@@ -1,12 +1,7 @@
 {
   "enchantment_id": "minecraft:fire-aspect",
+  "maxLevel": 0,
   "slots": {
-    "lapisLazuli": {
-      "1": {
-        "id": "empty",
-        "amount": 0
-      }
-    },
     "slot1": {
       "1": {
         "id": "empty",
@@ -20,6 +15,12 @@
       }
     },
     "slot3": {
+      "1": {
+        "id": "empty",
+        "amount": 0
+      }
+    },
+    "slot4": {
       "1": {
         "id": "empty",
         "amount": 0

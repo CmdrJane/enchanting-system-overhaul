@@ -1,6 +1,7 @@
 package aiefu.enchantmentoverhaul;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleResourceReloadListener;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
@@ -28,6 +29,8 @@ public class EnchantmentOverhaul implements ModInitializer {
 
 	public static final String MOD_ID = "enchantment-overhaul";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+	public static final ResourceLocation c2s_enchant_item = new ResourceLocation(MOD_ID, "c2s_enchant_item");
 
 	public static ConfigurationFile config;
 
@@ -67,6 +70,15 @@ public class EnchantmentOverhaul implements ModInitializer {
 				return new ResourceLocation(MOD_ID, "enchantment_recipe_loader");
 			}
 
+		});
+		ServerPlayNetworking.registerGlobalReceiver(c2s_enchant_item, (server, player, handler, buf, responseSender) -> {
+			String s = buf.readUtf();
+			ResourceLocation location = new ResourceLocation(s);
+			server.execute(() -> {
+				if(player.containerMenu instanceof OverhauledEnchantmentMenu m){
+					m.checkRequirementsAndConsume(location, player);
+				}
+			});
 		});
 		LOGGER.info("Hello Fabric world!");
 	}

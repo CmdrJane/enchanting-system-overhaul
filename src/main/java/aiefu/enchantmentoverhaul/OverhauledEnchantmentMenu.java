@@ -14,14 +14,18 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.block.Blocks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -117,26 +121,68 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         }
     }
 
-    public void enchant(Player player, String enchantmentLocation){
+    public void checkRequirementsAndConsume(ResourceLocation location, Player player){
         this.access.execute((level, blockPos) -> {
-            Enchantment enchantment = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(enchantmentLocation));
             ItemStack stack = this.tableInv.getItem(0);
-            if(stack.isEnchanted()){
-                Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
-                if(enchs.containsKey(enchantment)){
-                    int l = enchs.get(enchantment);
-                    if(l + 1 <= EnchantmentOverhaul.config.maxEnchantmentLevel()){
-                        player.onEnchantmentPerformed(stack, 0);
-                        enchs.put(enchantment, l + 1);
-                        EnchantmentHelper.setEnchantments(enchs, stack);
+            if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)) {
+                if(stack.is(Items.BOOK)) {
+                    this.enchantBook(stack, location, player);
+                } else {
+                    Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
+                    if (target != null) {
+                        stack.getOrCreateTag();
+                        Map<Enchantment, Integer> enchs = stack.isEnchanted() ? EnchantmentHelper.getEnchantments(stack) : new HashMap<>();
+                        int targetLevel = 1;
+                        Integer l = enchs.get(target);
+                        if (l != null) {
+                            targetLevel = l + 1;
+                        }
+                        RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
+                        if (targetLevel < holder.getMaxLevel(target)) {
+                            int x = 0;
+                            for (int i = 1; i < 5; i++) {
+                                if (holder.checkRequirements("slot" + i, this.tableInv.getItem(i), targetLevel)) {
+                                    ++x;
+                                }
+                            }
+                            if (x == 4) {
+                                for (int i = 1; i < 5; i++) {
+                                    holder.consume("slot" + i, this.tableInv.getItem(i), targetLevel);
+                                }
+                                enchs.put(target, targetLevel);
+                                EnchantmentHelper.setEnchantments(enchs, stack);
+                                player.onEnchantmentPerformed(stack, 0);
+                                this.tableInv.setChanged();
+                                this.broadcastChanges();
+                            }
+                        }
                     }
                 }
-            } else stack.enchant(enchantment, enchantment.getMinLevel());
+            }
         });
     }
 
-    public boolean checkRecipeRequirements(ItemStack stack, Enchantment enchantment, int targetLvl){
-        return true;
+    public void enchantBook(ItemStack stack, ResourceLocation location, Player player){
+        Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
+        if(target != null){
+            stack.getOrCreateTag();
+            RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
+            int x = 0;
+            for (int i = 1; i < 5; i++) {
+                if (holder.checkRequirements("slot" + i, this.tableInv.getItem(i), 1)) {
+                    ++x;
+                }
+            }
+            if (x == 4) {
+                for (int i = 1; i < 5; i++) {
+                    holder.consume("slot" + i, this.tableInv.getItem(i), 1);
+                }
+                EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(target, 1));
+                player.onEnchantmentPerformed(stack, 0);
+                this.tableInv.setChanged();
+                this.broadcastChanges();
+            }
+        }
     }
 
     public static void onEquipItem(Player player, EquipmentSlot slot, ItemStack newItem, ItemStack oldItem) {

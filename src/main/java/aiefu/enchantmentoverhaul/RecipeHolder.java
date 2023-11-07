@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -11,15 +12,14 @@ import java.util.HashMap;
 public class RecipeHolder {
     public transient ResourceLocation ench_location;
     public static final ItemData EMPTY = new ItemData(null, 0);
-    public static final String lapizLazuliSlot = "lapisLazuli";
-    public static final String slot1 = "slot1";
-    public static final String slot2 = "slot2";
-    public static final String slot3 = "slot3";
     public String enchantment_id;
+    public int maxLevel;
     public HashMap<String, Int2ObjectOpenHashMap<ItemData>> slots = new HashMap<>();
 
     public void processData(){
+        this.slots.values().forEach(m -> m.values().forEach(ItemData::makeId));
         this.ench_location = new ResourceLocation(enchantment_id);
+        EnchantmentOverhaul.recipeMap.put(this.ench_location, this);
     }
 
     public boolean checkRequirements(String slot, ItemStack stack, int targetLevel){
@@ -34,6 +34,26 @@ public class RecipeHolder {
             data = EMPTY;
         }
         return data.isEmpty() || data.isSameStack(stack) && data.isEnough(stack);
+    }
+
+    public void consume(String slot, ItemStack stack, int targetLevel){
+        ItemData data;
+        Int2ObjectOpenHashMap<ItemData> map = this.slots.get(slot);
+        if(map == null){
+            data = EMPTY;
+        } else {
+            data = map.get(targetLevel);
+        }
+        if(data == null){
+            data = EMPTY;
+        }
+        if(!data.isEmpty()){
+            stack.shrink(data.amount);
+        }
+    }
+
+    public int getMaxLevel(Enchantment enchantment){
+        return this.maxLevel < 1 ? enchantment.getMaxLevel() : this.maxLevel;
     }
 
     public static class ItemData{
