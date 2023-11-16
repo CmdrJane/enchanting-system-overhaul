@@ -1,5 +1,15 @@
 package aiefu.enchantmentoverhaul;
 
-public record ConfigurationFile(int maxEnchantments, int maxEnchantmentLevel) {
+public class ConfigurationFile {
+    protected int maxEnchantments;
 
+    public ConfigurationFile() {
+    }
+    public ConfigurationFile(int maxEnchantments) {
+        this.maxEnchantments = maxEnchantments;
+    }
+
+    public int getMaxEnchantments() {
+        return maxEnchantments;
+    }
 }

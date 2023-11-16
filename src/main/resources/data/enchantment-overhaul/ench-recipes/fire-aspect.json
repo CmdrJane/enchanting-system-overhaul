@@ -1,26 +1,26 @@
 {
-  "enchantment_id": "minecraft:fire-aspect",
+  "enchantment_id": "minecraft:fire_aspect",
   "maxLevel": 0,
   "slots": {
-    "slot1": {
+    "1": {
+      "1": {
+        "id": "minecraft:gold_ingot",
+        "amount": 12
+      }
+    },
+    "2": {
       "1": {
         "id": "empty",
         "amount": 0
       }
     },
-    "slot2": {
+    "3": {
       "1": {
         "id": "empty",
         "amount": 0
       }
     },
-    "slot3": {
-      "1": {
-        "id": "empty",
-        "amount": 0
-      }
-    },
-    "slot4": {
+    "4": {
       "1": {
         "id": "empty",
         "amount": 0

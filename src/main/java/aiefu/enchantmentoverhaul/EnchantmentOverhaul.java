@@ -15,8 +15,15 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.include.com.google.gson.Gson;
+import org.spongepowered.include.com.google.gson.GsonBuilder;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +51,6 @@ public class EnchantmentOverhaul implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new SimpleResourceReloadListener<Map<ResourceLocation, Resource>>() {
-
 
 			@Override
 			public CompletableFuture<Map<ResourceLocation, Resource>> load(ResourceManager manager, ProfilerFiller profiler, Executor executor) {
@@ -80,6 +86,29 @@ public class EnchantmentOverhaul implements ModInitializer {
 				}
 			});
 		});
+		try {
+			this.genConfig();
+			this.readConfig();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 		LOGGER.info("Hello Fabric world!");
+	}
+
+	public void genConfig() throws IOException {
+		Path p = Paths.get("./config/enchantment-overhaul");
+		if(!Files.exists(p)){
+			Files.createDirectory(p);
+		}
+		String p2 = "./config/enchantment-overhaul/config.json";
+		if(!Files.exists(Paths.get(p2))){
+			try(FileWriter writer = new FileWriter(p2)){
+				new GsonBuilder().setPrettyPrinting().create().toJson(new ConfigurationFile(5), writer);
+			}
+		}
+	}
+
+	public void readConfig() throws FileNotFoundException {
+		EnchantmentOverhaul.config = new Gson().fromJson(new FileReader("./config/enchantment-overhaul/config.json"), ConfigurationFile.class);
 	}
 }

@@ -2,29 +2,37 @@ package aiefu.enchantmentoverhaul.client.gui;
 
 import aiefu.enchantmentoverhaul.EnchantmentOverhaul;
 import aiefu.enchantmentoverhaul.OverhauledEnchantmentMenu;
+import aiefu.enchantmentoverhaul.RecipeHolder;
 import aiefu.enchantmentoverhaul.client.EnchantmentOverhaulClient;
+import io.netty.buffer.Unpooled;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnchantmentMenu> {
     public static final ResourceLocation ENCHANTING_BACKGROUND_TEXTURE = new ResourceLocation(EnchantmentOverhaul.MOD_ID,"textures/gui/ench_screen.png");
 
-    protected ScrollListWidget enchantmentsScrollList;
+    protected EnchantmentListWidget enchantmentsScrollList;
     protected EditBox searchFilter;
 
     protected CustomEnchantingButton confirmButton;
@@ -45,8 +53,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     protected void init() {
         super.init();
         this.confirmButton = this.addWidget(new CustomEnchantingButton(leftPos + 60, topPos + 72, 30, 12, Component.translatable("gui.yes"), button -> {
-            //Todo:send enchant packet
             this.switchOverlayState(true);
+            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+            buf.writeUtf(BuiltInRegistries.ENCHANTMENT.getKey(selectedEnchantment).toString());
+            ClientPlayNetworking.send(EnchantmentOverhaul.c2s_enchant_item, buf);
         }));
         this.cancelButton = this.addWidget(new CustomEnchantingButton(leftPos + 130, topPos + 72, 30, 12, Component.translatable("gui.no"), button -> {
             this.switchOverlayState(true);
@@ -57,7 +67,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
 
-        this.enchantmentsScrollList = this.addRenderableWidget(new ScrollListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), this.craftEnchantmentsButtons()));
+        this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), this.craftEnchantmentsButtons()));
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 80, topPos + 8, 123, 10, Component.literal("Search...")));
         this.setInitialFocus(enchantmentsScrollList);
     }
@@ -71,7 +81,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public void switchOverlayState(boolean bl){ //False to activate overlay, true to disable
         this.searchFilter.active = bl;
         this.enchantmentsScrollList.active = bl;
-        this.enchantmentsScrollList.switchButtonsState(bl);
+        this.enchantmentsScrollList.switchOverlayState(bl);
         this.overlayActive = !bl;
         this.confirmButton.active = !bl;
         this.confirmButton.visible = !bl;
@@ -142,29 +152,49 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         guiGraphics.blit(ENCHANTING_BACKGROUND_TEXTURE, i, j, 0, 0, this.imageWidth, this.imageHeight);
     }
 
-    public List<Button> craftEnchantmentsButtons(){
-        List<Button> list = new ArrayList<>();
+    public List<EnchButtonWithData> craftEnchantmentsButtons(){
+        List<EnchButtonWithData> list = new ArrayList<>();
         for (int i = 0; i < enchMenu.enchantments.size(); i++) {
             Enchantment enchantment = enchMenu.enchantments.get(i);
             MutableComponent translatable = Component.translatable(enchantment.getDescriptionId());
-            CustomEnchantingButton b = new CustomEnchantingButton(leftPos + 80, (this.topPos + 25) + 16 * i, 123, 14, translatable, button -> {
+            EnchButtonWithData b = new EnchButtonWithData(leftPos + 80, (this.topPos + 25) + 16 * i, 123, 14, translatable, button -> {
                 this.switchOverlayState(false);
                 this.selectedEnchantment = enchantment;
-            });
+            }, EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment)), enchantment);
             MutableComponent c = translatable.copy();
             c.append("\n");
             c.append(EnchantmentOverhaulClient.getEnchantmentDescription(enchantment));
             b.setTooltip(Tooltip.create(c));
             list.add(b);
-
-            /*
-            list.add(CustomEnchantingButton.builder(Component.translatable(s), button -> {
-                System.out.println(s);
-                System.out.println(FastColor.ARGB32.color(255, 250, 185, 239));
-            }).bounds(this.leftPos + 60, (this.topPos + 16) + 16 * i,98, 14).build());
-             */
         }
 
         return list;
+    }
+
+    public void recalculateAvailability(SimpleContainer container){
+        ItemStack stack = container.getItem(0);
+        if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)){
+            Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
+            if(enchs.keySet().size() < EnchantmentOverhaul.config.getMaxEnchantments()) {
+                label1:
+                for (EnchButtonWithData b : enchantmentsScrollList.getEnchantments()) {
+                    if(!b.enchantment.canEnchant(stack)){
+                        continue;
+                    }
+                    for (Enchantment e : enchs.keySet()) {
+                        if (!e.isCompatibleWith(b.enchantment)) {
+                            b.active = false;
+                            continue label1;
+                        }
+                    }
+                    RecipeHolder holder = b.getRecipe();
+                    if (holder != null) {
+                        Integer targetLevel = enchs.get(b.getEnchantment());
+                        targetLevel = targetLevel == null ? 1 : targetLevel + 1;
+                        b.active = targetLevel < holder.getMaxLevel(b.getEnchantment()) && holder.check(container, targetLevel);
+                    } else b.active = false;
+                }
+            } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);
+        } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);
     }
 }

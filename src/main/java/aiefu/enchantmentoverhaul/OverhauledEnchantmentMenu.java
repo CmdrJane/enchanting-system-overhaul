@@ -5,6 +5,7 @@ import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
@@ -36,9 +37,12 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     private final ContainerLevelAccess access;
     public List<Enchantment> enchantments = new ArrayList<>();
 
+    public boolean isClientSide = false;
+
     protected SimpleContainer tableInv;
     public OverhauledEnchantmentMenu(int syncId, Inventory inventory, FriendlyByteBuf buf) {
         this(syncId, inventory, ContainerLevelAccess.NULL, EnchantmentOverhaulClient.getClientPlayer());
+        this.isClientSide = true;
         int r = buf.readInt();
         for (int i = 0; i < r; i++) {
             String s = buf.readUtf();
@@ -107,7 +111,20 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(this.tableInv, 0, 24,31){
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return stack.isEnchantable();
+                return stack.getItem().isEnchantable(stack) || stack.is(Items.BOOK);
+            }
+
+            @Override
+            public int getMaxStackSize() {
+                return 1;
+            }
+
+            @Override
+            public void set(ItemStack stack) {
+                super.set(stack);
+                if(OverhauledEnchantmentMenu.this.isClientSide){
+                    EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
+                }
             }
         });
         this.addSlot(new Slot(this.tableInv, 1, 42,31){
@@ -115,9 +132,25 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             public boolean mayPlace(ItemStack stack) {
                 return true; //TODO: make filters
             }
+
+            @Override
+            public void set(ItemStack stack) {
+                super.set(stack);
+                if(OverhauledEnchantmentMenu.this.isClientSide){
+                    EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
+                }
+            }
         });
         for (int j = 0; j < 3; j++) { //15 49
-            this.addSlot(new Slot(this.tableInv, j + 2, 15 + j * 18, 49));
+            this.addSlot(new Slot(this.tableInv, j + 2, 15 + j * 18, 49){
+                @Override
+                public void set(ItemStack stack) {
+                    super.set(stack);
+                    if(OverhauledEnchantmentMenu.this.isClientSide){
+                        EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
+                    }
+                }
+            });
         }
     }
 
@@ -126,35 +159,32 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             ItemStack stack = this.tableInv.getItem(0);
             if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)) {
                 if(stack.is(Items.BOOK)) {
-                    this.enchantBook(stack, location, player);
+                    this.enchantBook(location, player);
                 } else {
                     Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
                     if (target != null) {
                         stack.getOrCreateTag();
                         Map<Enchantment, Integer> enchs = stack.isEnchanted() ? EnchantmentHelper.getEnchantments(stack) : new HashMap<>();
+                        if(!target.canEnchant(stack) || enchs.keySet().size() >= EnchantmentOverhaul.config.getMaxEnchantments()){
+                            return;
+                        }
+                        for (Enchantment e : enchs.keySet()){
+                            if(!e.isCompatibleWith(target)){
+                                return;
+                            }
+                        }
                         int targetLevel = 1;
                         Integer l = enchs.get(target);
                         if (l != null) {
                             targetLevel = l + 1;
                         }
                         RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
-                        if (targetLevel < holder.getMaxLevel(target)) {
-                            int x = 0;
-                            for (int i = 1; i < 5; i++) {
-                                if (holder.checkRequirements("slot" + i, this.tableInv.getItem(i), targetLevel)) {
-                                    ++x;
-                                }
-                            }
-                            if (x == 4) {
-                                for (int i = 1; i < 5; i++) {
-                                    holder.consume("slot" + i, this.tableInv.getItem(i), targetLevel);
-                                }
-                                enchs.put(target, targetLevel);
-                                EnchantmentHelper.setEnchantments(enchs, stack);
-                                player.onEnchantmentPerformed(stack, 0);
-                                this.tableInv.setChanged();
-                                this.broadcastChanges();
-                            }
+                        if (holder != null && targetLevel < holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
+                            enchs.put(target, targetLevel);
+                            EnchantmentHelper.setEnchantments(enchs, stack);
+                            player.onEnchantmentPerformed(stack, 0);
+                            this.tableInv.setChanged();
+                            this.broadcastChanges();
                         }
                     }
                 }
@@ -162,27 +192,39 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         });
     }
 
-    public void enchantBook(ItemStack stack, ResourceLocation location, Player player){
+    public void enchantBook(ResourceLocation location, Player player){
         Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
         if(target != null){
+            ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
             stack.getOrCreateTag();
             RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
-            int x = 0;
-            for (int i = 1; i < 5; i++) {
-                if (holder.checkRequirements("slot" + i, this.tableInv.getItem(i), 1)) {
-                    ++x;
-                }
-            }
-            if (x == 4) {
-                for (int i = 1; i < 5; i++) {
-                    holder.consume("slot" + i, this.tableInv.getItem(i), 1);
-                }
-                EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(target, 1));
+            if(holder != null && holder.checkAndConsume(this.tableInv, 1)){
+                stack.enchant(target, 1);
+                this.tableInv.setItem(0, stack);
                 player.onEnchantmentPerformed(stack, 0);
-                this.tableInv.setChanged();
                 this.broadcastChanges();
             }
         }
+    }
+
+    public SimpleContainer getTableInv() {
+        return tableInv;
+    }
+
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        this.access.execute((level, blockPos) -> this.clearContainer(player, this.tableInv));
+    }
+
+    @Override
+    protected void clearContainer(Player player, Container container) {
+        super.clearContainer(player, container);
+    }
+
+    @Override
+    public void slotsChanged(Container container) {
+        super.slotsChanged(container);
     }
 
     public static void onEquipItem(Player player, EquipmentSlot slot, ItemStack newItem, ItemStack oldItem) {
@@ -194,7 +236,56 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
 
     @Override
     public @NotNull ItemStack quickMoveStack(Player player, int i) {
-        return ItemStack.EMPTY;
+        ItemStack returnStack = ItemStack.EMPTY;
+        Slot slot = slots.get(i);
+        if(slot.hasItem()){
+            ItemStack stack = slot.getItem();
+            returnStack = stack.copy();
+            if(i == 41){
+                EquipmentSlot eqs = Mob.getEquipmentSlotForItem(stack);
+                if(eqs.isArmor()){
+                    int o = 39 - eqs.getIndex();
+                    if(!moveItemStackTo(stack, o, o + 1, true)){
+                        return ItemStack.EMPTY;
+                    }
+                } else if(eqs == EquipmentSlot.OFFHAND){
+                    if(!moveItemStackTo(stack, 40 , 41 , true)){
+                        return ItemStack.EMPTY;
+                    }
+                } else {
+                    if(!moveItemStackTo(stack, 0, 36, true)){
+                        return ItemStack.EMPTY;
+                    }
+                }
+            } else if(i > 41 && i < 46){
+                if(!moveItemStackTo(stack, 0 , 36, true)){
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                ItemStack stack2 = stack.copyWithCount(1);
+                if(!this.slots.get(41).hasItem() && this.slots.get(41).mayPlace(stack2)){
+                    stack.shrink(1);
+                    this.slots.get(41).setByPlayer(stack2);
+                    returnStack = ItemStack.EMPTY;
+                } else if(!moveItemStackTo(stack, 42, 46, false)){
+                    return ItemStack.EMPTY;
+                } else return ItemStack.EMPTY;
+            }
+
+            if (stack.isEmpty()) {
+                slot.setByPlayer(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+
+            if (stack.getCount() == returnStack.getCount()) {
+                return ItemStack.EMPTY;
+            }
+
+            slot.onTake(player, stack);
+        }
+
+        return returnStack;
     }
 
     @Override

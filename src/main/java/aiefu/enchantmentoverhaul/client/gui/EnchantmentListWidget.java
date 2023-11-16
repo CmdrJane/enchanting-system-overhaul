@@ -9,12 +9,12 @@ import net.minecraft.util.Mth;
 
 import java.util.List;
 
-public class ScrollListWidget extends AbstractScrollWidget {
+public class EnchantmentListWidget extends AbstractScrollWidget {
 
-    public List<Button> enchantments;
+    public List<EnchButtonWithData> enchantments;
     protected boolean overlayActive = false;
 
-    public ScrollListWidget(int x, int y, int width, int height, Component message, List<Button> enchantments) {
+    public EnchantmentListWidget(int x, int y, int width, int height, Component message, List<EnchButtonWithData> enchantments) {
         super(x, y, width, height, message);
         this.enchantments = enchantments;
     }
@@ -23,7 +23,7 @@ public class ScrollListWidget extends AbstractScrollWidget {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if(this.withinContentAreaPoint(mouseX, mouseY)){
             this.enchantments.forEach(b -> b.mouseClicked(mouseX, mouseY + scrollAmount(), button));
-        }
+        } else this.setFocused(false);
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
@@ -88,8 +88,20 @@ public class ScrollListWidget extends AbstractScrollWidget {
 
     }
 
-    public void switchButtonsState(boolean bl){
+    public void switchOverlayState(boolean bl){
         this.overlayActive = !bl;
-        this.enchantments.forEach(b -> b.active = bl);
+        if(!bl){
+            this.enchantments.forEach(b -> {
+                b.prevState = b.active;
+                b.active = false;
+            });
+        } else {
+            this.enchantments.forEach(b -> b.active = b.prevState);
+        }
+
+    }
+
+    public List<EnchButtonWithData> getEnchantments() {
+        return enchantments;
     }
 }
