@@ -89,16 +89,7 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
     }
 
     public void switchOverlayState(boolean bl){
-        this.overlayActive = !bl;
-        if(!bl){
-            this.enchantments.forEach(b -> {
-                b.prevState = b.active;
-                b.active = false;
-            });
-        } else {
-            this.enchantments.forEach(b -> b.active = b.prevState);
-        }
-
+        this.enchantments.forEach(b -> b.active = bl);
     }
 
     public List<EnchButtonWithData> getEnchantments() {
