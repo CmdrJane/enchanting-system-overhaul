@@ -95,4 +95,8 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
     public List<EnchButtonWithData> getEnchantments() {
         return enchantments;
     }
+
+    public void setEnchantments(List<EnchButtonWithData> enchantments) {
+        this.enchantments = enchantments;
+    }
 }

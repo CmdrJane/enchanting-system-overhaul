@@ -1,4 +1,7 @@
 {
   "enchantmentoverhaul.applyench.1" : "Apply ",
-  "enchantmentoverhaul.applyench.2" : " to your "
+  "enchantmentoverhaul.applyench.2" : " to ",
+  "enchantmentoverhaul.requires" : "Crafting Ingredients: ",
+  "enchantmentoverhaul.slot" : "Slot %s :",
+  "enchantmentoverhaul.emptyitem" : "Empty"
 }

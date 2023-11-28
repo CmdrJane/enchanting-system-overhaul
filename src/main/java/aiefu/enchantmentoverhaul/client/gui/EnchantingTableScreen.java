@@ -6,12 +6,14 @@ import aiefu.enchantmentoverhaul.RecipeHolder;
 import aiefu.enchantmentoverhaul.client.EnchantmentOverhaulClient;
 import io.netty.buffer.Unpooled;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -75,9 +77,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton.visible = overlayActive;
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
-
-        this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), this.craftEnchantmentsButtons()));
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 80, topPos + 8, 123, 10, Component.literal("Search...")));
+        this.searchFilter.setBordered(false);
+
+        this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), this.craftEnchantmentsButtons(this.searchFilter.getValue().toLowerCase())));
         this.setInitialFocus(enchantmentsScrollList);
     }
 
@@ -89,7 +92,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     }
 
     public void switchOverlayState(boolean bl){ //False to activate overlay, true to disable
-        if(selectedEnchantment != null){
+        if(selectedEnchantment != null && !bl){
             MutableComponent msg = Component.translatable("enchantmentoverhaul.applyench.1");
             msg.append(Component.translatable(this.selectedEnchantment.getDescriptionId()).withStyle(STYLE));
             msg.append(Component.translatable("enchantmentoverhaul.applyench.2"));
@@ -98,7 +101,6 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         }
         this.searchFilter.active = bl;
         this.enchantmentsScrollList.active = bl;
-        this.enchantmentsScrollList.switchOverlayState(bl);
         this.overlayActive = !bl;
         this.confirmButton.active = !bl;
         this.confirmButton.visible = !bl;
@@ -161,6 +163,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if(this.searchFilter.isFocused()){
             if(keyCode == 256) this.searchFilter.setFocused(false);
+            else if(keyCode == 257){
+                this.enchantmentsScrollList.setEnchantments(this.craftEnchantmentsButtons(this.searchFilter.getValue()));
+                this.recalculateAvailability(this.enchMenu.getTableInv());
+            }
            return this.searchFilter.keyPressed(keyCode, scanCode, modifiers);
         }
         else return super.keyPressed(keyCode, scanCode, modifiers);
@@ -182,21 +188,45 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         guiGraphics.blit(ENCHANTING_BACKGROUND_TEXTURE, i, j, 0, 0, this.imageWidth, this.imageHeight);
     }
 
-    public List<EnchButtonWithData> craftEnchantmentsButtons(){
+    public List<EnchButtonWithData> craftEnchantmentsButtons(String filter){
         List<EnchButtonWithData> list = new ArrayList<>();
-        for (int i = 0; i < enchMenu.enchantments.size(); i++) {
-            Enchantment enchantment = enchMenu.enchantments.get(i);
-            MutableComponent translatable = Component.translatable(enchantment.getDescriptionId());
-            EnchButtonWithData b = new EnchButtonWithData(leftPos + 80, (this.topPos + 25) + 16 * i, 123, 14, translatable, button -> {
-                this.selectedEnchantment = enchantment;
-                this.switchOverlayState(false);
-                this.switchButtonsState(false);
-            }, EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment)), enchantment);
-            MutableComponent c = translatable.copy();
-            c.append("\n");
-            c.append(EnchantmentOverhaulClient.getEnchantmentDescription(enchantment));
-            b.setTooltip(Tooltip.create(c));
-            list.add(b);
+        ItemStack stack = this.enchMenu.getTableInv().getItem(0);
+        Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
+        int offset = 0;
+        for (Enchantment enchantment : enchMenu.enchantments) {
+            String name = I18n.get(enchantment.getDescriptionId());
+            if(filter.isEmpty() || filter.isBlank() || name.contains(filter)){
+                RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
+                MutableComponent translatable = Component.translatable(name);
+                EnchButtonWithData b = new EnchButtonWithData(leftPos + 80, (this.topPos + 25) + 16 * offset, 123, 14, translatable, button -> {
+                    this.selectedEnchantment = enchantment;
+                    this.switchOverlayState(false);
+                    this.switchButtonsState(false);
+                }, holder, enchantment);
+                Integer l = enchs.get(enchantment);
+                int targetLevel = l != null ? l : 1;
+                MutableComponent c = translatable.copy();
+                c.append("\n");
+                c.append(EnchantmentOverhaulClient.getEnchantmentDescription(enchantment));
+                if(holder != null){
+                    c.append("\n");
+                    c.append(Component.translatable("enchantmentoverhaul.requires"));
+                    for (RecipeHolder.ItemData data : holder.levels.get(targetLevel)) {
+                        MutableComponent itemName;
+                        if(data.isEmpty()){
+                            itemName = Component.translatable("enchantmentoverhaul.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
+                        } else {
+                            itemName = Component.translatable(data.item.getDescriptionId());
+                        }
+                        c.append("\n");
+                        c.append(itemName);
+
+                    }
+                }
+                b.setTooltip(Tooltip.create(c));
+                list.add(b);
+                offset++;
+            }
         }
 
         return list;
@@ -215,7 +245,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                             continue;
                         }
                         for (Enchantment e : enchs.keySet()) {
-                            if (!e.isCompatibleWith(b.enchantment)) {
+                            if (e != b.enchantment && !e.isCompatibleWith(b.enchantment)) {
                                 b.active = false;
                                 continue label1;
                             }
@@ -225,7 +255,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     if (holder != null) {
                         Integer targetLevel = enchs.get(b.getEnchantment());
                         targetLevel = targetLevel == null ? 1 : targetLevel + 1;
-                        b.active = targetLevel < holder.getMaxLevel(b.getEnchantment()) && holder.check(container, targetLevel);
+                        b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && holder.check(container, targetLevel);
                     } else b.active = false;
                 }
             } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);
