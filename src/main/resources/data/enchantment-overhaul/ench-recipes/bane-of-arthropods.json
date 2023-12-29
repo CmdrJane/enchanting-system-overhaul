@@ -1,0 +1,96 @@
+{
+  "enchantment_id": "minecraft:fire_aspect",
+  "maxLevel": 0,
+  "levels": {
+    "1": [
+      {
+        "id": "minecraft:glowstone_dust",
+        "amount": 24
+      },
+      {
+        "id": "minecraft:blaze_rod",
+        "amount": 12
+      },
+      {
+        "id": "minecraft:blaze_powder",
+        "amount": 6
+      },
+      {
+        "id": "minecraft:magma_cream",
+        "amount": 6
+      }
+    ],
+    "2": [
+      {
+        "id": "minecraft:glowstone_dust",
+        "amount": 64
+      },
+      {
+        "id": "minecraft:blaze_rod",
+        "amount": 24
+      },
+      {
+        "id": "minecraft:blaze_powder",
+        "amount": 32
+      },
+      {
+        "id": "minecraft:magma_cream",
+        "amount": 18
+      }
+    ],
+    "3": [
+      {
+        "id": "minecraft:glowstone_dust",
+        "amount": 64
+      },
+      {
+        "id": "minecraft:blaze_rod",
+        "amount": 24
+      },
+      {
+        "id": "minecraft:blaze_powder",
+        "amount": 32
+      },
+      {
+        "id": "minecraft:magma_cream",
+        "amount": 18
+      }
+    ],
+    "4": [
+      {
+        "id": "minecraft:glowstone_dust",
+        "amount": 64
+      },
+      {
+        "id": "minecraft:blaze_rod",
+        "amount": 24
+      },
+      {
+        "id": "minecraft:blaze_powder",
+        "amount": 32
+      },
+      {
+        "id": "minecraft:magma_cream",
+        "amount": 18
+      }
+    ],
+    "5": [
+      {
+        "id": "minecraft:glowstone_dust",
+        "amount": 64
+      },
+      {
+        "id": "minecraft:blaze_rod",
+        "amount": 24
+      },
+      {
+        "id": "minecraft:blaze_powder",
+        "amount": 32
+      },
+      {
+        "id": "minecraft:magma_cream",
+        "amount": 18
+      }
+    ]
+  }
+}

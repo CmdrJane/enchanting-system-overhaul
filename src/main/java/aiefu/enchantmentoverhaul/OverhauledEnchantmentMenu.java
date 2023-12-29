@@ -139,7 +139,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 }
             }
         });
-        for (int j = 0; j < 3; j++) { //15 49
+        for (int j = 0; j < 3; j++) {
             this.addSlot(new Slot(this.tableInv, j + 2, 15 + j * 18, 49){
                 @Override
                 public void set(ItemStack stack) {
@@ -167,7 +167,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                             return;
                         }
                         for (Enchantment e : enchs.keySet()){
-                            if(!e.isCompatibleWith(target)){
+                            if(e != target && !e.isCompatibleWith(target)){
                                 return;
                             }
                         }
@@ -177,7 +177,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                             targetLevel = l + 1;
                         }
                         RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
-                        if (holder != null && targetLevel < holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
+                        if (holder != null && targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
                             enchs.put(target, targetLevel);
                             EnchantmentHelper.setEnchantments(enchs, stack);
                             player.onEnchantmentPerformed(stack, 0);

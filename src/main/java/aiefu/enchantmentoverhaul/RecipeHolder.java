@@ -1,7 +1,10 @@
 package aiefu.enchantmentoverhaul;
 
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.Item;
@@ -9,6 +12,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 public class RecipeHolder {
     public transient ResourceLocation ench_location;
@@ -21,7 +26,7 @@ public class RecipeHolder {
         this.levels.values().forEach(m -> {
             for (int i = 0; i < m.length; i++) {
                 ItemData data = m[i];
-                if(data.id == null || data.id.isEmpty() || data.id.isBlank() || data.id.equalsIgnoreCase("empty")){
+                if(data == null || data.id == null || data.id.isEmpty() || data.id.isBlank() || data.id.equalsIgnoreCase("empty")){
                     m[i] = EMPTY;
                 } else {
                     data.makeId();
@@ -40,7 +45,7 @@ public class RecipeHolder {
                 ItemStack stack = container.getItem(i);
                 ItemData data = array[i - 1];
                 if (data != null) {
-                    if (data.isEmpty() || stack.getItem() == data.item && data.isEnough(stack)) {
+                    if (data.isEmpty() || stack.getItem() == data.item && data.isEnough(stack) && data.testTag(stack)) {
                         x++;
                     }
                 } else {
@@ -59,7 +64,7 @@ public class RecipeHolder {
                 ItemStack stack = container.getItem(i);
                 ItemData data = arr[i - 1];
                 if (data != null) {
-                    if (data.isEmpty() || stack.getItem() == data.item && data.isEnough(stack)) {
+                    if (data.isEmpty() || stack.getItem() == data.item && data.isEnough(stack) && data.testTag(stack)) {
                         x++;
                     }
                 } else {
@@ -80,20 +85,25 @@ public class RecipeHolder {
         return this.maxLevel < 1 ? enchantment.getMaxLevel() : this.maxLevel;
     }
 
+    @SuppressWarnings("unused")
     public static class ItemData{
         protected transient boolean isEmpty = false;
         @Nullable
         public transient ResourceLocation item_id;
         public transient Item item = Items.AIR;
-        @Nullable
+
+        public transient CompoundTag tag;
+
         public String id;
         public int amount;
+
+        public String stringTag;
 
         public ItemData() {
         }
 
         public ItemData(Void v) {
-            this.makeId();
+            this.isEmpty = true;
         }
 
         public ItemData(@Nullable String id, int amount) {
@@ -102,8 +112,26 @@ public class RecipeHolder {
         }
 
         public void makeId(){
+            Objects.requireNonNull(this.id);
             this.item_id = new ResourceLocation(this.id);
-            this.item = BuiltInRegistries.ITEM.get(item_id);
+            this.item = BuiltInRegistries.ITEM.get(this.item_id);
+            if(this.stringTag != null){
+                try {
+                   this.tag = new TagParser(new StringReader(stringTag)).readStruct();
+                } catch (CommandSyntaxException e){
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public boolean testTag(ItemStack stack){
+            if(!stack.hasTag()){
+                return true;
+            }
+            if(this.tag == null){
+                return true;
+            }
+            else return TagsUtils.havePartialMatch(this.tag, stack.getOrCreateTag());
         }
 
         public boolean isSameStack(ItemStack stack){

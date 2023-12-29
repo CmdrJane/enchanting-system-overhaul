@@ -1,0 +1,25 @@
+{
+  "enchantment_id": "minecraft:aqua_affinity",
+  "maxLevel": 0,
+  "levels": {
+    "1": [
+      {
+        "id": "minecraft:lapis_lazuli",
+        "amount": 48
+      },
+      {
+        "id": "minecraft:turtle_helmet",
+        "amount": 1
+      },
+      {
+        "id": "minecraft:glow_ink_sac",
+        "amount": 16
+      },
+      {
+        "id": "minecraft:potion",
+        "amount": 1,
+        "tag": "{Potion: \"minecraft:water_breathing\"}"
+      }
+    ]
+  }
+}

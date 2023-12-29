@@ -103,7 +103,7 @@ public class EnchantmentOverhaul implements ModInitializer {
 		String p2 = "./config/enchantment-overhaul/config.json";
 		if(!Files.exists(Paths.get(p2))){
 			try(FileWriter writer = new FileWriter(p2)){
-				new GsonBuilder().setPrettyPrinting().create().toJson(new ConfigurationFile(5), writer);
+				new GsonBuilder().setPrettyPrinting().create().toJson(ConfigurationFile.getDefault(), writer);
 			}
 		}
 	}
