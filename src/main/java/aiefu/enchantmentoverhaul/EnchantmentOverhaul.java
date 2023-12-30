@@ -30,14 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 public class EnchantmentOverhaul implements ModInitializer {
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
 
 	public static final String MOD_ID = "enchantment-overhaul";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	public static final ResourceLocation c2s_enchant_item = new ResourceLocation(MOD_ID, "c2s_enchant_item");
+
+	private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 	public static ConfigurationFile config;
 
@@ -61,9 +60,10 @@ public class EnchantmentOverhaul implements ModInitializer {
 			public CompletableFuture<Void> apply(Map<ResourceLocation, Resource> data, ResourceManager manager, ProfilerFiller profiler, Executor executor) {
 				return CompletableFuture.runAsync(() -> {
 					EnchantmentOverhaul.recipeMap.clear();
+					Gson gson = new Gson();
 					data.forEach((key, value) -> {
 						try {
-							new Gson().fromJson(value.openAsReader(), RecipeHolder.class).processData();
+							gson.fromJson(value.openAsReader(), RecipeHolder.class).processData();
 						} catch (IOException ex) {
 							throw new RuntimeException(ex);
 						}
@@ -103,12 +103,12 @@ public class EnchantmentOverhaul implements ModInitializer {
 		String p2 = "./config/enchantment-overhaul/config.json";
 		if(!Files.exists(Paths.get(p2))){
 			try(FileWriter writer = new FileWriter(p2)){
-				new GsonBuilder().setPrettyPrinting().create().toJson(ConfigurationFile.getDefault(), writer);
+				gson.toJson(ConfigurationFile.getDefault(), writer);
 			}
 		}
 	}
 
 	public void readConfig() throws FileNotFoundException {
-		EnchantmentOverhaul.config = new Gson().fromJson(new FileReader("./config/enchantment-overhaul/config.json"), ConfigurationFile.class);
+		EnchantmentOverhaul.config = gson.fromJson(new FileReader("./config/enchantment-overhaul/config.json"), ConfigurationFile.class);
 	}
 }

@@ -3,5 +3,8 @@
   "enchantmentoverhaul.applyench.2" : " to ",
   "enchantmentoverhaul.requires" : "Crafting Ingredients: ",
   "enchantmentoverhaul.slot" : "Slot %s :",
-  "enchantmentoverhaul.emptyitem" : "Empty"
+  "enchantmentoverhaul.emptyitem" : "Empty",
+  "enchantmentoverhaul.absorbingknowledge" : "Glyphs imbued with magical power disappear from the book as you absorb their power",
+  "enchantmentoverhaul.booktoashes" : "Drained of magical power enchanted book crumbles to ashes in your hands",
+  "enchantmentoverhaul.allreadylearned" : "You already know all secrets contained within this book"
 }

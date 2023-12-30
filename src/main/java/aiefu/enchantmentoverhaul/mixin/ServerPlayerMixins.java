@@ -1,5 +1,6 @@
 package aiefu.enchantmentoverhaul.mixin;
 
+import aiefu.enchantmentoverhaul.IServerPlayerAcc;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -17,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.HashSet;
 
 @Mixin(ServerPlayer.class)
-public class ServerPlayerMixins {
+public class ServerPlayerMixins implements IServerPlayerAcc {
     @Unique
     private HashSet<Enchantment> unlockedEnchantments = new HashSet<>();
 
@@ -49,4 +50,8 @@ public class ServerPlayerMixins {
     }
 
 
+    @Override
+    public HashSet<Enchantment> enchantment_overhaul$getUnlockedEnchantments() {
+        return unlockedEnchantments;
+    }
 }

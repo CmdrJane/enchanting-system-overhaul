@@ -4,8 +4,6 @@ import aiefu.enchantmentoverhaul.exception.ItemDoesNotExistException;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;

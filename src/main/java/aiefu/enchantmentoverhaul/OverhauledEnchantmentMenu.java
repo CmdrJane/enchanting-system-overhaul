@@ -15,11 +15,13 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.block.Blocks;
 import org.jetbrains.annotations.NotNull;
 
@@ -198,7 +200,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             stack.getOrCreateTag();
             RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
             if(holder != null && holder.checkAndConsume(this.tableInv, 1)){
-                stack.enchant(target, 1);
+                EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(target, 1));
                 this.tableInv.setItem(0, stack);
                 player.onEnchantmentPerformed(stack, 0);
                 this.broadcastChanges();

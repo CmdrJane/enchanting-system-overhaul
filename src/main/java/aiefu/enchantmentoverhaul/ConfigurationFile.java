@@ -10,9 +10,11 @@ public class ConfigurationFile {
     public ConfigurationFile() {
     }
 
-    public ConfigurationFile(int maxEnchantments, int lootHandlingTactic) {
+    public ConfigurationFile(int maxEnchantments, int lootHandlingTactic, int maxEnchantmentsOnLootBooks, int maxEnchantmentsOnLootItems) {
         this.maxEnchantments = maxEnchantments;
         this.lootHandlingTactic = lootHandlingTactic;
+        this.maxEnchantmentsOnLootBooks = maxEnchantmentsOnLootBooks;
+        this.maxEnchantmentsOnLootItems = maxEnchantmentsOnLootItems;
     }
 
     public int getMaxEnchantments() {
@@ -20,6 +22,6 @@ public class ConfigurationFile {
     }
 
     public static ConfigurationFile getDefault(){
-        return new ConfigurationFile(5, 0);
+        return new ConfigurationFile(5, 0, 2, 3);
     }
 }
