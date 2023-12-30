@@ -30,10 +30,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnchantmentMenu> {
     public static final ResourceLocation ENCHANTING_BACKGROUND_TEXTURE = new ResourceLocation(EnchantmentOverhaul.MOD_ID,"textures/gui/ench_screen.png");
@@ -48,6 +50,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     protected Enchantment selectedEnchantment;
     protected List<FormattedCharSequence> confirmMsg = new ArrayList<>();
     protected OverhauledEnchantmentMenu enchMenu;
+
+    protected MutableComponent displayMsg;
 
     protected boolean overlayActive = false;
     public EnchantingTableScreen(OverhauledEnchantmentMenu menu, Inventory playerInventory, Component title) {
@@ -65,7 +69,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             this.switchOverlayState(true);
             this.switchButtonsState(false);
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-            buf.writeUtf(BuiltInRegistries.ENCHANTMENT.getKey(selectedEnchantment).toString());
+            buf.writeUtf(Objects.requireNonNull(BuiltInRegistries.ENCHANTMENT.getKey(selectedEnchantment)).toString());
             ClientPlayNetworking.send(EnchantmentOverhaul.c2s_enchant_item, buf);
         }));
         this.cancelButton = this.addWidget(new CustomEnchantingButton(leftPos + 130, topPos + 92, 30, 12, Component.translatable("gui.no"), button -> {
@@ -77,8 +81,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton.visible = overlayActive;
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
-        this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, Component.literal("Search...")));
+        Component searchHint = Component.translatable("enchantmentoverhaul.search");
+        this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
+        this.searchFilter.setHint(searchHint);
 
         this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), this.craftEnchantmentsButtons(this.searchFilter.getValue().toLowerCase())));
         this.setInitialFocus(enchantmentsScrollList);
@@ -130,9 +136,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.searchFilter.render(guiGraphics, mouseX, mouseY, partialTick);
         if(!overlayActive) this.renderTooltip(guiGraphics, mouseX, mouseY);
-        int x = leftPos + 79;
-        Component text = Component.literal("Enchantments left: 5");
-        this.drawCenteredString(guiGraphics, this.font, text, ((x + 123 + x) /2), topPos + 75, 4210752, false);
+        if(displayMsg != null){
+            int x = leftPos + 79;
+            this.drawCenteredString(guiGraphics, this.font, displayMsg, ((x + 123 + x) /2), topPos + 75, 4210752, false);
+        }
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(0.0F, 0.0F, 1000.0F);
         this.renderConfirmOverlay(guiGraphics, mouseX, mouseY, partialTick);
@@ -196,11 +203,12 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         for (Enchantment enchantment : enchMenu.enchantments) {
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
-                RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
+                @Nullable RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
                 Integer l = enchs.get(enchantment);
-                int targetLevel = l != null ? Math.min(holder.getMaxLevel(enchantment), l + 1) : 1;
+                int maxLevel = RecipeHolder.getMaxLevel(holder, enchantment);
+                int targetLevel = l != null ? Math.min(maxLevel, l + 1) : 1;
 
-                MutableComponent translatable = (MutableComponent) enchantment.getFullname(targetLevel);
+                MutableComponent translatable = RecipeHolder.getFullName(enchantment, targetLevel, maxLevel);
                 EnchButtonWithData b = new EnchButtonWithData(leftPos + 80, (this.topPos + 25) + 16 * offset, 123, 14, translatable, button -> {
                     this.selectedEnchantment = enchantment;
                     this.switchOverlayState(false);
@@ -241,6 +249,13 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     }
 
     public void updateButtons(){
+        ItemStack stack = this.enchMenu.getTableInv().getItem(0);
+        if(stack.isEmpty()){
+            this.displayMsg = null;
+        } else {
+            int i = Math.max(EnchantmentOverhaul.config.getMaxEnchantments() - EnchantmentHelper.getEnchantments(stack).size(), 0);
+            this.displayMsg = Component.translatable("enchantmentoverhaul.enchantmentsleft", i);
+        }
         this.enchantmentsScrollList.setEnchantments(craftEnchantmentsButtons(this.getFilterString().toLowerCase()));
     }
 

@@ -34,6 +34,10 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public static final ResourceLocation[] TEXTURE_EMPTY_SLOTS = new ResourceLocation[]{InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS,
             InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE, InventoryMenu.EMPTY_ARMOR_SLOT_HELMET};
     protected static final EquipmentSlot[] SLOT_IDS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};;
+
+    public static final ResourceLocation LAZURITE_EMPTY_ICON = new ResourceLocation("item/empty_slot_lapis_lazuli");
+    public static final ResourceLocation SWORD_EMPTY_ICON = new ResourceLocation("item/empty_slot_sword");
+    public static final ResourceLocation INGOT_EMPTY_ICON = new ResourceLocation("item/empty_slot_ingot");
     private final ContainerLevelAccess access;
     public List<Enchantment> enchantments = new ArrayList<>();
 
@@ -86,7 +90,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
 
                     public boolean mayPickup(Player player) {
                         ItemStack itemStack = this.getItem();
-                        return !itemStack.isEmpty() && !player.isCreative() && EnchantmentHelper.hasBindingCurse(itemStack) ? false : super.mayPickup(player);
+                        return (player.isCreative() || !EnchantmentHelper.hasBindingCurse(itemStack)) && super.mayPickup(player);
                     }
 
                     public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
@@ -127,19 +131,22 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                     EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
                 }
             }
+
+            public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+                return Pair.of(InventoryMenu.BLOCK_ATLAS, SWORD_EMPTY_ICON);
+            }
         });
         this.addSlot(new Slot(this.tableInv, 1, 42,31){
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return true; //TODO: make filters
-            }
-
             @Override
             public void set(ItemStack stack) {
                 super.set(stack);
                 if(OverhauledEnchantmentMenu.this.isClientSide){
                     EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
                 }
+            }
+
+            public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+                return Pair.of(InventoryMenu.BLOCK_ATLAS, LAZURITE_EMPTY_ICON);
             }
         });
         for (int j = 0; j < 3; j++) {
@@ -150,6 +157,10 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                     if(OverhauledEnchantmentMenu.this.isClientSide){
                         EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
                     }
+                }
+
+                public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+                    return Pair.of(InventoryMenu.BLOCK_ATLAS, INGOT_EMPTY_ICON);
                 }
             });
         }

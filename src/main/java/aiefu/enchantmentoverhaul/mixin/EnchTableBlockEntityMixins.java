@@ -25,7 +25,6 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 @Mixin(EnchantmentTableBlockEntity.class)
 public abstract class EnchTableBlockEntityMixins extends BlockEntity implements ExtendedScreenHandlerFactory {

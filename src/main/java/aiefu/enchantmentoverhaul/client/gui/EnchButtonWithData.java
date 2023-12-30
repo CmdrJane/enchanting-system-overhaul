@@ -3,8 +3,11 @@ package aiefu.enchantmentoverhaul.client.gui;
 import aiefu.enchantmentoverhaul.RecipeHolder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.enchantment.Enchantment;
+import org.jetbrains.annotations.Nullable;
 
 public class EnchButtonWithData extends CustomEnchantingButton{
+
+    @Nullable
     protected RecipeHolder recipe;
     protected Enchantment enchantment;
 
@@ -14,7 +17,7 @@ public class EnchButtonWithData extends CustomEnchantingButton{
         this.enchantment = enchantment;
     }
 
-    public RecipeHolder getRecipe() {
+    public @Nullable RecipeHolder getRecipe() {
         return recipe;
     }
 

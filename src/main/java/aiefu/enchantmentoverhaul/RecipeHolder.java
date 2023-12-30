@@ -7,6 +7,9 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.Item;
@@ -94,6 +97,18 @@ public class RecipeHolder {
 
     public int getMaxLevel(Enchantment enchantment){
         return this.maxLevel < 1 ? enchantment.getMaxLevel() : this.maxLevel;
+    }
+
+    public static int getMaxLevel(RecipeHolder holder, Enchantment enchantment){
+        return holder != null ? holder.getMaxLevel(enchantment) : enchantment.getMaxLevel();
+    }
+
+    public static MutableComponent getFullName(Enchantment e, int level, int maxLevel){
+        MutableComponent mutableComponent = Component.translatable(e.getDescriptionId());
+        if (level != 1 || maxLevel != 1) {
+            mutableComponent.append(CommonComponents.SPACE).append(Component.translatable("enchantment.level." + level));
+        }
+        return mutableComponent;
     }
 
     @SuppressWarnings("unused")
