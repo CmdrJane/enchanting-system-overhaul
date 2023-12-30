@@ -121,6 +121,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             public void set(ItemStack stack) {
                 super.set(stack);
                 if(OverhauledEnchantmentMenu.this.isClientSide){
+                    EnchantmentOverhaulClient.updateButtons();
                     EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
                 }
             }

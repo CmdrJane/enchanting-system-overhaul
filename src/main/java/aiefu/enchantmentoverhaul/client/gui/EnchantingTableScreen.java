@@ -77,7 +77,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton.visible = overlayActive;
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
-        this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 80, topPos + 8, 123, 10, Component.literal("Search...")));
+        this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, Component.literal("Search...")));
         this.searchFilter.setBordered(false);
 
         this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), this.craftEnchantmentsButtons(this.searchFilter.getValue().toLowerCase())));
@@ -195,28 +195,36 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         int offset = 0;
         for (Enchantment enchantment : enchMenu.enchantments) {
             String name = I18n.get(enchantment.getDescriptionId());
-            if(filter.isEmpty() || filter.isBlank() || name.contains(filter)){
+            if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
                 RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
-                MutableComponent translatable = Component.translatable(name);
+                Integer l = enchs.get(enchantment);
+                int targetLevel = l != null ? Math.min(holder.getMaxLevel(enchantment), l + 1) : 1;
+
+                MutableComponent translatable = (MutableComponent) enchantment.getFullname(targetLevel);
                 EnchButtonWithData b = new EnchButtonWithData(leftPos + 80, (this.topPos + 25) + 16 * offset, 123, 14, translatable, button -> {
                     this.selectedEnchantment = enchantment;
                     this.switchOverlayState(false);
                     this.switchButtonsState(false);
                 }, holder, enchantment);
-                Integer l = enchs.get(enchantment);
-                int targetLevel = l != null ? l : 1;
+
                 MutableComponent c = translatable.copy();
+                c.withStyle(ChatFormatting.AQUA);
                 c.append("\n");
                 c.append(EnchantmentOverhaulClient.getEnchantmentDescription(enchantment));
                 if(holder != null){
                     c.append("\n");
-                    c.append(Component.translatable("enchantmentoverhaul.requires"));
+                    c.append(Component.translatable("enchantmentoverhaul.requires").withStyle(ChatFormatting.GRAY));
                     for (RecipeHolder.ItemData data : holder.levels.get(targetLevel)) {
                         MutableComponent itemName;
                         if(data.isEmpty()){
                             itemName = Component.translatable("enchantmentoverhaul.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
                         } else {
-                            itemName = Component.translatable(data.item.getDescriptionId());
+                            if(data.compoundTag != null){
+                                ItemStack refStack = new ItemStack(data.item, 1);
+                                refStack.setTag(data.compoundTag);
+                                itemName = Component.translatable(refStack.getDescriptionId());
+                            } else itemName = Component.translatable(data.item.getDescriptionId());
+                            itemName.append(": ").append(Component.literal(String.valueOf(data.amount)).withStyle(ChatFormatting.DARK_GREEN)).withStyle(ChatFormatting.GOLD);
                         }
                         c.append("\n");
                         c.append(itemName);
@@ -230,6 +238,14 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         }
 
         return list;
+    }
+
+    public void updateButtons(){
+        this.enchantmentsScrollList.setEnchantments(craftEnchantmentsButtons(this.getFilterString().toLowerCase()));
+    }
+
+    public String getFilterString(){
+        return this.searchFilter.getValue();
     }
 
     public void recalculateAvailability(SimpleContainer container){
@@ -260,5 +276,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 }
             } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);
         } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);
+    }
+
+    public EnchantmentListWidget getEnchantmentsScrollList() {
+        return enchantmentsScrollList;
     }
 }

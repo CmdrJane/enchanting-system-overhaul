@@ -18,7 +18,8 @@
       {
         "id": "minecraft:potion",
         "amount": 1,
-        "tag": "{Potion: \"minecraft:water_breathing\"}"
+        "tag": "{Potion: \"minecraft:water_breathing\"}",
+        "remainderId": "minecraft:glass_bottle"
       }
     ]
   }

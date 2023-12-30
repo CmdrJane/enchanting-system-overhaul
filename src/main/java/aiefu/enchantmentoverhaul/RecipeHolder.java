@@ -1,10 +1,14 @@
 package aiefu.enchantmentoverhaul;
 
+import aiefu.enchantmentoverhaul.exception.ItemDoesNotExistException;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.Item;
@@ -29,7 +33,11 @@ public class RecipeHolder {
                 if(data == null || data.id == null || data.id.isEmpty() || data.id.isBlank() || data.id.equalsIgnoreCase("empty")){
                     m[i] = EMPTY;
                 } else {
-                    data.makeId();
+                    try {
+                        data.makeId(enchantment_id);
+                    } catch (ItemDoesNotExistException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         });
@@ -75,7 +83,12 @@ public class RecipeHolder {
         }
         if(x > 3){
             for (int i = 0; i < arr.length; i++) {
-                container.getItem(i + 1).shrink(arr[i].amount);
+                ItemStack stack = container.getItem(i + 1);
+                ItemData data = arr[i];
+                ItemStack remainder = data.getRemainderForStack(stack);
+                if(stack.getCount() == 1 && remainder != null){
+                    container.setItem(i + 1, remainder);
+                } else stack.shrink(data.amount);
             }
             return true;
         } else return false;
@@ -92,12 +105,24 @@ public class RecipeHolder {
         public transient ResourceLocation item_id;
         public transient Item item = Items.AIR;
 
-        public transient CompoundTag tag;
+        public transient CompoundTag compoundTag;
+
+        public transient Item remainderItem = Items.AIR;
+
+        public transient boolean remainderEmpty = false;
+
+        public transient CompoundTag remainderCompoundTag;
 
         public String id;
         public int amount;
 
-        public String stringTag;
+        public String tag;
+
+        public String remainderId;
+
+        public int remainderAmount = 1;
+
+        public String remainderTag;
 
         public ItemData() {
         }
@@ -111,27 +136,51 @@ public class RecipeHolder {
             this.amount = amount;
         }
 
-        public void makeId(){
+        public void makeId(String eid) throws ItemDoesNotExistException {
             Objects.requireNonNull(this.id);
             this.item_id = new ResourceLocation(this.id);
             this.item = BuiltInRegistries.ITEM.get(this.item_id);
-            if(this.stringTag != null){
+            if(this.item == Items.AIR) throw new ItemDoesNotExistException("Item id " + this.id + " not found in game registry for enchantment recipe " + eid);
+            if(this.tag != null){
                 try {
-                   this.tag = new TagParser(new StringReader(stringTag)).readStruct();
+                   this.compoundTag = new TagParser(new StringReader(tag)).readStruct();
                 } catch (CommandSyntaxException e){
                     e.printStackTrace();
                 }
             }
+            if(this.remainderId != null){
+                if(!this.remainderId.isEmpty() && !this.remainderId.isBlank() && !this.remainderId.equalsIgnoreCase("empty")){
+                    this.remainderItem = BuiltInRegistries.ITEM.get(new ResourceLocation(this.remainderId));
+                    if(remainderItem == Items.AIR) throw new ItemDoesNotExistException("Remainder item id " + this.remainderId + " not found in game registry for enchantment recipe " + eid);
+                } else remainderEmpty = true;
+            }
+            if(this.remainderTag != null){
+                try {
+                    this.remainderCompoundTag = new TagParser(new StringReader(remainderTag)).readStruct();
+                } catch (CommandSyntaxException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public @Nullable ItemStack getRemainderForStack(ItemStack stack){
+            if(this.remainderEmpty){
+                return null;
+            } else if(this.remainderItem != Items.AIR){
+                ItemStack s = new ItemStack(this.remainderItem, this.remainderAmount);
+                s.setTag(this.remainderCompoundTag);
+                return s;
+            } else return stack.getRecipeRemainder();
         }
 
         public boolean testTag(ItemStack stack){
             if(!stack.hasTag()){
                 return true;
             }
-            if(this.tag == null){
+            if(this.compoundTag == null){
                 return true;
             }
-            else return TagsUtils.havePartialMatch(this.tag, stack.getOrCreateTag());
+            else return TagsUtils.havePartialMatch(this.compoundTag, stack.getOrCreateTag());
         }
 
         public boolean isSameStack(ItemStack stack){

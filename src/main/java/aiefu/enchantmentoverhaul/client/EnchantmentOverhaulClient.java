@@ -58,4 +58,10 @@ public class EnchantmentOverhaulClient implements ClientModInitializer {
             screen.recalculateAvailability(container);
         }
     }
+
+    public static void updateButtons(){
+        if(Minecraft.getInstance().screen instanceof EnchantingTableScreen screen){
+            screen.updateButtons();
+        }
+    }
 }

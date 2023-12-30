@@ -1,6 +1,8 @@
 package aiefu.enchantmentoverhaul;
 
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 
 public class TagsUtils {
     public static boolean havePartialMatch(CompoundTag tag, CompoundTag ref){
@@ -30,6 +32,6 @@ public class TagsUtils {
                 if(findPartialMatch(t, i)) listMatches++;
             }
         }
-        return listMatches>= main.size();
+        return listMatches >= main.size();
     }
 }

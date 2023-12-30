@@ -4,6 +4,9 @@ public class ConfigurationFile {
     public int maxEnchantments;
     public int lootHandlingTactic;
 
+    public int maxEnchantmentsOnLootBooks;
+    public int maxEnchantmentsOnLootItems;
+
     public ConfigurationFile() {
     }
 
