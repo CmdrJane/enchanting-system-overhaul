@@ -3,6 +3,7 @@
   "package": "aiefu.enchantmentoverhaul.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "AnvilMenuMixins",
     "EnchantedBookMixins",
     "EnchantingTableMixins",
     "EnchTableBlockEntityMixins",

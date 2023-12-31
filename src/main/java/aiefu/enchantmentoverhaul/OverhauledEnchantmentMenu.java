@@ -191,17 +191,26 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                             targetLevel = l + 1;
                         }
                         RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
-                        if (holder != null && targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
+                        if (holder != null && targetLevel <= holder.getMaxLevel(target)) {
+                            if(player.getAbilities().instabuild || holder.checkAndConsume(this.tableInv, targetLevel)) {
+                                enchs.put(target, targetLevel);
+                                this.applyAndBroadcast(player, enchs, stack);
+                            }
+                        } else if(player.getAbilities().instabuild && targetLevel <= target.getMaxLevel()){
                             enchs.put(target, targetLevel);
-                            EnchantmentHelper.setEnchantments(enchs, stack);
-                            player.onEnchantmentPerformed(stack, 0);
-                            this.tableInv.setChanged();
-                            this.broadcastChanges();
+                            this.applyAndBroadcast(player, enchs, stack);
                         }
                     }
                 }
             }
         });
+    }
+
+    public void applyAndBroadcast(Player player, Map<Enchantment, Integer> map, ItemStack stack){
+        EnchantmentHelper.setEnchantments(map, stack);
+        player.onEnchantmentPerformed(stack, 0);
+        this.tableInv.setChanged();
+        this.broadcastChanges();
     }
 
     public void enchantBook(ResourceLocation location, Player player){
@@ -210,7 +219,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
             stack.getOrCreateTag();
             RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
-            if(holder != null && holder.checkAndConsume(this.tableInv, 1)){
+            if(player.getAbilities().instabuild || holder != null && holder.checkAndConsume(this.tableInv, 1)){
                 EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(target, 1));
                 this.tableInv.setItem(0, stack);
                 player.onEnchantmentPerformed(stack, 0);

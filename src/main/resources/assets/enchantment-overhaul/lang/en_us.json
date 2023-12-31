@@ -8,5 +8,6 @@
   "enchantmentoverhaul.enchantmentsleft" : "Enchantments left: %d",
   "enchantmentoverhaul.absorbingknowledge" : "Glyphs imbued with magical power disappear from the book as you absorb their power",
   "enchantmentoverhaul.booktoashes" : "Drained of magical power enchanted book crumbles to ashes in your hands",
-  "enchantmentoverhaul.allreadylearned" : "You already know all secrets contained within this book"
+  "enchantmentoverhaul.allreadylearned" : "You already know all secrets contained within this book",
+  "enchantmentoverhaul.youlearned" : "You learned: %s"
 }

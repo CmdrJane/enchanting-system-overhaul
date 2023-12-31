@@ -1,7 +1,10 @@
 package aiefu.enchantmentoverhaul.mixin;
 
 import aiefu.enchantmentoverhaul.IServerPlayerAcc;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -14,9 +17,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 @Mixin(EnchantedBookItem.class)
 public abstract class EnchantedBookMixins extends Item {
@@ -33,23 +34,32 @@ public abstract class EnchantedBookMixins extends Item {
             Map<Enchantment, Integer> map = EnchantmentHelper.getEnchantments(stack);
 
             int originalSize = map.size();
-
+            List<Enchantment> msg = new ArrayList<>();
             Iterator<Map.Entry<Enchantment, Integer>> iterator = map.entrySet().iterator();
             while (iterator.hasNext()){
                 Map.Entry<Enchantment, Integer> entry = iterator.next();
                 if(!set.contains(entry.getKey())){
-                    set.add(entry.getKey());
+                    Enchantment e = entry.getKey();
+                    set.add(e);
+                    msg.add(e);
                     iterator.remove();
                 }
             }
             if(map.size() != originalSize) {
                 EnchantmentHelper.setEnchantments(map, stack);
-                player.displayClientMessage(Component.translatable("enchantmentoverhaul.absorbingknowledge"), false);
+                player.displayClientMessage(Component.translatable("enchantmentoverhaul.absorbingknowledge")
+                        .withStyle(ChatFormatting.DARK_PURPLE), false);
                 if(map.size() == 0){
                     stack.shrink(1);
-                    player.displayClientMessage(Component.translatable("enchantmentoverhaul.booktoashes"), false);
+                    player.displayClientMessage(Component.translatable("enchantmentoverhaul.booktoashes")
+                            .withStyle(ChatFormatting.GOLD), false);
                 }
-            } else player.displayClientMessage(Component.translatable("enchantmentoverhaul.allreadylearned"), false);
+                for (Enchantment e: msg) {
+                    MutableComponent c = Component.literal("[" + I18n.get(e.getDescriptionId()) + "]").withStyle(ChatFormatting.DARK_PURPLE);
+                    player.displayClientMessage(Component.translatable("enchantmentoverhaul.youlearned", c).withStyle(ChatFormatting.GOLD), false);
+                }
+            } else player.displayClientMessage(Component.translatable("enchantmentoverhaul.allreadylearned")
+                    .withStyle(ChatFormatting.DARK_GREEN), false);
 
         }
         return InteractionResultHolder.pass(stack);

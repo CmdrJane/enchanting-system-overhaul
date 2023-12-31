@@ -24,6 +24,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -232,7 +233,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                                 refStack.setTag(data.compoundTag);
                                 itemName = Component.translatable(refStack.getDescriptionId());
                             } else itemName = Component.translatable(data.item.getDescriptionId());
-                            itemName.append(": ").append(Component.literal(String.valueOf(data.amount)).withStyle(ChatFormatting.DARK_GREEN)).withStyle(ChatFormatting.GOLD);
+                            itemName.append(": ").append(Component.literal(String.valueOf(data.amount)).withStyle(ChatFormatting.AQUA)).withStyle(ChatFormatting.GOLD);
                         }
                         c.append("\n");
                         c.append(itemName);
@@ -265,6 +266,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     public void recalculateAvailability(SimpleContainer container){
         ItemStack stack = container.getItem(0);
+        Player player = Minecraft.getInstance().player;
         if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)){
             Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
             if(enchs.keySet().size() < EnchantmentOverhaul.config.getMaxEnchantments()) {
@@ -282,12 +284,13 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                             }
                         }
                     }
+                    
+                    Integer targetLevel = enchs.get(b.getEnchantment());
+                    targetLevel = targetLevel == null ? 1 : targetLevel + 1;
                     RecipeHolder holder = b.getRecipe();
                     if (holder != null) {
-                        Integer targetLevel = enchs.get(b.getEnchantment());
-                        targetLevel = targetLevel == null ? 1 : targetLevel + 1;
-                        b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && holder.check(container, targetLevel);
-                    } else b.active = false;
+                        b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && (holder.check(container, targetLevel) || player.getAbilities().instabuild);
+                    } else b.active = player.getAbilities().instabuild && targetLevel <= b.getEnchantment().getMaxLevel();
                 }
             } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);
         } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);

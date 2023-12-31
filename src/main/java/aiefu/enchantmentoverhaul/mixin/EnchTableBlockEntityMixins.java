@@ -25,6 +25,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Mixin(EnchantmentTableBlockEntity.class)
 public abstract class EnchTableBlockEntityMixins extends BlockEntity implements ExtendedScreenHandlerFactory {
@@ -36,12 +37,20 @@ public abstract class EnchTableBlockEntityMixins extends BlockEntity implements 
 
     @Override
     public void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
-        HashSet<Enchantment> enchantments = ((IServerPlayerAcc)player).enchantment_overhaul$getUnlockedEnchantments();
-        buf.writeInt(enchantments.size());
-        for (Enchantment e : enchantments){
-            ResourceLocation loc = BuiltInRegistries.ENCHANTMENT.getKey(e);
-            Objects.requireNonNull(loc);
-            buf.writeUtf(loc.toString());
+        if(player.getAbilities().instabuild){
+            Set<ResourceLocation> keyset = BuiltInRegistries.ENCHANTMENT.keySet();
+            buf.writeInt(keyset.size());
+            for (ResourceLocation loc : keyset){
+                buf.writeUtf(loc.toString());
+            }
+        } else {
+            HashSet<Enchantment> enchantments = ((IServerPlayerAcc) player).enchantment_overhaul$getUnlockedEnchantments();
+            buf.writeInt(enchantments.size());
+            for (Enchantment e : enchantments) {
+                ResourceLocation loc = BuiltInRegistries.ENCHANTMENT.getKey(e);
+                Objects.requireNonNull(loc);
+                buf.writeUtf(loc.toString());
+            }
         }
     }
 
