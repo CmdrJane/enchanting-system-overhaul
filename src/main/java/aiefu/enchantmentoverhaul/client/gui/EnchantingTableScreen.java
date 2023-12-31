@@ -88,7 +88,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
         this.searchFilter.setHint(searchHint);
-        List<EnchButtonWithData> list = firstInit ? new ArrayList<>() : this.craftEnchantmentsButtons(this.searchFilter.getValue().toLowerCase());
+        List<EnchButtonWithData> list = this.firstInit ? new ArrayList<>() : this.craftEnchantmentsButtons(this.searchFilter.getValue().toLowerCase());
+        this.firstInit = false;
         this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
         this.setInitialFocus(enchantmentsScrollList);
     }
