@@ -55,6 +55,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     protected MutableComponent displayMsg;
 
     protected boolean overlayActive = false;
+
+    protected boolean firstInit = true;
     public EnchantingTableScreen(OverhauledEnchantmentMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageHeight = 181;
@@ -86,8 +88,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
         this.searchFilter.setHint(searchHint);
-
-        this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), this.craftEnchantmentsButtons(this.searchFilter.getValue().toLowerCase())));
+        List<EnchButtonWithData> list = firstInit ? new ArrayList<>() : this.craftEnchantmentsButtons(this.searchFilter.getValue().toLowerCase());
+        this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
         this.setInitialFocus(enchantmentsScrollList);
     }
 
@@ -201,7 +203,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         ItemStack stack = this.enchMenu.getTableInv().getItem(0);
         Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
         int offset = 0;
-        for (Enchantment enchantment : enchMenu.enchantments) {
+        for (Enchantment enchantment : enchs.size() >= EnchantmentOverhaul.config.getMaxEnchantments() ? enchs.keySet() : enchMenu.enchantments) {
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
                 @Nullable RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
@@ -269,30 +271,28 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         Player player = Minecraft.getInstance().player;
         if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)){
             Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
-            if(enchs.keySet().size() < EnchantmentOverhaul.config.getMaxEnchantments()) {
-                label1:
-                for (EnchButtonWithData b : this.enchantmentsScrollList.getEnchantments()) {
-                    if(!stack.is(Items.BOOK)) {
-                        if (!b.enchantment.canEnchant(stack)) {
+            label1:
+            for (EnchButtonWithData b : this.enchantmentsScrollList.getEnchantments()) {
+                if(!stack.is(Items.BOOK)) {
+                    if (!b.enchantment.canEnchant(stack)) {
+                        b.active = false;
+                        continue;
+                    }
+                    for (Enchantment e : enchs.keySet()) {
+                        if (e != b.enchantment && !e.isCompatibleWith(b.enchantment)) {
                             b.active = false;
-                            continue;
-                        }
-                        for (Enchantment e : enchs.keySet()) {
-                            if (e != b.enchantment && !e.isCompatibleWith(b.enchantment)) {
-                                b.active = false;
-                                continue label1;
-                            }
+                            continue label1;
                         }
                     }
-                    
-                    Integer targetLevel = enchs.get(b.getEnchantment());
-                    targetLevel = targetLevel == null ? 1 : targetLevel + 1;
-                    RecipeHolder holder = b.getRecipe();
-                    if (holder != null) {
-                        b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && (holder.check(container, targetLevel) || player.getAbilities().instabuild);
-                    } else b.active = player.getAbilities().instabuild && targetLevel <= b.getEnchantment().getMaxLevel();
                 }
-            } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);
+
+                Integer targetLevel = enchs.get(b.getEnchantment());
+                targetLevel = targetLevel == null ? 1 : targetLevel + 1;
+                RecipeHolder holder = b.getRecipe();
+                if (holder != null) {
+                    b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && (holder.check(container, targetLevel) || player.getAbilities().instabuild);
+                } else b.active = player.getAbilities().instabuild && targetLevel <= b.getEnchantment().getMaxLevel();
+            }
         } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);
     }
 

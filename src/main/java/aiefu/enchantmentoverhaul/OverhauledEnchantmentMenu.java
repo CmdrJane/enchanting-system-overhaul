@@ -177,7 +177,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                     if (target != null) {
                         stack.getOrCreateTag();
                         Map<Enchantment, Integer> enchs = stack.isEnchanted() ? EnchantmentHelper.getEnchantments(stack) : new HashMap<>();
-                        if(!target.canEnchant(stack) || enchs.keySet().size() >= EnchantmentOverhaul.config.getMaxEnchantments()){
+                        if(!target.canEnchant(stack) || enchs.keySet().size() >= EnchantmentOverhaul.config.getMaxEnchantments() && !enchs.containsKey(target)){
                             return;
                         }
                         for (Enchantment e : enchs.keySet()){
