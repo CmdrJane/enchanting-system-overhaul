@@ -75,6 +75,10 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
         guiGraphics.fill(minX + 1, minY + 1, maxX - 1, maxY -1, -4814674); //-8241880 . -11789813 //og -8355712 . -4144960 //purple -4814674 . -345617
     }
 
+    public void resetScrollAmount(){
+        this.setScrollAmount(0);
+    }
+
     public int getScrollBarHeight() {
         return Mth.clamp((int)((float)(this.height * this.height) / (float)this.getContentHeight()), 32, this.height);
     }

@@ -27,26 +27,16 @@ public class SetEnchantmentsFuncMixins  {
         ItemStack stack = cir.getReturnValue();
         Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
         Map<Enchantment, Integer> enchantments = Maps.newLinkedHashMap();
-        if(EnchantmentOverhaul.config.lootHandlingTactic == 0){
-            List<Enchantment> list = new ArrayList<>(enchs.keySet());
-            Collections.shuffle(list);
-            int size = Math.min(list.size(), stack.getItem() == Items.ENCHANTED_BOOK ?
-                    EnchantmentOverhaul.config.maxEnchantmentsOnLootBooks : EnchantmentOverhaul.config.maxEnchantmentsOnLootItems);
-            for (int i = 0; i < size; i++) {
-                Enchantment e = list.get(i);
-                enchantments.put(e, enchs.get(e));
-            }
-        } else if(EnchantmentOverhaul.config.lootHandlingTactic == 1) {
-            int size = Math.min(enchs.size(), stack.getItem() == Items.ENCHANTED_BOOK ?
-                    EnchantmentOverhaul.config.maxEnchantmentsOnLootBooks : EnchantmentOverhaul.config.maxEnchantmentsOnLootItems);
-            int i = 0;
-            for (Map.Entry<Enchantment, Integer> e : enchs.entrySet()){
-                if(i < size){
-                    enchantments.put(e.getKey(), e.getValue());
-                    i++;
-                }
-            }
+
+        List<Enchantment> list = new ArrayList<>(enchs.keySet());
+        Collections.shuffle(list);
+        int size = Math.min(list.size(), stack.getItem() == Items.ENCHANTED_BOOK ?
+                EnchantmentOverhaul.config.maxEnchantmentsOnLootBooks : EnchantmentOverhaul.config.maxEnchantmentsOnLootItems);
+        for (int i = 0; i < size; i++) {
+            Enchantment e = list.get(i);
+            enchantments.put(e, enchs.get(e));
         }
+
         CompoundTag compound = stack.getOrCreateTag();
         if(compound.contains("StoredEnchantments", Tag.TAG_LIST)){
             compound.remove("StoredEnchantments");

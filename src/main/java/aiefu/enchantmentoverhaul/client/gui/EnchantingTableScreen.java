@@ -1,5 +1,6 @@
 package aiefu.enchantmentoverhaul.client.gui;
 
+import aiefu.enchantmentoverhaul.ConfigurationFile;
 import aiefu.enchantmentoverhaul.EnchantmentOverhaul;
 import aiefu.enchantmentoverhaul.OverhauledEnchantmentMenu;
 import aiefu.enchantmentoverhaul.RecipeHolder;
@@ -33,10 +34,8 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Predicate;
 
 public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnchantmentMenu> {
     public static final ResourceLocation ENCHANTING_BACKGROUND_TEXTURE = new ResourceLocation(EnchantmentOverhaul.MOD_ID,"textures/gui/ench_screen.png");
@@ -88,7 +87,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
         this.searchFilter.setHint(searchHint);
-        List<EnchButtonWithData> list = this.firstInit ? new ArrayList<>() : this.craftEnchantmentsButtons(this.searchFilter.getValue().toLowerCase());
+        List<EnchButtonWithData> list = this.firstInit ? new ArrayList<>() : this.craftEnchantmentsButtons(this.searchFilter.getValue());
         this.firstInit = false;
         this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
         this.setInitialFocus(enchantmentsScrollList);
@@ -202,9 +201,36 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public List<EnchButtonWithData> craftEnchantmentsButtons(String filter){
         List<EnchButtonWithData> list = new ArrayList<>();
         ItemStack stack = this.enchMenu.getTableInv().getItem(0);
+
         Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
+        HashSet<Enchantment> el = stack.isEmpty() ? enchMenu.enchantments : this.filterToNewSet(enchMenu.enchantments, enchantment -> enchantment.canEnchant(stack));
+        HashSet<Enchantment> curses = this.filterToNewSet(enchs.keySet(), Enchantment::isCurse);
+        int crl = this.getCurrentEnchantmentsCount(enchs.size(), curses.size());
+        int ml = this.getEnchantmentsLimit(curses.size());
+        if(stack.isEmpty()){
+            this.displayMsg = null;
+        } else {
+            int i = Math.max(ml - crl, 0);
+            this.displayMsg = Component.translatable("enchantmentoverhaul.enchantmentsleft", i);
+        }
+        HashSet<Enchantment> applicableCurses = this.filterToNewSet(enchMenu.curses, e -> e.canEnchant(stack));
+        if(crl >= ml){
+            el = new HashSet<>(enchs.keySet());
+            if(curses.size() < EnchantmentOverhaul.config.maxCurses){
+                el.addAll(applicableCurses);
+            } else {
+                for (Enchantment c : curses){
+                    if(c.getMaxLevel() > 1){
+                        el.add(c);
+                    }
+                }
+            }
+        } else if(curses.size() < EnchantmentOverhaul.config.maxCurses){
+            el.addAll(applicableCurses);
+        }
         int offset = 0;
-        for (Enchantment enchantment : enchs.size() >= EnchantmentOverhaul.config.getMaxEnchantments() ? enchs.keySet() : enchMenu.enchantments) {
+
+        for (Enchantment enchantment : el) {
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
                 @Nullable RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
@@ -252,15 +278,29 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         return list;
     }
 
-    public void updateButtons(){
-        ItemStack stack = this.enchMenu.getTableInv().getItem(0);
-        if(stack.isEmpty()){
-            this.displayMsg = null;
-        } else {
-            int i = Math.max(EnchantmentOverhaul.config.getMaxEnchantments() - EnchantmentHelper.getEnchantments(stack).size(), 0);
-            this.displayMsg = Component.translatable("enchantmentoverhaul.enchantmentsleft", i);
+    public HashSet<Enchantment> filterToNewSet(Set<Enchantment> set , Predicate<Enchantment> predicate){
+        HashSet<Enchantment> enchs = new HashSet<>();
+        for (Enchantment e : set){
+            if(predicate.test(e)){
+                enchs.add(e);
+            }
         }
-        this.enchantmentsScrollList.setEnchantments(craftEnchantmentsButtons(this.getFilterString().toLowerCase()));
+        return enchs;
+    }
+
+    public int getEnchantmentsLimit(int curses){
+        ConfigurationFile cfg = EnchantmentOverhaul.config;
+        return cfg.enableCursesAmplifier ? cfg.maxEnchantments + Math.min(curses, cfg.maxCurses) * cfg.enchantmentLimitIncreasePerCurse : cfg.maxEnchantments;
+    }
+
+    public int getCurrentEnchantmentsCount(int appliedEnchantments, int curses){
+        ConfigurationFile cfg = EnchantmentOverhaul.config;
+        return cfg.enableCursesAmplifier ? appliedEnchantments - curses : appliedEnchantments;
+    }
+
+    public void updateButtons(){
+        this.enchantmentsScrollList.resetScrollAmount();
+        this.enchantmentsScrollList.setEnchantments(craftEnchantmentsButtons(this.getFilterString()));
     }
 
     public String getFilterString(){
@@ -275,10 +315,6 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             label1:
             for (EnchButtonWithData b : this.enchantmentsScrollList.getEnchantments()) {
                 if(!stack.is(Items.BOOK)) {
-                    if (!b.enchantment.canEnchant(stack)) {
-                        b.active = false;
-                        continue;
-                    }
                     for (Enchantment e : enchs.keySet()) {
                         if (e != b.enchantment && !e.isCompatibleWith(b.enchantment)) {
                             b.active = false;

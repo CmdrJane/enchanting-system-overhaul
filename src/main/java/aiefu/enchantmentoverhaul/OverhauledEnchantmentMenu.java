@@ -25,10 +25,7 @@ import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.block.Blocks;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public static final ResourceLocation[] TEXTURE_EMPTY_SLOTS = new ResourceLocation[]{InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS,
@@ -39,7 +36,9 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public static final ResourceLocation SWORD_EMPTY_ICON = new ResourceLocation("item/empty_slot_sword");
     public static final ResourceLocation INGOT_EMPTY_ICON = new ResourceLocation("item/empty_slot_ingot");
     private final ContainerLevelAccess access;
-    public List<Enchantment> enchantments = new ArrayList<>();
+    public HashSet<Enchantment> enchantments = new HashSet<>();
+
+    public HashSet<Enchantment> curses = new HashSet<>();
 
     public boolean isClientSide = false;
 
@@ -47,12 +46,19 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public OverhauledEnchantmentMenu(int syncId, Inventory inventory, FriendlyByteBuf buf) {
         this(syncId, inventory, ContainerLevelAccess.NULL, EnchantmentOverhaulClient.getClientPlayer());
         this.isClientSide = true;
+        List<Enchantment> list = new ArrayList<>();
         int r = buf.readInt();
         for (int i = 0; i < r; i++) {
             String s = buf.readUtf();
             ResourceLocation loc = new ResourceLocation(s);
-            this.enchantments.add(BuiltInRegistries.ENCHANTMENT.get(loc));
+            list.add(BuiltInRegistries.ENCHANTMENT.get(loc));
         }
+        for (Enchantment e : list){
+            if(e.isCurse()){
+                curses.add(e);
+            } else enchantments.add(e);
+        }
+
     }
     public OverhauledEnchantmentMenu(int syncId, Inventory inventory, ContainerLevelAccess access, Player owner) {
         super(EnchantmentOverhaul.enchantment_menu_ovr, syncId);
@@ -177,33 +183,45 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                     if (target != null) {
                         stack.getOrCreateTag();
                         Map<Enchantment, Integer> enchs = stack.isEnchanted() ? EnchantmentHelper.getEnchantments(stack) : new HashMap<>();
-                        if(!target.canEnchant(stack) || enchs.keySet().size() >= EnchantmentOverhaul.config.getMaxEnchantments() && !enchs.containsKey(target)){
-                            return;
-                        }
-                        for (Enchantment e : enchs.keySet()){
-                            if(e != target && !e.isCompatibleWith(target)){
-                                return;
+                        int curses = (int) enchs.keySet().stream().filter(Enchantment::isCurse).count();
+                        if(target.canEnchant(stack) && (enchs.containsKey(target) || target.isCurse() && curses < EnchantmentOverhaul.config.maxCurses
+                                || this.getCurrentLimit(enchs.keySet().size(), curses) < this.getEnchantmentsLimit(curses))) {
+
+                            for (Enchantment e : enchs.keySet()) {
+                                if (e != target && !e.isCompatibleWith(target)) {
+                                    return;
+                                }
                             }
-                        }
-                        int targetLevel = 1;
-                        Integer l = enchs.get(target);
-                        if (l != null) {
-                            targetLevel = l + 1;
-                        }
-                        RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
-                        if (holder != null && targetLevel <= holder.getMaxLevel(target)) {
-                            if(player.getAbilities().instabuild || holder.checkAndConsume(this.tableInv, targetLevel)) {
+                            int targetLevel = 1;
+                            Integer l = enchs.get(target);
+                            if (l != null) {
+                                targetLevel = l + 1;
+                            }
+                            RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
+                            if (holder != null && targetLevel <= holder.getMaxLevel(target)) {
+                                if (player.getAbilities().instabuild || holder.checkAndConsume(this.tableInv, targetLevel)) {
+                                    enchs.put(target, targetLevel);
+                                    this.applyAndBroadcast(player, enchs, stack);
+                                }
+                            } else if (player.getAbilities().instabuild && targetLevel <= target.getMaxLevel()) {
                                 enchs.put(target, targetLevel);
                                 this.applyAndBroadcast(player, enchs, stack);
                             }
-                        } else if(player.getAbilities().instabuild && targetLevel <= target.getMaxLevel()){
-                            enchs.put(target, targetLevel);
-                            this.applyAndBroadcast(player, enchs, stack);
                         }
                     }
                 }
             }
         });
+    }
+
+    public int getEnchantmentsLimit(int curses){
+        ConfigurationFile cfg = EnchantmentOverhaul.config;
+        return cfg.enableCursesAmplifier ? cfg.maxEnchantments + Math.min(curses, cfg.maxCurses)* cfg.enchantmentLimitIncreasePerCurse : cfg.maxEnchantments;
+    }
+
+    public int getCurrentLimit(int appliedEnchantments, int curses){
+        ConfigurationFile cfg = EnchantmentOverhaul.config;
+        return cfg.enableCursesAmplifier ? appliedEnchantments - curses : appliedEnchantments;
     }
 
     public void applyAndBroadcast(Player player, Map<Enchantment, Integer> map, ItemStack stack){
