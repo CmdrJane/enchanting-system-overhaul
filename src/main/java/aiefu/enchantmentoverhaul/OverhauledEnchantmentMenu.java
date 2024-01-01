@@ -187,7 +187,10 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
 
                         stack.getOrCreateTag();
                         Map<Enchantment, Integer> enchs = stack.isEnchanted() ? EnchantmentHelper.getEnchantments(stack) : new HashMap<>();
-                        int curses = (int) enchs.keySet().stream().filter(Enchantment::isCurse).count();
+                        int curses = 0;
+                        for (Enchantment e : enchs.keySet()){
+                            if(e.isCurse()) curses++;
+                        }
                         if(target.canEnchant(stack) && (enchs.containsKey(target) || target.isCurse() && curses < EnchantmentOverhaul.config.maxCurses
                                 || this.getCurrentLimit(enchs.keySet().size(), curses) < this.getEnchantmentsLimit(curses))) {
 
@@ -278,7 +281,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public @NotNull ItemStack quickMoveStack(Player player, int i) {
+    public @NotNull ItemStack quickMoveStack(Player player, int i) { //TODO: move armor to inventory
         ItemStack returnStack = ItemStack.EMPTY;
         Slot slot = slots.get(i);
         if(slot.hasItem()){

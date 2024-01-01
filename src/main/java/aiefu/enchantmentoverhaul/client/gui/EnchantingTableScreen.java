@@ -42,6 +42,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     public static final Style STYLE = Style.EMPTY.withColor(TextColor.fromRgb(5636095));
 
+    public static final List<FormattedCharSequence> emptyMsg = Minecraft.getInstance().font.split(Component.translatable("enchantmentoverhaul.enchantmentsempty"), 110);
+
     protected EnchantmentListWidget enchantmentsScrollList;
     protected EditBox searchFilter;
 
@@ -141,7 +143,15 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         if(!overlayActive) this.renderTooltip(guiGraphics, mouseX, mouseY);
         if(displayMsg != null){
             int x = leftPos + 79;
-            this.drawCenteredString(guiGraphics, this.font, displayMsg, ((x + 123 + x) /2), topPos + 75, 4210752, false);
+            this.drawCenteredString(guiGraphics, this.font, displayMsg, x + 124 / 2, topPos + 75, 4210752, false);
+        }
+        if(enchantmentsScrollList.getEnchantments().isEmpty()){
+            int i = 0;
+            int h = (48 - (font.lineHeight * emptyMsg.size() + (emptyMsg.size() - 1) * 7)) / 2;
+            for (FormattedCharSequence cs : emptyMsg){
+                this.drawCenteredString(guiGraphics, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * i, 4210752, false);
+                i++;
+            }
         }
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(0.0F, 0.0F, 1000.0F);
@@ -154,9 +164,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public void renderConfirmOverlay(GuiGraphics graphics, int mx, int my, float pt){
         if(overlayActive){
             graphics.blitNineSliced(ENCHANTING_BACKGROUND_TEXTURE, leftPos + 10, topPos + 48, 200, 60, 20, 20, 140, 60, 0, 196);
-            int x = leftPos + 40;
+            int h = (50 - (font.lineHeight * this.confirmMsg.size() + (this.confirmMsg.size() - 1) * 7)) / 2;
             for (int i = 0; i < this.confirmMsg.size(); i++) {
-                this.drawCenteredString(graphics, font, this.confirmMsg.get(i), (x + 140 + x) / 2, topPos + 58 + (18 * i),4210752, false);
+                this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 48 + h + 14 * i,4210752, false);
             }
         }
     }
@@ -201,9 +211,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public List<EnchButtonWithData> craftEnchantmentsButtons(String filter){
         List<EnchButtonWithData> list = new ArrayList<>();
         ItemStack stack = this.enchMenu.getTableInv().getItem(0);
-
+        boolean bl = stack.is(Items.BOOK);
         Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
-        HashSet<Enchantment> el = stack.isEmpty() ? enchMenu.enchantments : this.filterToNewSet(enchMenu.enchantments, enchantment -> enchantment.canEnchant(stack));
+        HashSet<Enchantment> el = stack.isEmpty() || bl ? enchMenu.enchantments : this.filterToNewSet(enchMenu.enchantments, enchantment -> enchantment.canEnchant(stack));
         HashSet<Enchantment> curses = this.filterToNewSet(enchs.keySet(), Enchantment::isCurse);
         int ec = this.getCurrentEnchantmentsCount(enchs.size(), curses.size());
         int ml = this.getEnchantmentsLimit(curses.size());
@@ -216,7 +226,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
         ConfigurationFile cfg = EnchantmentOverhaul.config;
 
-        HashSet<Enchantment> applicableCurses = this.filterToNewSet(enchMenu.curses, e -> e.canEnchant(stack));
+        HashSet<Enchantment> applicableCurses = bl ? enchMenu.curses : this.filterToNewSet(enchMenu.curses, e -> e.canEnchant(stack));
         if(ec >= ml){
             el = new HashSet<>(enchs.keySet());
             if(cfg.enableCursesAmplifier){
@@ -332,7 +342,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 targetLevel = targetLevel == null ? 1 : targetLevel + 1;
                 RecipeHolder holder = b.getRecipe();
                 if (holder != null) {
-                    b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && (holder.check(container, targetLevel) || player.getAbilities().instabuild);
+                    b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && (player.getAbilities().instabuild || holder.check(container, targetLevel));
                 } else b.active = player.getAbilities().instabuild && targetLevel <= b.getEnchantment().getMaxLevel();
             }
         } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);

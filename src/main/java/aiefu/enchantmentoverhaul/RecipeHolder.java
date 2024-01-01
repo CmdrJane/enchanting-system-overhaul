@@ -50,9 +50,9 @@ public class RecipeHolder {
         int x = 0;
         ItemData[] array = this.levels.get(targetLevel);
         if(array != null) {
-            for (int i = 1; i < 5; i++) {
-                ItemStack stack = container.getItem(i);
-                ItemData data = array[i - 1];
+            for (int i = 0; i < array.length; i++) {
+                ItemStack stack = container.getItem(i + 1);
+                ItemData data = array[i];
                 if (data != null) {
                     if (data.isEmpty() || stack.getItem() == data.item && data.isEnough(stack) && data.testTag(stack)) {
                         x++;
@@ -61,38 +61,41 @@ public class RecipeHolder {
                     x++;
                 }
             }
+            return x > array.length - 1;
         }
-        return x > 3;
+        return false;
     }
 
     public boolean checkAndConsume(SimpleContainer container, int targetLevel){
         int x = 0;
         ItemData[] arr = this.levels.get(targetLevel);
         if(arr != null) {
-            for (int i = 1; i < 5; i++) {
-                ItemStack stack = container.getItem(i);
-                ItemData data = arr[i - 1];
+            for (int i = 0; i < arr.length; i++) {
+                ItemStack stack = container.getItem(i + 1);
+                ItemData data = arr[i];
                 if (data != null) {
                     if (data.isEmpty() || stack.getItem() == data.item && data.isEnough(stack) && data.testTag(stack)) {
                         x++;
                     }
                 } else {
                     x++;
-                    arr[i - 1] = EMPTY;
+                    arr[i] = EMPTY;
                 }
             }
-        }
-        if(x > 3){
-            for (int i = 0; i < arr.length; i++) {
-                ItemStack stack = container.getItem(i + 1);
-                ItemData data = arr[i];
-                ItemStack remainder = data.getRemainderForStack(stack);
-                if(stack.getCount() == 1 && remainder != null){
-                    container.setItem(i + 1, remainder);
-                } else stack.shrink(data.amount);
+
+            if(x >= arr.length){
+                for (int i = 0; i < arr.length; i++) {
+                    ItemStack stack = container.getItem(i + 1);
+                    ItemData data = arr[i];
+                    ItemStack remainder = data.getRemainderForStack(stack);
+                    if(stack.getCount() == 1 && remainder != null){
+                        container.setItem(i + 1, remainder);
+                    } else stack.shrink(data.amount);
+                }
+                return true;
             }
-            return true;
-        } else return false;
+        }
+        return false;
     }
 
     public int getMaxLevel(Enchantment enchantment){
