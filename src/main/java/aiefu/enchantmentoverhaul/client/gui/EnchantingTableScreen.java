@@ -205,27 +205,32 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
         HashSet<Enchantment> el = stack.isEmpty() ? enchMenu.enchantments : this.filterToNewSet(enchMenu.enchantments, enchantment -> enchantment.canEnchant(stack));
         HashSet<Enchantment> curses = this.filterToNewSet(enchs.keySet(), Enchantment::isCurse);
-        int crl = this.getCurrentEnchantmentsCount(enchs.size(), curses.size());
+        int ec = this.getCurrentEnchantmentsCount(enchs.size(), curses.size());
         int ml = this.getEnchantmentsLimit(curses.size());
         if(stack.isEmpty()){
             this.displayMsg = null;
         } else {
-            int i = Math.max(ml - crl, 0);
+            int i = Math.max(ml - ec, 0);
             this.displayMsg = Component.translatable("enchantmentoverhaul.enchantmentsleft", i);
         }
+
+        ConfigurationFile cfg = EnchantmentOverhaul.config;
+
         HashSet<Enchantment> applicableCurses = this.filterToNewSet(enchMenu.curses, e -> e.canEnchant(stack));
-        if(crl >= ml){
+        if(ec >= ml){
             el = new HashSet<>(enchs.keySet());
-            if(curses.size() < EnchantmentOverhaul.config.maxCurses){
-                el.addAll(applicableCurses);
-            } else {
-                for (Enchantment c : curses){
-                    if(c.getMaxLevel() > 1){
-                        el.add(c);
+            if(cfg.enableCursesAmplifier){
+                if(curses.size() < cfg.maxCurses){
+                    el.addAll(applicableCurses);
+                } else {
+                    for (Enchantment c : curses){
+                        if(c.getMaxLevel() > 1){
+                            el.add(c);
+                        }
                     }
                 }
             }
-        } else if(curses.size() < EnchantmentOverhaul.config.maxCurses){
+        } else if(cfg.enableCursesAmplifier && curses.size() < cfg.maxCurses){
             el.addAll(applicableCurses);
         }
         int offset = 0;

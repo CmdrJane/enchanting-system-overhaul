@@ -181,6 +181,10 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 } else {
                     Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
                     if (target != null) {
+                        if(target.isCurse() && !EnchantmentOverhaul.config.enableCursesAmplifier){
+                            return;
+                        }
+
                         stack.getOrCreateTag();
                         Map<Enchantment, Integer> enchs = stack.isEnchanted() ? EnchantmentHelper.getEnchantments(stack) : new HashMap<>();
                         int curses = (int) enchs.keySet().stream().filter(Enchantment::isCurse).count();
