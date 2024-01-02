@@ -12,7 +12,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.Enchantment;
 
@@ -51,17 +50,5 @@ public class EnchantmentOverhaulClient implements ClientModInitializer {
 
     public static Player getClientPlayer(){
         return Minecraft.getInstance().player;
-    }
-
-    public static void updateEnchantmentsCriteria(SimpleContainer container){
-        if(Minecraft.getInstance().screen instanceof EnchantingTableScreen screen){
-            screen.recalculateAvailability(container);
-        }
-    }
-
-    public static void updateButtons(){
-        if(Minecraft.getInstance().screen instanceof EnchantingTableScreen screen){
-            screen.updateButtons();
-        }
     }
 }

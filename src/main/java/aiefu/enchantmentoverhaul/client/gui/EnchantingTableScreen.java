@@ -26,7 +26,9 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerListener;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -57,7 +59,6 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     protected boolean overlayActive = false;
 
-    protected boolean firstInit = true;
     public EnchantingTableScreen(OverhauledEnchantmentMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageHeight = 181;
@@ -89,10 +90,27 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
         this.searchFilter.setHint(searchHint);
-        List<EnchButtonWithData> list = this.firstInit ? new ArrayList<>() : this.craftEnchantmentsButtons(this.searchFilter.getValue());
-        this.firstInit = false;
+        List<EnchButtonWithData> list = this.craftEnchantmentsButtons(this.searchFilter.getValue());
         this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
         this.setInitialFocus(enchantmentsScrollList);
+        this.recalculateAvailability(menu.getTableInv());
+        this.menu.addSlotListener(new ContainerListener() {
+            @Override
+            public void slotChanged(AbstractContainerMenu containerToSend, int dataSlotIndex, ItemStack stack) {
+                System.out.println(dataSlotIndex);
+                if(dataSlotIndex == 41){
+                    EnchantingTableScreen.this.updateButtons();
+                }
+                if(dataSlotIndex > 40 && dataSlotIndex < 46){
+                    EnchantingTableScreen.this.recalculateAvailability(menu.getTableInv());
+                }
+            }
+
+            @Override
+            public void dataChanged(AbstractContainerMenu containerMenu, int dataSlotIndex, int value) {
+
+            }
+        });
     }
 
     @Override
@@ -147,7 +165,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         }
         if(enchantmentsScrollList.getEnchantments().isEmpty()){
             int i = 0;
-            int h = (48 - (font.lineHeight * emptyMsg.size() + (emptyMsg.size() - 1) * 7)) / 2;
+            int h = (48 - (font.lineHeight * emptyMsg.size() + (emptyMsg.size() - 1) * 14 - font.lineHeight)) / 2;
             for (FormattedCharSequence cs : emptyMsg){
                 this.drawCenteredString(guiGraphics, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * i, 4210752, false);
                 i++;
@@ -164,7 +182,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public void renderConfirmOverlay(GuiGraphics graphics, int mx, int my, float pt){
         if(overlayActive){
             graphics.blitNineSliced(ENCHANTING_BACKGROUND_TEXTURE, leftPos + 10, topPos + 48, 200, 60, 20, 20, 140, 60, 0, 196);
-            int h = (50 - (font.lineHeight * this.confirmMsg.size() + (this.confirmMsg.size() - 1) * 7)) / 2;
+            int h = (50 - (font.lineHeight * this.confirmMsg.size() + (this.confirmMsg.size() - 1) * 14 - font.lineHeight)) / 2;
             for (int i = 0; i < this.confirmMsg.size(); i++) {
                 this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 48 + h + 14 * i,4210752, false);
             }

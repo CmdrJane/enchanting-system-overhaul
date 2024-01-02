@@ -63,7 +63,13 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public OverhauledEnchantmentMenu(int syncId, Inventory inventory, ContainerLevelAccess access, Player owner) {
         super(EnchantmentOverhaul.enchantment_menu_ovr, syncId);
         this.access = access;
-        this.tableInv = new SimpleContainer(5);
+        this.tableInv = new SimpleContainer(5){
+            @Override
+            public void setChanged() {
+                super.setChanged();
+                OverhauledEnchantmentMenu.this.slotsChanged(this);
+            }
+        };
         //Inventory Slots
         int i;
         for(i = 0; i < 3; ++i) {
@@ -132,10 +138,6 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             @Override
             public void set(ItemStack stack) {
                 super.set(stack);
-                if(OverhauledEnchantmentMenu.this.isClientSide){
-                    EnchantmentOverhaulClient.updateButtons();
-                    EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
-                }
             }
 
             public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
@@ -146,9 +148,6 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             @Override
             public void set(ItemStack stack) {
                 super.set(stack);
-                if(OverhauledEnchantmentMenu.this.isClientSide){
-                    EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
-                }
             }
 
             public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
@@ -160,9 +159,6 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 @Override
                 public void set(ItemStack stack) {
                     super.set(stack);
-                    if(OverhauledEnchantmentMenu.this.isClientSide){
-                        EnchantmentOverhaulClient.updateEnchantmentsCriteria(OverhauledEnchantmentMenu.this.tableInv);
-                    }
                 }
 
                 public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
@@ -281,7 +277,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public @NotNull ItemStack quickMoveStack(Player player, int i) { //TODO: move armor to inventory
+    public @NotNull ItemStack quickMoveStack(Player player, int i) {
         ItemStack returnStack = ItemStack.EMPTY;
         Slot slot = slots.get(i);
         if(slot.hasItem()){
@@ -291,11 +287,11 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 EquipmentSlot eqs = Mob.getEquipmentSlotForItem(stack);
                 if(eqs.isArmor()){
                     int o = 39 - eqs.getIndex();
-                    if(!moveItemStackTo(stack, o, o + 1, true)){
+                    if(!moveItemStackTo(stack, o, o + 1, true) && !moveItemStackTo(stack, 0, 36, true)){
                         return ItemStack.EMPTY;
                     }
                 } else if(eqs == EquipmentSlot.OFFHAND){
-                    if(!moveItemStackTo(stack, 40 , 41 , true)){
+                    if(!moveItemStackTo(stack, 40 , 41 , true) && !moveItemStackTo(stack, 0, 36, true)){
                         return ItemStack.EMPTY;
                     }
                 } else {
@@ -327,10 +323,8 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             if (stack.getCount() == returnStack.getCount()) {
                 return ItemStack.EMPTY;
             }
-
             slot.onTake(player, stack);
         }
-
         return returnStack;
     }
 
