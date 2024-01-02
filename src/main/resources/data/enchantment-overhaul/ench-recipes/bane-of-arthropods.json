@@ -4,92 +4,72 @@
   "levels": {
     "1": [
       {
-        "id": "minecraft:glowstone_dust",
-        "amount": 24
+        "id": "minecraft:lapis_lazuli",
+        "amount": 3
       },
       {
-        "id": "minecraft:blaze_rod",
-        "amount": 12
+        "id": "minecraft:glistering_melon_slice",
+        "amount": 3
       },
       {
-        "id": "minecraft:blaze_powder",
-        "amount": 6
-      },
-      {
-        "id": "minecraft:magma_cream",
-        "amount": 6
+        "id": "minecraft:spider_eye",
+        "amount": 3
       }
     ],
     "2": [
       {
-        "id": "minecraft:glowstone_dust",
-        "amount": 64
+        "id": "minecraft:lapis_lazuli",
+        "amount": 6
       },
       {
-        "id": "minecraft:blaze_rod",
-        "amount": 24
+        "id": "minecraft:glistering_melon_slice",
+        "amount": 4
       },
       {
-        "id": "minecraft:blaze_powder",
-        "amount": 32
-      },
-      {
-        "id": "minecraft:magma_cream",
-        "amount": 18
+        "id": "minecraft:spider_eye",
+        "amount": 6
       }
     ],
     "3": [
       {
-        "id": "minecraft:glowstone_dust",
-        "amount": 64
+        "id": "minecraft:lapis_lazuli",
+        "amount": 9
       },
       {
-        "id": "minecraft:blaze_rod",
-        "amount": 24
+        "id": "minecraft:glistering_melon_slice",
+        "amount": 4
       },
       {
-        "id": "minecraft:blaze_powder",
-        "amount": 32
-      },
-      {
-        "id": "minecraft:magma_cream",
-        "amount": 18
+        "id": "minecraft:spider_eye",
+        "amount": 4
       }
     ],
     "4": [
       {
-        "id": "minecraft:glowstone_dust",
-        "amount": 64
+        "id": "minecraft:lapis_lazuli",
+        "amount": 12
       },
       {
-        "id": "minecraft:blaze_rod",
-        "amount": 24
+        "id": "minecraft:glistering_melon_slice",
+        "amount": 4
       },
       {
-        "id": "minecraft:blaze_powder",
-        "amount": 32
-      },
-      {
-        "id": "minecraft:magma_cream",
-        "amount": 18
+        "id": "minecraft:spider_eye",
+        "amount": 12
       }
     ],
     "5": [
       {
-        "id": "minecraft:glowstone_dust",
-        "amount": 64
+        "id": "minecraft:lapis_lazuli",
+        "amount": 12
       },
       {
-        "id": "minecraft:blaze_rod",
-        "amount": 24
+        "id": "minecraft:glistering_melon_slice",
+        "amount": 4
       },
       {
-        "id": "minecraft:blaze_powder",
-        "amount": 32
-      },
-      {
-        "id": "minecraft:magma_cream",
-        "amount": 18
+        "id": "minecraft:spider_eye",
+        "amount": 16
       }
     ]
   }

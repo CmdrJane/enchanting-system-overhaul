@@ -1,13 +1,18 @@
 package aiefu.enchantmentoverhaul;
 
+import io.netty.buffer.Unpooled;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleResourceReloadListener;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -35,6 +40,8 @@ public class EnchantmentOverhaul implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	public static final ResourceLocation c2s_enchant_item = new ResourceLocation(MOD_ID, "c2s_enchant_item");
+
+	public static final ResourceLocation s2c_data_sync = new ResourceLocation(MOD_ID, "s2c_data_sync");
 
 	private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -92,6 +99,17 @@ public class EnchantmentOverhaul implements ModInitializer {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> {
+			if(!server.isDedicatedServer()){
+				server.execute(() -> recipeMap.values().forEach(RecipeHolder::processTags));
+				server.getPlayerList().getPlayers().forEach(EnchantmentOverhaul::syncData);
+			}
+		});
+		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+			if(!server.isDedicatedServer()){
+				server.execute(() -> recipeMap.values().forEach(RecipeHolder::processTags));
+			}
+		});
 		LOGGER.info("Hello Fabric world!");
 	}
 
@@ -106,6 +124,39 @@ public class EnchantmentOverhaul implements ModInitializer {
 				gson.toJson(ConfigurationFile.getDefault(), writer);
 			}
 		}
+	}
+
+	public static void syncData(ServerPlayer player){
+		FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+		String n = "null";
+
+		buf.writeVarInt(recipeMap.size());
+		for (Map.Entry<ResourceLocation, RecipeHolder> e : recipeMap.entrySet()){
+			buf.writeUtf(e.getKey().toString());
+			RecipeHolder holder = e.getValue();
+			buf.writeUtf(holder.enchantment_id);
+			buf.writeVarInt(holder.maxLevel);
+
+			buf.writeVarInt(holder.levels.size());
+			for (Int2ObjectMap.Entry<RecipeHolder.ItemData[]> entry : holder.levels.int2ObjectEntrySet()){
+				buf.writeVarInt(entry.getIntKey());
+				RecipeHolder.ItemData[] arr = entry.getValue();
+				buf.writeVarInt(arr.length);
+				for (RecipeHolder.ItemData data : arr){
+					String id = data.id == null ? n : data.id;
+					buf.writeUtf(id);
+					buf.writeVarInt(data.amount);
+					String tag = data.tag == null ? n : data.tag;
+					buf.writeUtf(tag);
+					String remainder = data.remainderId == null ? n : data.remainderId;
+					buf.writeUtf(remainder);
+					buf.writeVarInt(data.remainderAmount);
+					String remainderTag = data.remainderTag == null ? n : data.remainderTag;
+					buf.writeUtf(remainderTag);
+				}
+			}
+		}
+		ServerPlayNetworking.send(player, s2c_data_sync, buf);
 	}
 
 	public void readConfig() throws FileNotFoundException {

@@ -3,7 +3,6 @@ package aiefu.enchantmentoverhaul.mixin;
 import aiefu.enchantmentoverhaul.EnchantmentOverhaul;
 import aiefu.enchantmentoverhaul.IServerPlayerAcc;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.InteractionHand;
@@ -59,7 +58,9 @@ public abstract class EnchantedBookMixins extends Item {
                     if(e.isCurse() && !EnchantmentOverhaul.config.enableCursesAmplifier){
                         continue;
                     }
-                    MutableComponent c = Component.literal("[" + I18n.get(e.getDescriptionId()) + "]").withStyle(ChatFormatting.DARK_PURPLE);
+                    MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
+                    c.append(Component.translatable(e.getDescriptionId()));
+                    c.append(Component.literal("]"));
                     player.displayClientMessage(Component.translatable("enchantmentoverhaul.youlearned", c).withStyle(ChatFormatting.GOLD), false);
                 }
             } else player.displayClientMessage(Component.translatable("enchantmentoverhaul.allreadylearned")

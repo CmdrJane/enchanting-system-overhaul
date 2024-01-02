@@ -2,16 +2,24 @@ package aiefu.enchantmentoverhaul.client;
 
 import aiefu.enchantmentoverhaul.EnchDescCompat;
 import aiefu.enchantmentoverhaul.EnchantmentOverhaul;
+import aiefu.enchantmentoverhaul.RecipeHolder;
 import aiefu.enchantmentoverhaul.client.gui.EnchantingTableScreen;
+import aiefu.enchantmentoverhaul.exception.ItemDoesNotExistException;
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.Enchantment;
 
@@ -42,6 +50,9 @@ public class EnchantmentOverhaulClient implements ClientModInitializer {
                 getDescription = descriptions::get;
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(EnchantmentOverhaul.s2c_data_sync, (client, handler, buf, responseSender) -> {
+            this.readData(buf);
+        });
     }
 
     public static MutableComponent getEnchantmentDescription(Enchantment e){
@@ -50,5 +61,54 @@ public class EnchantmentOverhaulClient implements ClientModInitializer {
 
     public static Player getClientPlayer(){
         return Minecraft.getInstance().player;
+    }
+
+    public void readData(FriendlyByteBuf buf){
+        Interner<String> interner = Interners.newWeakInterner();
+        String n = "null";
+        interner.intern(n);
+
+        int i = buf.readVarInt();
+        ConcurrentHashMap<ResourceLocation, RecipeHolder> map = new ConcurrentHashMap<>();
+        for (int j = 0; j < i; j++) {
+            String s = buf.readUtf();
+            ResourceLocation loc = new ResourceLocation(s);
+            String eid = buf.readUtf();
+            int maxLevel = buf.readVarInt();
+            int r = buf.readVarInt();
+            RecipeHolder holder = new RecipeHolder();
+            holder.enchantment_id = eid;
+            holder.maxLevel = maxLevel;
+            Int2ObjectOpenHashMap<RecipeHolder.ItemData[]> int2ObjMap = new Int2ObjectOpenHashMap<>();
+            for (int k = 0; k < r; k++) {
+                int level = buf.readVarInt();
+                int q = buf.readVarInt();
+                RecipeHolder.ItemData[] arr = new RecipeHolder.ItemData[q];
+                for (int l = 0; l < q; l++) {
+                    RecipeHolder.ItemData data = new RecipeHolder.ItemData();
+                    String id = interner.intern(buf.readUtf());
+                    data.id = n == id ? null : id;
+                    data.amount = buf.readVarInt();
+                    String tag = interner.intern(buf.readUtf());
+                    data.tag = n == tag ? null : tag;
+                    String remainder = interner.intern(buf.readUtf());
+                    data.remainderId = n == remainder ? null : remainder;
+                    data.remainderAmount = buf.readVarInt();
+                    String remainderTag = interner.intern(buf.readUtf());
+                    data.remainderTag = n == remainderTag ? null : remainderTag;
+                    try {
+                        data.makeId(eid);
+                        data.processTags();
+                    } catch (ItemDoesNotExistException e) {
+                        throw new RuntimeException(e);
+                    }
+                    arr[l] = data;
+                }
+                int2ObjMap.put(level, arr);
+            }
+            holder.levels = int2ObjMap;
+            map.put(loc, holder);
+        }
+        Minecraft.getInstance().execute(() -> EnchantmentOverhaul.recipeMap = map);
     }
 }

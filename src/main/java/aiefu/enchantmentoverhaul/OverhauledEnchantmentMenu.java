@@ -135,32 +135,17 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 return 1;
             }
 
-            @Override
-            public void set(ItemStack stack) {
-                super.set(stack);
-            }
-
             public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
                 return Pair.of(InventoryMenu.BLOCK_ATLAS, SWORD_EMPTY_ICON);
             }
         });
         this.addSlot(new Slot(this.tableInv, 1, 42,31){
-            @Override
-            public void set(ItemStack stack) {
-                super.set(stack);
-            }
-
             public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
                 return Pair.of(InventoryMenu.BLOCK_ATLAS, LAZURITE_EMPTY_ICON);
             }
         });
         for (int j = 0; j < 3; j++) {
             this.addSlot(new Slot(this.tableInv, j + 2, 15 + j * 18, 49){
-                @Override
-                public void set(ItemStack stack) {
-                    super.set(stack);
-                }
-
                 public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
                     return Pair.of(InventoryMenu.BLOCK_ATLAS, INGOT_EMPTY_ICON);
                 }

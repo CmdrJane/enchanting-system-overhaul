@@ -30,6 +30,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.ContainerListener;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -58,6 +59,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     protected MutableComponent displayMsg;
 
     protected boolean overlayActive = false;
+
+    protected HashSet<EnchButtonWithData> tickingButtons = new HashSet<>();
+
+    protected int ticks = 0;
 
     public EnchantingTableScreen(OverhauledEnchantmentMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -97,7 +102,6 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.menu.addSlotListener(new ContainerListener() {
             @Override
             public void slotChanged(AbstractContainerMenu containerToSend, int dataSlotIndex, ItemStack stack) {
-                System.out.println(dataSlotIndex);
                 if(dataSlotIndex == 41){
                     EnchantingTableScreen.this.updateButtons();
                 }
@@ -152,6 +156,21 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     protected void containerTick() {
         super.containerTick();
         this.searchFilter.tick();
+        if(ticks % 80 == 0){
+            Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(this.enchMenu.getTableInv().getItem(0));
+            for (EnchButtonWithData b : this.tickingButtons){
+                Enchantment enchantment = b.getEnchantment();
+
+                @Nullable RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
+                Integer l = enchs.get(enchantment);
+                int maxLevel = RecipeHolder.getMaxLevel(holder, enchantment);
+                int targetLevel = l != null ? Math.min(maxLevel, l + 1) : 1;
+
+                MutableComponent translatable = RecipeHolder.getFullName(enchantment, targetLevel, maxLevel);
+                this.composeTooltipAndApply(translatable, enchantment, holder, targetLevel, b, false);
+            }
+        }
+        this.ticks++;
     }
 
     @Override
@@ -227,6 +246,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     }
 
     public List<EnchButtonWithData> craftEnchantmentsButtons(String filter){
+        tickingButtons.clear();
         List<EnchButtonWithData> list = new ArrayList<>();
         ItemStack stack = this.enchMenu.getTableInv().getItem(0);
         boolean bl = stack.is(Items.BOOK);
@@ -277,38 +297,49 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     this.switchOverlayState(false);
                     this.switchButtonsState(false);
                 }, holder, enchantment);
-
-                MutableComponent c = translatable.copy();
-                c.withStyle(ChatFormatting.AQUA);
-                c.append("\n");
-                c.append(EnchantmentOverhaulClient.getEnchantmentDescription(enchantment));
-                if(holder != null){
-                    c.append("\n");
-                    c.append(Component.translatable("enchantmentoverhaul.requires").withStyle(ChatFormatting.GRAY));
-                    for (RecipeHolder.ItemData data : holder.levels.get(targetLevel)) {
-                        MutableComponent itemName;
-                        if(data.isEmpty()){
-                            itemName = Component.translatable("enchantmentoverhaul.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
-                        } else {
-                            if(data.compoundTag != null){
-                                ItemStack refStack = new ItemStack(data.item, 1);
-                                refStack.setTag(data.compoundTag);
-                                itemName = Component.translatable(refStack.getDescriptionId());
-                            } else itemName = Component.translatable(data.item.getDescriptionId());
-                            itemName.append(": ").append(Component.literal(String.valueOf(data.amount)).withStyle(ChatFormatting.AQUA)).withStyle(ChatFormatting.GOLD);
-                        }
-                        c.append("\n");
-                        c.append(itemName);
-
-                    }
-                }
-                b.setTooltip(Tooltip.create(c));
+                this.composeTooltipAndApply(translatable, enchantment, holder, targetLevel, b, true);
                 list.add(b);
                 offset++;
             }
         }
 
         return list;
+    }
+
+    public void composeTooltipAndApply(MutableComponent translatable, Enchantment enchantment, RecipeHolder holder, int targetLevel, EnchButtonWithData button, boolean bl){
+        MutableComponent c = translatable.copy();
+        c.withStyle(ChatFormatting.AQUA);
+        c.append("\n");
+        c.append(EnchantmentOverhaulClient.getEnchantmentDescription(enchantment));
+        if(holder != null){
+            c.append("\n");
+            c.append(Component.translatable("enchantmentoverhaul.requires").withStyle(ChatFormatting.GRAY));
+            for (RecipeHolder.ItemData data : holder.levels.get(targetLevel)) {
+                MutableComponent itemName;
+                if(data.isEmpty()){
+                    itemName = Component.translatable("enchantmentoverhaul.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
+                } else {
+                    Item item;
+                    if(data.tagKey != null){
+                        if(data.applicableItems.isEmpty()) continue;
+                        item = data.getNext();
+                        if(bl){
+                            this.tickingButtons.add(button);
+                        }
+                    } else item = data.item;
+                    if(data.compoundTag != null){
+                        ItemStack refStack = new ItemStack(item, 1);
+                        refStack.setTag(data.compoundTag);
+                        itemName = Component.translatable(refStack.getDescriptionId());
+                    } else itemName = Component.translatable(item.getDescriptionId());
+                    itemName.append(": ").append(Component.literal(String.valueOf(data.amount)).withStyle(ChatFormatting.AQUA)).withStyle(ChatFormatting.GOLD);
+                }
+                c.append("\n");
+                c.append(itemName);
+
+            }
+        }
+        button.setTooltip(Tooltip.create(c));
     }
 
     public HashSet<Enchantment> filterToNewSet(Set<Enchantment> set , Predicate<Enchantment> predicate){

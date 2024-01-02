@@ -3,14 +3,17 @@ package aiefu.enchantmentoverhaul;
 import aiefu.enchantmentoverhaul.exception.ItemDoesNotExistException;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -18,11 +21,15 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class RecipeHolder {
     public transient ResourceLocation ench_location;
     public static final ItemData EMPTY = new ItemData(null);
+
+
     public String enchantment_id;
     public int maxLevel;
     public Int2ObjectOpenHashMap<ItemData[]> levels = new Int2ObjectOpenHashMap<>();
@@ -54,7 +61,7 @@ public class RecipeHolder {
                 ItemStack stack = container.getItem(i + 1);
                 ItemData data = array[i];
                 if (data != null) {
-                    if (data.isEmpty() || stack.getItem() == data.item && data.isEnough(stack) && data.testTag(stack)) {
+                    if (data.isEmpty() || data.testItemOrGroup(stack) && data.isEnough(stack) && data.testTag(stack)) {
                         x++;
                     }
                 } else {
@@ -74,7 +81,7 @@ public class RecipeHolder {
                 ItemStack stack = container.getItem(i + 1);
                 ItemData data = arr[i];
                 if (data != null) {
-                    if (data.isEmpty() || stack.getItem() == data.item && data.isEnough(stack) && data.testTag(stack)) {
+                    if (data.isEmpty() || data.testItemOrGroup(stack) && data.isEnough(stack) && data.testTag(stack)) {
                         x++;
                     }
                 } else {
@@ -98,6 +105,18 @@ public class RecipeHolder {
         return false;
     }
 
+    public void processTags(){
+        for (Int2ObjectMap.Entry<ItemData[]> e : levels.int2ObjectEntrySet()){
+            for (ItemData data : e.getValue()){
+                data.processTags();
+            }
+        }
+    }
+
+    public void resetTooltipPosition(){
+
+    }
+
     public int getMaxLevel(Enchantment enchantment){
         return this.maxLevel < 1 ? enchantment.getMaxLevel() : this.maxLevel;
     }
@@ -117,9 +136,15 @@ public class RecipeHolder {
     @SuppressWarnings("unused")
     public static class ItemData{
         protected transient boolean isEmpty = false;
-        @Nullable
-        public transient ResourceLocation item_id;
+
         public transient Item item = Items.AIR;
+
+        public transient List<Item> applicableItems = new ArrayList<>();
+
+        public transient int pos = 0;
+
+        @Nullable
+        public transient TagKey<Item> tagKey;
 
         public transient CompoundTag compoundTag;
 
@@ -154,16 +179,22 @@ public class RecipeHolder {
 
         public void makeId(String eid) throws ItemDoesNotExistException {
             Objects.requireNonNull(this.id);
-            this.item_id = new ResourceLocation(this.id);
-            this.item = BuiltInRegistries.ITEM.get(this.item_id);
-            if(this.item == Items.AIR) throw new ItemDoesNotExistException("Item id " + this.id + " not found in game registry for enchantment recipe " + eid);
+            if(id.startsWith("tags#")){
+                this.tagKey = TagKey.create(Registries.ITEM, new ResourceLocation(id.substring(5)));
+                this.applicableItems.clear();
+            } else {
+                this.item = BuiltInRegistries.ITEM.get(new ResourceLocation(this.id));
+                if(this.item == Items.AIR) throw new ItemDoesNotExistException("Item id " + this.id + " not found in game registry for enchantment recipe " + eid);
+            }
+
             if(this.tag != null){
                 try {
-                   this.compoundTag = new TagParser(new StringReader(tag)).readStruct();
+                    this.compoundTag = new TagParser(new StringReader(tag)).readStruct();
                 } catch (CommandSyntaxException e){
                     e.printStackTrace();
                 }
             }
+
             if(this.remainderId != null){
                 if(!this.remainderId.isEmpty() && !this.remainderId.isBlank() && !this.remainderId.equalsIgnoreCase("empty")){
                     this.remainderItem = BuiltInRegistries.ITEM.get(new ResourceLocation(this.remainderId));
@@ -190,17 +221,16 @@ public class RecipeHolder {
         }
 
         public boolean testTag(ItemStack stack){
-            if(!stack.hasTag()){
-                return true;
-            }
             if(this.compoundTag == null){
                 return true;
+            } else if(!stack.hasTag()){
+                return false;
             }
             else return TagsUtils.havePartialMatch(this.compoundTag, stack.getOrCreateTag());
         }
 
-        public boolean isSameStack(ItemStack stack){
-           return stack.is(item);
+        public boolean testItemOrGroup(ItemStack stack){
+            return tagKey != null ? stack.is(tagKey) : stack.is(item);
         }
 
         public boolean isEnough(ItemStack stack){
@@ -209,6 +239,26 @@ public class RecipeHolder {
 
         public boolean isEmpty() {
             return this.isEmpty;
+        }
+
+        public void processTags(){
+            if(tagKey != null){
+                for (ResourceLocation location : BuiltInRegistries.ITEM.keySet()){
+                    Item i = BuiltInRegistries.ITEM.get(location);
+                    if(i.builtInRegistryHolder().is(tagKey)){
+                        this.applicableItems.add(i);
+                    }
+                }
+            }
+        }
+
+        public Item getNext(){
+            Item i = this.applicableItems.get(pos);
+            pos++;
+            if(pos > this.applicableItems.size()){
+                pos = 0;
+            }
+            return i;
         }
     }
 }
