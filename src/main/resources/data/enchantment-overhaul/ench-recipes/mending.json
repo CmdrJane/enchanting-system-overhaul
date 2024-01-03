@@ -1,0 +1,28 @@
+{
+  "enchantment_id": "minecraft:mending",
+  "maxLevel": 0,
+  "levels": {
+    "1": [
+      {
+        "id": "minecraft:redstone",
+        "amount": 48
+      },
+      {
+        "id": "minecraft:amethyst_shard",
+        "amount": 12
+      },
+      {
+        "id": "minecraft:potion",
+        "amount": 1,
+        "tag": "{Potion: \"minecraft:healing\"}",
+        "remainderId": "minecraft:glass_bottle"
+      },
+      {
+        "id": "minecraft:potion",
+        "amount": 1,
+        "tag": "{Potion: \"minecraft:regeneration\"}",
+        "remainderId": "minecraft:glass_bottle"
+      }
+    ]
+  }
+}

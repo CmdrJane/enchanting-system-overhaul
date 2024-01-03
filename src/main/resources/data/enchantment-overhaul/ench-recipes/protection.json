@@ -1,0 +1,62 @@
+{
+  "enchantment_id": "minecraft:protection",
+  "maxLevel": 0,
+  "levels": {
+    "1": [
+      {
+        "id": "minecraft:lapis_lazuli",
+        "amount": 12
+      },
+      {
+        "id": "minecraft:amethyst_shard",
+        "amount": 4
+      },
+      {
+        "id": "minecraft:diamond",
+        "amount": 2
+      }
+    ],
+    "2": [
+      {
+        "id": "minecraft:lapis_lazuli",
+        "amount": 24
+      },
+      {
+        "id": "minecraft:amethyst_shard",
+        "amount": 6
+      },
+      {
+        "id": "minecraft:diamond",
+        "amount": 6
+      }
+    ],
+    "3": [
+      {
+        "id": "minecraft:lapis_lazuli",
+        "amount": 24
+      },
+      {
+        "id": "minecraft:amethyst_shard",
+        "amount": 6
+      },
+      {
+        "id": "minecraft:diamond",
+        "amount": 8
+      }
+    ],
+    "4": [
+      {
+        "id": "minecraft:glowstone_dust",
+        "amount": 32
+      },
+      {
+        "id": "minecraft:netherite_scrap",
+        "amount": 1
+      },
+      {
+        "id": "minecraft:gold_ingot",
+        "amount": 12
+      }
+    ]
+  }
+}
