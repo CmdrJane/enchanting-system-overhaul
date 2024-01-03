@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +48,7 @@ public class EnchantmentOverhaul implements ModInitializer {
 
 	public static ConfigurationFile config;
 
-	public static ConcurrentHashMap<ResourceLocation, RecipeHolder> recipeMap = new ConcurrentHashMap<>();
+	public static ConcurrentHashMap<ResourceLocation, List<RecipeHolder>> recipeMap = new ConcurrentHashMap<>();
 
 
 	public static final ExtendedScreenHandlerType<OverhauledEnchantmentMenu> enchantment_menu_ovr =
@@ -86,10 +87,11 @@ public class EnchantmentOverhaul implements ModInitializer {
 		});
 		ServerPlayNetworking.registerGlobalReceiver(c2s_enchant_item, (server, player, handler, buf, responseSender) -> {
 			String s = buf.readUtf();
+			int ordinal = buf.readVarInt();
 			ResourceLocation location = new ResourceLocation(s);
 			server.execute(() -> {
 				if(player.containerMenu instanceof OverhauledEnchantmentMenu m){
-					m.checkRequirementsAndConsume(location, player);
+					m.checkRequirementsAndConsume(location, player, ordinal);
 				}
 			});
 		});
@@ -101,13 +103,13 @@ public class EnchantmentOverhaul implements ModInitializer {
 		}
 		ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> {
 			if(!server.isDedicatedServer()){
-				server.execute(() -> recipeMap.values().forEach(RecipeHolder::processTags));
+				server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
 				server.getPlayerList().getPlayers().forEach(EnchantmentOverhaul::syncData);
 			}
 		});
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			if(!server.isDedicatedServer()){
-				server.execute(() -> recipeMap.values().forEach(RecipeHolder::processTags));
+				server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
 			}
 		});
 		LOGGER.info("Hello Fabric world!");
@@ -131,28 +133,31 @@ public class EnchantmentOverhaul implements ModInitializer {
 		String n = "null";
 
 		buf.writeVarInt(recipeMap.size());
-		for (Map.Entry<ResourceLocation, RecipeHolder> e : recipeMap.entrySet()){
+		for (Map.Entry<ResourceLocation, List<RecipeHolder>> e : recipeMap.entrySet()){
 			buf.writeUtf(e.getKey().toString());
-			RecipeHolder holder = e.getValue();
-			buf.writeUtf(holder.enchantment_id);
-			buf.writeVarInt(holder.maxLevel);
+			List<RecipeHolder> holders = e.getValue();
+			buf.writeVarInt(holders.size());
+			for (RecipeHolder holder : holders){
+				buf.writeUtf(holder.enchantment_id);
+				buf.writeVarInt(holder.maxLevel);
 
-			buf.writeVarInt(holder.levels.size());
-			for (Int2ObjectMap.Entry<RecipeHolder.ItemData[]> entry : holder.levels.int2ObjectEntrySet()){
-				buf.writeVarInt(entry.getIntKey());
-				RecipeHolder.ItemData[] arr = entry.getValue();
-				buf.writeVarInt(arr.length);
-				for (RecipeHolder.ItemData data : arr){
-					String id = data.id == null ? n : data.id;
-					buf.writeUtf(id);
-					buf.writeVarInt(data.amount);
-					String tag = data.tag == null ? n : data.tag;
-					buf.writeUtf(tag);
-					String remainder = data.remainderId == null ? n : data.remainderId;
-					buf.writeUtf(remainder);
-					buf.writeVarInt(data.remainderAmount);
-					String remainderTag = data.remainderTag == null ? n : data.remainderTag;
-					buf.writeUtf(remainderTag);
+				buf.writeVarInt(holder.levels.size());
+				for (Int2ObjectMap.Entry<RecipeHolder.ItemData[]> entry : holder.levels.int2ObjectEntrySet()){
+					buf.writeVarInt(entry.getIntKey());
+					RecipeHolder.ItemData[] arr = entry.getValue();
+					buf.writeVarInt(arr.length);
+					for (RecipeHolder.ItemData data : arr){
+						String id = data.id == null ? n : data.id;
+						buf.writeUtf(id);
+						buf.writeVarInt(data.amount);
+						String tag = data.tag == null ? n : data.tag;
+						buf.writeUtf(tag);
+						String remainder = data.remainderId == null ? n : data.remainderId;
+						buf.writeUtf(remainder);
+						buf.writeVarInt(data.remainderAmount);
+						String remainderTag = data.remainderTag == null ? n : data.remainderTag;
+						buf.writeUtf(remainderTag);
+					}
 				}
 			}
 		}

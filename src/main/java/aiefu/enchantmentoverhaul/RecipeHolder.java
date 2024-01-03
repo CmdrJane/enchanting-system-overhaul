@@ -50,7 +50,14 @@ public class RecipeHolder {
             }
         });
         this.ench_location = new ResourceLocation(enchantment_id);
-        EnchantmentOverhaul.recipeMap.put(this.ench_location, this);
+        List<RecipeHolder> list = EnchantmentOverhaul.recipeMap.get(ench_location);
+        if(list != null){
+            list.add(this);
+        } else {
+            list = new ArrayList<>();
+            list.add(this);
+            EnchantmentOverhaul.recipeMap.put(ench_location, list);
+        }
     }
 
     public boolean check(SimpleContainer container, int targetLevel){
@@ -119,10 +126,6 @@ public class RecipeHolder {
 
     public int getMaxLevel(Enchantment enchantment){
         return this.maxLevel < 1 ? enchantment.getMaxLevel() : this.maxLevel;
-    }
-
-    public static int getMaxLevel(RecipeHolder holder, Enchantment enchantment){
-        return holder != null ? holder.getMaxLevel(enchantment) : enchantment.getMaxLevel();
     }
 
     public static MutableComponent getFullName(Enchantment e, int level, int maxLevel){
@@ -252,10 +255,14 @@ public class RecipeHolder {
             }
         }
 
+        public void resetPos(){
+            this.pos = 0;
+        }
+
         public Item getNext(){
             Item i = this.applicableItems.get(pos);
             pos++;
-            if(pos > this.applicableItems.size()){
+            if(pos >= this.applicableItems.size()){
                 pos = 0;
             }
             return i;

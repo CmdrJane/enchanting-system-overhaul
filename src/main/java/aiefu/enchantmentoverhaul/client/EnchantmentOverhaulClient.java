@@ -23,6 +23,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.Enchantment;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -69,45 +71,50 @@ public class EnchantmentOverhaulClient implements ClientModInitializer {
         interner.intern(n);
 
         int i = buf.readVarInt();
-        ConcurrentHashMap<ResourceLocation, RecipeHolder> map = new ConcurrentHashMap<>();
+        ConcurrentHashMap<ResourceLocation, List<RecipeHolder>> map = new ConcurrentHashMap<>();
         for (int j = 0; j < i; j++) {
             String s = buf.readUtf();
             ResourceLocation loc = new ResourceLocation(s);
-            String eid = buf.readUtf();
-            int maxLevel = buf.readVarInt();
-            int r = buf.readVarInt();
-            RecipeHolder holder = new RecipeHolder();
-            holder.enchantment_id = eid;
-            holder.maxLevel = maxLevel;
-            Int2ObjectOpenHashMap<RecipeHolder.ItemData[]> int2ObjMap = new Int2ObjectOpenHashMap<>();
-            for (int k = 0; k < r; k++) {
-                int level = buf.readVarInt();
-                int q = buf.readVarInt();
-                RecipeHolder.ItemData[] arr = new RecipeHolder.ItemData[q];
-                for (int l = 0; l < q; l++) {
-                    RecipeHolder.ItemData data = new RecipeHolder.ItemData();
-                    String id = interner.intern(buf.readUtf());
-                    data.id = n == id ? null : id;
-                    data.amount = buf.readVarInt();
-                    String tag = interner.intern(buf.readUtf());
-                    data.tag = n == tag ? null : tag;
-                    String remainder = interner.intern(buf.readUtf());
-                    data.remainderId = n == remainder ? null : remainder;
-                    data.remainderAmount = buf.readVarInt();
-                    String remainderTag = interner.intern(buf.readUtf());
-                    data.remainderTag = n == remainderTag ? null : remainderTag;
-                    try {
-                        data.makeId(eid);
-                        data.processTags();
-                    } catch (ItemDoesNotExistException e) {
-                        throw new RuntimeException(e);
+            List<RecipeHolder> holders = new ArrayList<>();
+            int jk = buf.readVarInt();
+            for (int b = 0; b < jk; b++) {
+                String eid = buf.readUtf();
+                int maxLevel = buf.readVarInt();
+                int r = buf.readVarInt();
+                RecipeHolder holder = new RecipeHolder();
+                holder.enchantment_id = eid;
+                holder.maxLevel = maxLevel;
+                Int2ObjectOpenHashMap<RecipeHolder.ItemData[]> int2ObjMap = new Int2ObjectOpenHashMap<>();
+                for (int k = 0; k < r; k++) {
+                    int level = buf.readVarInt();
+                    int q = buf.readVarInt();
+                    RecipeHolder.ItemData[] arr = new RecipeHolder.ItemData[q];
+                    for (int l = 0; l < q; l++) {
+                        RecipeHolder.ItemData data = new RecipeHolder.ItemData();
+                        String id = interner.intern(buf.readUtf());
+                        data.id = n == id ? null : id;
+                        data.amount = buf.readVarInt();
+                        String tag = interner.intern(buf.readUtf());
+                        data.tag = n == tag ? null : tag;
+                        String remainder = interner.intern(buf.readUtf());
+                        data.remainderId = n == remainder ? null : remainder;
+                        data.remainderAmount = buf.readVarInt();
+                        String remainderTag = interner.intern(buf.readUtf());
+                        data.remainderTag = n == remainderTag ? null : remainderTag;
+                        try {
+                            data.makeId(eid);
+                            data.processTags();
+                        } catch (ItemDoesNotExistException e) {
+                            throw new RuntimeException(e);
+                        }
+                        arr[l] = data;
                     }
-                    arr[l] = data;
+                    int2ObjMap.put(level, arr);
                 }
-                int2ObjMap.put(level, arr);
+                holder.levels = int2ObjMap;
+                holders.add(holder);
             }
-            holder.levels = int2ObjMap;
-            map.put(loc, holder);
+            map.put(loc, holders);
         }
         Minecraft.getInstance().execute(() -> EnchantmentOverhaul.recipeMap = map);
     }

@@ -153,12 +153,12 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         }
     }
 
-    public void checkRequirementsAndConsume(ResourceLocation location, Player player){
+    public void checkRequirementsAndConsume(ResourceLocation location, Player player, int ordinal){
         this.access.execute((level, blockPos) -> {
             ItemStack stack = this.tableInv.getItem(0);
             if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)) {
                 if(stack.is(Items.BOOK)) {
-                    this.enchantBook(location, player);
+                    this.enchantBook(location, player, ordinal);
                 } else {
                     Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
                     if (target != null) {
@@ -185,9 +185,10 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                             if (l != null) {
                                 targetLevel = l + 1;
                             }
-                            RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
-                            if (holder != null && targetLevel <= holder.getMaxLevel(target)) {
-                                if (player.getAbilities().instabuild || holder.checkAndConsume(this.tableInv, targetLevel)) {
+                            List<RecipeHolder> holders = EnchantmentOverhaul.recipeMap.get(location);
+                            if (holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()) {
+                                RecipeHolder holder = holders.get(ordinal);
+                                if (player.getAbilities().instabuild || targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
                                     enchs.put(target, targetLevel);
                                     this.applyAndBroadcast(player, enchs, stack);
                                 }
@@ -219,13 +220,21 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         this.broadcastChanges();
     }
 
-    public void enchantBook(ResourceLocation location, Player player){
+    public void enchantBook(ResourceLocation location, Player player, int ordinal){
         Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
         if(target != null){
             ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
             stack.getOrCreateTag();
-            RecipeHolder holder = EnchantmentOverhaul.recipeMap.get(location);
-            if(player.getAbilities().instabuild || holder != null && holder.checkAndConsume(this.tableInv, 1)){
+            List<RecipeHolder> holders = EnchantmentOverhaul.recipeMap.get(location);
+            if(holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()){
+                RecipeHolder holder = holders.get(ordinal);
+                if(holder.checkAndConsume(this.tableInv, 1)){
+                    EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(target, 1));
+                    this.tableInv.setItem(0, stack);
+                    player.onEnchantmentPerformed(stack, 0);
+                    this.broadcastChanges();
+                }
+            } else if(player.getAbilities().instabuild){
                 EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(target, 1));
                 this.tableInv.setItem(0, stack);
                 player.onEnchantmentPerformed(stack, 0);
