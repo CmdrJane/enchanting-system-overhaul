@@ -2,7 +2,6 @@ package aiefu.enchantmentoverhaul.client.gui;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractScrollWidget;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -43,7 +42,7 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
             mouseX = -1;
             mouseY = -1;
         }
-        for (Button b : enchantments){
+        for (EnchButtonWithData b : enchantments){
             b.render(guiGraphics, mouseX, (int) (mouseY + scrollAmount()), partialTick);
         }
     }
