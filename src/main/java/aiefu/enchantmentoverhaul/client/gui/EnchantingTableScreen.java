@@ -79,6 +79,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             this.switchButtonsState(false);
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeUtf(Objects.requireNonNull(BuiltInRegistries.ENCHANTMENT.getKey(selectedEnchantment)).toString());
+            buf.writeVarInt(ordinal);
             ClientPlayNetworking.send(EnchantmentOverhaul.c2s_enchant_item, buf);
         }));
         this.cancelButton = this.addWidget(new CustomEnchantingButton(leftPos + 130, topPos + 92, 30, 12, CommonComponents.GUI_NO, button -> {
