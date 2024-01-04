@@ -50,8 +50,21 @@
         "amount": 32
       },
       {
-        "id": "minecraft:netherite_scrap",
-        "amount": 1
+        "itemArray": [
+          {
+            "id": "minecraft:netherite_scrap",
+            "amount": 1
+          },
+          {
+            "id": "minecraft:enchanted_golden_apple",
+            "amount": 1
+          },
+          {
+            "id": "minecraft:potion",
+            "amount": 1,
+            "tag": "{Potion: \"minecraft:turtle_master\"}"
+          }
+        ]
       },
       {
         "id": "minecraft:gold_ingot",

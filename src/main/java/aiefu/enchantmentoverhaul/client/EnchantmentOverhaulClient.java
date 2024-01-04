@@ -93,6 +93,20 @@ public class EnchantmentOverhaulClient implements ClientModInitializer {
                         RecipeHolder.ItemData data = new RecipeHolder.ItemData();
                         String id = interner.intern(buf.readUtf());
                         data.id = n == id ? null : id;
+                        boolean bl = buf.readBoolean();
+                        if(bl){
+                            int lk = buf.readVarInt();
+                            RecipeHolder.ItemDataSimple[] idsArr = new RecipeHolder.ItemDataSimple[lk];
+                            for (int m = 0; m < lk; m++) {
+                                RecipeHolder.ItemDataSimple ids = new RecipeHolder.ItemDataSimple();
+                                ids.id = buf.readUtf();
+                                ids.amount = buf.readVarInt();
+                                String tag = interner.intern(buf.readUtf());
+                                ids.tag = tag == n ? null : tag;
+                                idsArr[m] = ids;
+                            }
+                            data.itemArray = idsArr;
+                        }
                         data.amount = buf.readVarInt();
                         String tag = interner.intern(buf.readUtf());
                         data.tag = n == tag ? null : tag;

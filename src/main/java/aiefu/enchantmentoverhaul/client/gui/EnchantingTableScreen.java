@@ -17,6 +17,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
@@ -344,20 +345,39 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     itemName = Component.translatable("enchantmentoverhaul.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
                 } else {
                     Item item;
-                    if(data.tagKey != null){
+                    CompoundTag tag = null;
+                    int amount = 0;
+                    if(data.itemList != null){
                         if(data.applicableItems.isEmpty()) continue;
                         if(bl){
                             this.tickingButtons.add(button);
                             data.resetPos();
                         }
-                        item = data.getNext();
-                    } else item = data.item;
-                    if(data.compoundTag != null){
+                        RecipeHolder.ItemDataSimple ids = data.getSimpleData();
+                        item = ids.item;
+                        tag = ids.compoundTag;
+                        amount = ids.amount;
+                        data.next();
+                    } else if(data.tagKey != null){
+                        if(data.applicableItems.isEmpty()) continue;
+                        if(bl){
+                            this.tickingButtons.add(button);
+                            data.resetPos();
+                        }
+                        item = data.getApplicableItem();
+                        amount = data.amount;
+                        data.next();
+                    } else {
+                        item = data.item;
+                        tag = data.compoundTag;
+                        amount = data.amount;
+                    }
+                    if(tag != null){
                         ItemStack refStack = new ItemStack(item, 1);
-                        refStack.setTag(data.compoundTag);
+                        refStack.setTag(tag);
                         itemName = Component.translatable(refStack.getDescriptionId());
                     } else itemName = Component.translatable(item.getDescriptionId());
-                    itemName.append(": ").append(Component.literal(String.valueOf(data.amount)).withStyle(ChatFormatting.AQUA)).withStyle(ChatFormatting.GOLD);
+                    itemName.append(": ").append(Component.literal(String.valueOf(amount)).withStyle(ChatFormatting.AQUA)).withStyle(ChatFormatting.GOLD);
                 }
                 c.append(CommonComponents.NEW_LINE);
                 c.append(itemName);

@@ -1,5 +1,7 @@
 package aiefu.enchantmentoverhaul;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.fabricmc.api.ModInitializer;
@@ -19,8 +21,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongepowered.include.com.google.gson.Gson;
-import org.spongepowered.include.com.google.gson.GsonBuilder;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -149,6 +149,17 @@ public class EnchantmentOverhaul implements ModInitializer {
 					for (RecipeHolder.ItemData data : arr){
 						String id = data.id == null ? n : data.id;
 						buf.writeUtf(id);
+						if(data.itemArray != null){
+							buf.writeBoolean(true);
+							buf.writeVarInt(data.itemArray.length);
+							for (RecipeHolder.ItemDataSimple ds : data.itemArray){
+								buf.writeUtf(ds.id);
+								buf.writeVarInt(ds.amount);
+								String tag = ds.tag == null ? n : ds.tag;
+								buf.writeUtf(tag);
+							}
+						} else buf.writeBoolean(false);
+
 						buf.writeVarInt(data.amount);
 						String tag = data.tag == null ? n : data.tag;
 						buf.writeUtf(tag);
