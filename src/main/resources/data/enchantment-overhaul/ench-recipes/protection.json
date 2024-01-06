@@ -14,6 +14,10 @@
       {
         "id": "minecraft:diamond",
         "amount": 2
+      },
+      {
+        "id": "minecraft:obsidian",
+        "amount": 4
       }
     ],
     "2": [
@@ -42,6 +46,10 @@
       {
         "id": "minecraft:diamond",
         "amount": 12
+      },
+      {
+        "id": "minecraft:obsidian",
+        "amount": 8
       }
     ],
     "4": [
@@ -51,14 +59,14 @@
       },
       {
         "id": "minecraft:diamond",
-        "amount": 24
+        "amount": 16
       },
       {
         "id": "minecraft:amethyst_shard",
         "amount": 12
       },
       {
-        "id": "minecraft:gold_ingot",
+        "id": "minecraft:obsidian",
         "amount": 12
       }
     ]

@@ -58,10 +58,20 @@
         "amount": 16
       },
       {
-        "id": "minecraft:potion",
-        "amount": 1,
-        "tag": "{Potion: \"minecraft:fire_resistance\"}",
-        "remainderId": "minecraft:glass_bottle"
+        "itemArray": [
+          {
+            "id": "minecraft:potion",
+            "amount": 1,
+            "tag": "{Potion: \"minecraft:fire_resistance\"}",
+            "remainderId": "minecraft:glass_bottle"
+          },
+          {
+            "id": "minecraft:potion",
+            "amount": 1,
+            "tag": "{Potion: \"minecraft:long_fire_resistance\"}",
+            "remainderId": "minecraft:glass_bottle"
+          }
+        ]
       }
     ]
   }

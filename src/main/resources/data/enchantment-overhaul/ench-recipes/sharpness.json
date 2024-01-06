@@ -1,5 +1,5 @@
 {
-  "enchantment_id": "minecraft:power",
+  "enchantment_id": "minecraft:sharpness",
   "maxLevel": 0,
   "levels": {
     "1": [
@@ -9,15 +9,15 @@
       },
       {
         "id": "minecraft:diamond",
-        "amount": 1
+        "amount": 2
       },
       {
-        "id": "minecraft:slime_ball",
+        "id": "minecraft:quartz",
+        "amount": 8
+      },
+      {
+        "id": "minecraft:amethyst_shard",
         "amount": 3
-      },
-      {
-        "id": "minecraft:string",
-        "amount": 6
       }
     ],
     "2": [
@@ -27,15 +27,15 @@
       },
       {
         "id": "minecraft:diamond",
-        "amount": 1
+        "amount": 3
       },
       {
-        "id": "minecraft:slime_ball",
-        "amount": 7
+        "id": "minecraft:quartz",
+        "amount": 14
       },
       {
-        "id": "minecraft:string",
-        "amount": 12
+        "id": "minecraft:amethyst_shard",
+        "amount": 6
       }
     ],
     "3": [
@@ -45,15 +45,15 @@
       },
       {
         "id": "minecraft:diamond",
-        "amount": 1
+        "amount": 6
       },
       {
-        "id": "minecraft:slime_ball",
-        "amount": 12
+        "id": "minecraft:quartz",
+        "amount": 24
       },
       {
-        "id": "minecraft:string",
-        "amount": 12
+        "id": "minecraft:amethyst_shard",
+        "amount": 7
       }
     ],
     "4": [
@@ -63,28 +63,32 @@
       },
       {
         "id": "minecraft:diamond",
-        "amount": 1
+        "amount": 9
       },
       {
-        "id": "minecraft:slime_ball",
-        "amount": 12
+        "id": "minecraft:quartz",
+        "amount": 32
       },
       {
-        "id": "minecraft:string",
-        "amount": 24
+        "id": "minecraft:amethyst_shard",
+        "amount": 7
       }
     ],
     "5": [
       {
         "id": "minecraft:redstone",
-        "amount": 32
+        "amount": 48
       },
       {
         "id": "minecraft:diamond",
-        "amount": 1
+        "amount": 12
       },
       {
-        "id": "minecraft:firework_rocket",
+        "id": "minecraft:quartz",
+        "amount": 36
+      },
+      {
+        "id": "minecraft:amethyst_shard",
         "amount": 12
       }
     ]
