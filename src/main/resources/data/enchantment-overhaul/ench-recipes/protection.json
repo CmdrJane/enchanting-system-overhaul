@@ -41,7 +41,7 @@
       },
       {
         "id": "minecraft:diamond",
-        "amount": 8
+        "amount": 12
       }
     ],
     "4": [
@@ -51,7 +51,7 @@
       },
       {
         "id": "minecraft:diamond",
-        "amount": 12
+        "amount": 24
       },
       {
         "id": "minecraft:amethyst_shard",
