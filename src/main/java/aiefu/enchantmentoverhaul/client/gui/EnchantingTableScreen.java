@@ -32,6 +32,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
@@ -346,7 +347,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 } else {
                     Item item;
                     CompoundTag tag = null;
-                    int amount = 0;
+                    int amount;
                     if(data.itemList != null){
                         if(data.applicableItems.isEmpty()) continue;
                         if(bl){
@@ -376,6 +377,15 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                         ItemStack refStack = new ItemStack(item, 1);
                         refStack.setTag(tag);
                         itemName = Component.translatable(refStack.getDescriptionId());
+                        if(item instanceof PotionItem){
+                            String potion_id = tag.getString("Potion");
+                            if(potion_id.contains("strong")){
+                                itemName.append(Component.translatable("enchantmentoverhaul.potionstrong"));
+                            } else if(potion_id.contains("long")){
+                                itemName.append(Component.translatable("enchantmentoverhaul.potionlong"));
+                            }
+
+                        }
                     } else itemName = Component.translatable(item.getDescriptionId());
                     itemName.append(": ").append(Component.literal(String.valueOf(amount)).withStyle(ChatFormatting.AQUA)).withStyle(ChatFormatting.GOLD);
                 }

@@ -103,6 +103,11 @@ public class EnchantmentOverhaulClient implements ClientModInitializer {
                                 ids.amount = buf.readVarInt();
                                 String tag = interner.intern(buf.readUtf());
                                 ids.tag = tag == n ? null : tag;
+                                String rid = interner.intern(buf.readUtf());
+                                ids.remainderId = rid == n ? null : rid;
+                                ids.remainderAmount = buf.readVarInt();
+                                String rtag = interner.intern(buf.readUtf());
+                                ids.remainderTag = rtag == n ? null : rtag;
                                 idsArr[m] = ids;
                             }
                             data.itemArray = idsArr;

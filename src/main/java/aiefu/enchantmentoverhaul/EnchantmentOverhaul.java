@@ -157,6 +157,11 @@ public class EnchantmentOverhaul implements ModInitializer {
 								buf.writeVarInt(ds.amount);
 								String tag = ds.tag == null ? n : ds.tag;
 								buf.writeUtf(tag);
+								String rid = ds.remainderId == null ? n : ds.remainderId;
+								buf.writeUtf(rid);
+								buf.writeVarInt(ds.remainderAmount);
+								String rtag = ds.remainderTag == null ? n : ds.remainderTag;
+								buf.writeUtf(rtag);
 							}
 						} else buf.writeBoolean(false);
 

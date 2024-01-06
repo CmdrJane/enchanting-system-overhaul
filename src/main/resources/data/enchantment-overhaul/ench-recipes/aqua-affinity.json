@@ -16,10 +16,20 @@
         "amount": 6
       },
       {
-        "id": "minecraft:potion",
-        "amount": 1,
-        "tag": "{Potion: \"minecraft:water_breathing\"}",
-        "remainderId": "minecraft:glass_bottle"
+        "itemArray": [
+          {
+            "id": "minecraft:potion",
+            "amount": 1,
+            "tag": "{Potion: \"minecraft:water_breathing\"}",
+            "remainderId": "minecraft:glass_bottle"
+          },
+          {
+            "id": "minecraft:potion",
+            "amount": 1,
+            "tag": "{Potion: \"minecraft:long_water_breathing\"}",
+            "remainderId": "minecraft:glass_bottle"
+          }
+        ]
       }
     ]
   }

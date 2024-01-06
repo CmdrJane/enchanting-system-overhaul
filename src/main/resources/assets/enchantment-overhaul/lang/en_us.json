@@ -5,6 +5,8 @@
   "enchantmentoverhaul.slot" : "Slot %s :",
   "enchantmentoverhaul.emptyitem" : "Empty",
   "enchantmentoverhaul.enchantmentsempty" : "You did not learn any enchantments",
+  "enchantmentoverhaul.potionstrong" : "(Strong)",
+  "enchantmentoverhaul.potionlong" : "(Long)",
   "enchantmentoverhaul.search" : "Search",
   "enchantmentoverhaul.enchantmentsleft" : "Enchantments left: %d",
   "enchantmentoverhaul.absorbingknowledge" : "Glyphs imbued with magical power disappear from the book as you absorb their power",

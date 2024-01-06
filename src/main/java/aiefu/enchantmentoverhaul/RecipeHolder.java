@@ -198,6 +198,18 @@ public class RecipeHolder {
                             throw new RuntimeException(e);
                         }
                     }
+                    if(data.remainderId != null){
+                        data.rItem = BuiltInRegistries.ITEM.get(new ResourceLocation(data.remainderId));
+                        if(data.rItem == Items.AIR) throw new ItemDoesNotExistException("Remainder item id " + data.remainderId + " not found in game registry for enchantment recipe " + eid);
+                        if(data.remainderTag != null){
+                            try {
+                                data.rTag = new TagParser(new StringReader(data.remainderTag)).readStruct();
+                            } catch (CommandSyntaxException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
                     this.itemList.add(data);
                     this.arrayOverride = true;
                 }
@@ -220,21 +232,21 @@ public class RecipeHolder {
                         e.printStackTrace();
                     }
                 }
-            }
-
-            if(this.remainderId != null){
-                if(!this.remainderId.isEmpty() && !this.remainderId.isBlank() && !this.remainderId.equalsIgnoreCase("empty")){
-                    this.remainderItem = BuiltInRegistries.ITEM.get(new ResourceLocation(this.remainderId));
-                    if(remainderItem == Items.AIR) throw new ItemDoesNotExistException("Remainder item id " + this.remainderId + " not found in game registry for enchantment recipe " + eid);
-                } else remainderEmpty = true;
-            }
-            if(this.remainderTag != null){
-                try {
-                    this.remainderCompoundTag = new TagParser(new StringReader(remainderTag)).readStruct();
-                } catch (CommandSyntaxException e) {
-                    e.printStackTrace();
+                if(this.remainderId != null){
+                    if(!this.remainderId.isEmpty() && !this.remainderId.isBlank() && !this.remainderId.equalsIgnoreCase("empty")){
+                        this.remainderItem = BuiltInRegistries.ITEM.get(new ResourceLocation(this.remainderId));
+                        if(remainderItem == Items.AIR) throw new ItemDoesNotExistException("Remainder item id " + this.remainderId + " not found in game registry for enchantment recipe " + eid);
+                    } else remainderEmpty = true;
+                    if(this.remainderTag != null){
+                        try {
+                            this.remainderCompoundTag = new TagParser(new StringReader(remainderTag)).readStruct();
+                        } catch (CommandSyntaxException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             }
+
         }
 
         public @Nullable ItemStack getRemainderForStack(ItemStack stack){
@@ -270,6 +282,9 @@ public class RecipeHolder {
                 for (ItemDataSimple ids : itemList){
                     if(ids.item == stack.getItem()){
                         if(stack.getCount() >= ids.amount && testTag(stack, ids.compoundTag)){
+                            this.remainderItem = ids.rItem;
+                            this.remainderCompoundTag = ids.rTag;
+                            this.remainderAmount = ids.remainderAmount;
                             return true;
                         }
                     }
@@ -317,10 +332,18 @@ public class RecipeHolder {
     }
     public static class ItemDataSimple {
         public transient Item item;
+        public transient Item rItem;
         public transient CompoundTag compoundTag;
+        public transient CompoundTag rTag;
         public String id;
         public String tag;
         public int amount;
+        public String remainderId;
+
+        public int remainderAmount;
+
+        public String remainderTag;
+
 
         public ItemDataSimple() {
         }
