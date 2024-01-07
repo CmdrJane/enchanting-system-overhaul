@@ -29,6 +29,6 @@ public class ConfigurationFile {
     }
 
     public static ConfigurationFile getDefault(){
-        return new ConfigurationFile(4, 2, 3, false, 1, 1);
+        return new ConfigurationFile(3, 2, 3, true, 1, 1);
     }
 }

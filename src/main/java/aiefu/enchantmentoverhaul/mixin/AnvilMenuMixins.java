@@ -17,7 +17,9 @@ public abstract class AnvilMenuMixins extends ItemCombinerMenu {
         super(type, containerId, playerInventory, access);
     }
 
-    @ModifyVariable(method = "createResult", at = @At(value = "LOAD"), name = "bl4")
+    /* name = bl4 in dev, $$22 1.20.1 obfuscated */
+    @SuppressWarnings("all")
+    @ModifyVariable(method = "createResult", name = "$$22", at = @At(value = "LOAD"))
     private boolean disableEnchantCombinerFuncEOVR(boolean bl){
         return this.player.getAbilities().instabuild;
     }
