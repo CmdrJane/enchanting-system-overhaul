@@ -2,17 +2,17 @@
 	"schemaVersion": 1,
 	"id": "enchanting-overhaul",
 	"version": "${version}",
-	"name": "Enchantment Overhaul",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Enchanting Overhaul",
+	"description": "Overhauls enchanting system. No more RNG and XP grinding (just a lot of exploration instead)",
 	"authors": [
-		"Me!"
+		"Aiefu"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/CmdrJane/enchanting-overhaul"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/enchantment-overhaul/icon.png",
+	"icon": "assets/enchanting-overhaul/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [

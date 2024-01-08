@@ -68,7 +68,6 @@ public class EnchantingOverhaul implements ModInitializer {
 			public CompletableFuture<Void> apply(Map<ResourceLocation, Resource> data, ResourceManager manager, ProfilerFiller profiler, Executor executor) {
 				return CompletableFuture.runAsync(() -> {
 					EnchantingOverhaul.recipeMap.clear();
-					Gson gson = new Gson();
 					data.forEach((key, value) -> {
 						try {
 							gson.fromJson(value.openAsReader(), RecipeHolder.class).processData();
@@ -182,5 +181,9 @@ public class EnchantingOverhaul implements ModInitializer {
 
 	public void readConfig() throws FileNotFoundException {
 		EnchantingOverhaul.config = gson.fromJson(new FileReader("./config/enchantment-overhaul/config.json"), ConfigurationFile.class);
+	}
+
+	public static Gson getGson(){
+		return gson;
 	}
 }

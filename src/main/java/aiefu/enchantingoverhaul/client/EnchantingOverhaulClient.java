@@ -5,60 +5,96 @@ import aiefu.enchantingoverhaul.EnchantingOverhaul;
 import aiefu.enchantingoverhaul.RecipeHolder;
 import aiefu.enchantingoverhaul.client.gui.EnchantingTableScreen;
 import aiefu.enchantingoverhaul.exception.ItemDoesNotExistException;
+import aiefu.enchantingoverhaul.mixin.IClientLanguageAcc;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
+import com.google.gson.reflect.TypeToken;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.ResourceReloadListenerKeys;
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.Enchantment;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 public class EnchantingOverhaulClient implements ClientModInitializer {
-    private static Function<Enchantment, MutableComponent> getDescription;
     private static final ConcurrentHashMap<Enchantment, MutableComponent> descriptions = new ConcurrentHashMap<>();
+
+    private static final ResourceLocation language_reload_listener = new ResourceLocation(EnchantingOverhaul.MOD_ID, "language_reload_listener");
+
+    private static boolean ench_desc_loaded = false;
 
     @Override
     public void onInitializeClient() {
         MenuScreens.register(EnchantingOverhaul.enchantment_menu_ovr, EnchantingTableScreen::new);
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             if(FabricLoaderImpl.INSTANCE.isModLoaded("enchdesc")){
-                getDescription = EnchDescCompat::getEnchantmentDescription;
-            } else {
-                BuiltInRegistries.ENCHANTMENT.entrySet().forEach( e -> {
-                    //copy-paste from enchantment description mod in case it's not present
-                    String ed = e.getValue().getDescriptionId() + ".desc";
-                    Language language = Language.getInstance();
-                    if (!language.has(ed) && language.has(ed + ".description")) {
-
-                        ed = ed + ".description";
-                    }
-                    descriptions.put(e.getValue(), Component.translatable(ed));
-                });
-                getDescription = descriptions::get;
+                ench_desc_loaded = true;
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(EnchantingOverhaul.s2c_data_sync, (client, handler, buf, responseSender) -> {
             this.readData(buf);
         });
+
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
+            @Override
+               public ResourceLocation getFabricId() {
+                return language_reload_listener;
+            }
+
+            @Override
+            public Collection<ResourceLocation> getFabricDependencies() {
+                return Collections.singletonList(ResourceReloadListenerKeys.LANGUAGES);
+            }
+
+            @Override
+            public void onResourceManagerReload(ResourceManager resourceManager) {
+                Optional<Resource> optional = resourceManager.getResource(new ResourceLocation(EnchantingOverhaul.MOD_ID,"ench-desc/" +Minecraft.getInstance().getLanguageManager().getSelected() + "_ench_desc.json"));
+                if(optional.isPresent()){
+                    if(Language.getInstance() instanceof IClientLanguageAcc lacc){
+                        Map<String, String> lmap = lacc.getLanguageMap();
+                        try {
+                            Map<String, String> attachment = EnchantingOverhaul.getGson().fromJson(optional.get().openAsReader(), new TypeToken<HashMap<String, String>>(){}.getType());
+                            attachment.putAll(lmap);
+                            lacc.setLanguageMap(ImmutableMap.copyOf(attachment));
+                        } catch (IOException e) {
+                                throw new RuntimeException(e);
+                        }
+                    }
+                }
+            }
+        });
     }
 
     public static MutableComponent getEnchantmentDescription(Enchantment e){
-        return getDescription.apply(e);
+        return ench_desc_loaded ? EnchDescCompat.getEnchantmentDescription(e) : descriptions.computeIfAbsent(e, (enchantment) -> {
+            String ed = enchantment.getDescriptionId() + ".desc";
+            Language language = Language.getInstance();
+            if (!language.has(ed) && language.has(ed + ".description")) {
+
+                ed = ed + ".description";
+            }
+           return Component.translatable(ed).withStyle(ChatFormatting.DARK_GRAY);
+        });
     }
 
     public static Player getClientPlayer(){
