@@ -282,6 +282,7 @@ public class RecipeHolder {
                 for (ItemDataSimple ids : itemList){
                     if(ids.item == stack.getItem()){
                         if(stack.getCount() >= ids.amount && testTag(stack, ids.compoundTag)){
+                            this.amount = ids.amount;
                             this.remainderItem = ids.rItem;
                             this.remainderCompoundTag = ids.rTag;
                             this.remainderAmount = ids.remainderAmount;
