@@ -1,4 +1,4 @@
-package aiefu.enchantmentoverhaul;
+package aiefu.enchantingoverhaul;
 
 import net.minecraft.world.item.enchantment.Enchantment;
 

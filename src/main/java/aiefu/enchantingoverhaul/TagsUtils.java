@@ -1,4 +1,4 @@
-package aiefu.enchantmentoverhaul;
+package aiefu.enchantingoverhaul;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;

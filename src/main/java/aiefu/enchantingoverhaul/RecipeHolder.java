@@ -1,6 +1,6 @@
-package aiefu.enchantmentoverhaul;
+package aiefu.enchantingoverhaul;
 
-import aiefu.enchantmentoverhaul.exception.ItemDoesNotExistException;
+import aiefu.enchantingoverhaul.exception.ItemDoesNotExistException;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -49,13 +49,13 @@ public class RecipeHolder {
             }
         });
         this.ench_location = new ResourceLocation(enchantment_id);
-        List<RecipeHolder> list = EnchantmentOverhaul.recipeMap.get(ench_location);
+        List<RecipeHolder> list = EnchantingOverhaul.recipeMap.get(ench_location);
         if(list != null){
             list.add(this);
         } else {
             list = new ArrayList<>();
             list.add(this);
-            EnchantmentOverhaul.recipeMap.put(ench_location, list);
+            EnchantingOverhaul.recipeMap.put(ench_location, list);
         }
     }
 
@@ -194,7 +194,7 @@ public class RecipeHolder {
                         try {
                             data.compoundTag = new TagParser(new StringReader(data.tag)).readStruct();
                         } catch (CommandSyntaxException e) {
-                            EnchantmentOverhaul.LOGGER.error("Unable to parse tag array for enchantment recipe " + eid);
+                            EnchantingOverhaul.LOGGER.error("Unable to parse tag array for enchantment recipe " + eid);
                             throw new RuntimeException(e);
                         }
                     }

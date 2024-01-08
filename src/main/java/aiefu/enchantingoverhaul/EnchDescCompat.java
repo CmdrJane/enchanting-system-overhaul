@@ -1,4 +1,4 @@
-package aiefu.enchantmentoverhaul;
+package aiefu.enchantingoverhaul;
 
 import net.darkhax.enchdesc.DescriptionManager;
 import net.minecraft.network.chat.MutableComponent;

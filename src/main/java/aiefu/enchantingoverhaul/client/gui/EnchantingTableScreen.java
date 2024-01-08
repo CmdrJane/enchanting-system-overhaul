@@ -1,10 +1,10 @@
-package aiefu.enchantmentoverhaul.client.gui;
+package aiefu.enchantingoverhaul.client.gui;
 
-import aiefu.enchantmentoverhaul.ConfigurationFile;
-import aiefu.enchantmentoverhaul.EnchantmentOverhaul;
-import aiefu.enchantmentoverhaul.OverhauledEnchantmentMenu;
-import aiefu.enchantmentoverhaul.RecipeHolder;
-import aiefu.enchantmentoverhaul.client.EnchantmentOverhaulClient;
+import aiefu.enchantingoverhaul.ConfigurationFile;
+import aiefu.enchantingoverhaul.EnchantingOverhaul;
+import aiefu.enchantingoverhaul.OverhauledEnchantmentMenu;
+import aiefu.enchantingoverhaul.RecipeHolder;
+import aiefu.enchantingoverhaul.client.EnchantingOverhaulClient;
 import com.google.common.collect.Maps;
 import io.netty.buffer.Unpooled;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -40,7 +40,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnchantmentMenu> {
-    public static final ResourceLocation ENCHANTING_BACKGROUND_TEXTURE = new ResourceLocation(EnchantmentOverhaul.MOD_ID,"textures/gui/ench_screen.png");
+    public static final ResourceLocation ENCHANTING_BACKGROUND_TEXTURE = new ResourceLocation(EnchantingOverhaul.MOD_ID,"textures/gui/ench_screen.png");
 
     public static final Style STYLE = Style.EMPTY.withColor(TextColor.fromRgb(5636095));
 
@@ -82,7 +82,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeUtf(Objects.requireNonNull(BuiltInRegistries.ENCHANTMENT.getKey(selectedEnchantment)).toString());
             buf.writeVarInt(ordinal);
-            ClientPlayNetworking.send(EnchantmentOverhaul.c2s_enchant_item, buf);
+            ClientPlayNetworking.send(EnchantingOverhaul.c2s_enchant_item, buf);
         }));
         this.cancelButton = this.addWidget(new CustomEnchantingButton(leftPos + 130, topPos + 92, 30, 12, CommonComponents.GUI_NO, button -> {
             this.switchOverlayState(true);
@@ -266,7 +266,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             this.displayMsg = Component.translatable("enchantmentoverhaul.enchantmentsleft", i);
         }
 
-        ConfigurationFile cfg = EnchantmentOverhaul.config;
+        ConfigurationFile cfg = EnchantingOverhaul.config;
 
         HashSet<Enchantment> applicableCurses = bl ? menu.curses : this.filterToNewSet(menu.curses, e -> e.canEnchant(stack));
         if(ec >= ml){
@@ -290,7 +290,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         for (Enchantment enchantment : el) {
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
-                List<RecipeHolder> holders = EnchantmentOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
+                List<RecipeHolder> holders = EnchantingOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
                 if(holders != null){
                     int ordinal = 0;
                     for (RecipeHolder holder : holders){
@@ -336,7 +336,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         MutableComponent c = translatable.copy();
         c.withStyle(ChatFormatting.AQUA);
         c.append(CommonComponents.NEW_LINE);
-        c.append(EnchantmentOverhaulClient.getEnchantmentDescription(enchantment));
+        c.append(EnchantingOverhaulClient.getEnchantmentDescription(enchantment));
         if(holder != null){
             c.append(CommonComponents.NEW_LINE);
             c.append(Component.translatable("enchantmentoverhaul.requires").withStyle(ChatFormatting.GRAY));
@@ -408,12 +408,12 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     }
 
     public int getEnchantmentsLimit(int curses){
-        ConfigurationFile cfg = EnchantmentOverhaul.config;
+        ConfigurationFile cfg = EnchantingOverhaul.config;
         return cfg.enableCursesAmplifier ? cfg.maxEnchantments + Math.min(curses, cfg.maxCurses) * cfg.enchantmentLimitIncreasePerCurse : cfg.maxEnchantments;
     }
 
     public int getCurrentEnchantmentsCount(int appliedEnchantments, int curses){
-        ConfigurationFile cfg = EnchantmentOverhaul.config;
+        ConfigurationFile cfg = EnchantingOverhaul.config;
         return cfg.enableCursesAmplifier ? appliedEnchantments - curses : appliedEnchantments;
     }
 

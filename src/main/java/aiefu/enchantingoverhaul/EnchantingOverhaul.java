@@ -1,4 +1,4 @@
-package aiefu.enchantmentoverhaul;
+package aiefu.enchantingoverhaul;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -35,9 +35,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
-public class EnchantmentOverhaul implements ModInitializer {
+public class EnchantingOverhaul implements ModInitializer {
 
-	public static final String MOD_ID = "enchantment-overhaul";
+	public static final String MOD_ID = "enchanting-overhaul";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	public static final ResourceLocation c2s_enchant_item = new ResourceLocation(MOD_ID, "c2s_enchant_item");
@@ -67,7 +67,7 @@ public class EnchantmentOverhaul implements ModInitializer {
 			@Override
 			public CompletableFuture<Void> apply(Map<ResourceLocation, Resource> data, ResourceManager manager, ProfilerFiller profiler, Executor executor) {
 				return CompletableFuture.runAsync(() -> {
-					EnchantmentOverhaul.recipeMap.clear();
+					EnchantingOverhaul.recipeMap.clear();
 					Gson gson = new Gson();
 					data.forEach((key, value) -> {
 						try {
@@ -104,7 +104,7 @@ public class EnchantmentOverhaul implements ModInitializer {
 		ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> {
 			if(!server.isDedicatedServer()){
 				server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
-				server.getPlayerList().getPlayers().forEach(EnchantmentOverhaul::syncData);
+				server.getPlayerList().getPlayers().forEach(EnchantingOverhaul::syncData);
 			}
 		});
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
@@ -181,6 +181,6 @@ public class EnchantmentOverhaul implements ModInitializer {
 	}
 
 	public void readConfig() throws FileNotFoundException {
-		EnchantmentOverhaul.config = gson.fromJson(new FileReader("./config/enchantment-overhaul/config.json"), ConfigurationFile.class);
+		EnchantingOverhaul.config = gson.fromJson(new FileReader("./config/enchantment-overhaul/config.json"), ConfigurationFile.class);
 	}
 }

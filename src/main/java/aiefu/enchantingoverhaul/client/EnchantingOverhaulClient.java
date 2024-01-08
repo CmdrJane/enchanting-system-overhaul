@@ -1,10 +1,10 @@
-package aiefu.enchantmentoverhaul.client;
+package aiefu.enchantingoverhaul.client;
 
-import aiefu.enchantmentoverhaul.EnchDescCompat;
-import aiefu.enchantmentoverhaul.EnchantmentOverhaul;
-import aiefu.enchantmentoverhaul.RecipeHolder;
-import aiefu.enchantmentoverhaul.client.gui.EnchantingTableScreen;
-import aiefu.enchantmentoverhaul.exception.ItemDoesNotExistException;
+import aiefu.enchantingoverhaul.EnchDescCompat;
+import aiefu.enchantingoverhaul.EnchantingOverhaul;
+import aiefu.enchantingoverhaul.RecipeHolder;
+import aiefu.enchantingoverhaul.client.gui.EnchantingTableScreen;
+import aiefu.enchantingoverhaul.exception.ItemDoesNotExistException;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -28,13 +28,13 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-public class EnchantmentOverhaulClient implements ClientModInitializer {
+public class EnchantingOverhaulClient implements ClientModInitializer {
     private static Function<Enchantment, MutableComponent> getDescription;
     private static final ConcurrentHashMap<Enchantment, MutableComponent> descriptions = new ConcurrentHashMap<>();
 
     @Override
     public void onInitializeClient() {
-        MenuScreens.register(EnchantmentOverhaul.enchantment_menu_ovr, EnchantingTableScreen::new);
+        MenuScreens.register(EnchantingOverhaul.enchantment_menu_ovr, EnchantingTableScreen::new);
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             if(FabricLoaderImpl.INSTANCE.isModLoaded("enchdesc")){
                 getDescription = EnchDescCompat::getEnchantmentDescription;
@@ -52,7 +52,7 @@ public class EnchantmentOverhaulClient implements ClientModInitializer {
                 getDescription = descriptions::get;
             }
         });
-        ClientPlayNetworking.registerGlobalReceiver(EnchantmentOverhaul.s2c_data_sync, (client, handler, buf, responseSender) -> {
+        ClientPlayNetworking.registerGlobalReceiver(EnchantingOverhaul.s2c_data_sync, (client, handler, buf, responseSender) -> {
             this.readData(buf);
         });
     }
@@ -135,6 +135,6 @@ public class EnchantmentOverhaulClient implements ClientModInitializer {
             }
             map.put(loc, holders);
         }
-        Minecraft.getInstance().execute(() -> EnchantmentOverhaul.recipeMap = map);
+        Minecraft.getInstance().execute(() -> EnchantingOverhaul.recipeMap = map);
     }
 }

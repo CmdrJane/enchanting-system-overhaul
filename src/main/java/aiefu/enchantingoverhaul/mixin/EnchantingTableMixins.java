@@ -1,4 +1,4 @@
-package aiefu.enchantmentoverhaul.mixin;
+package aiefu.enchantingoverhaul.mixin;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.MenuProvider;

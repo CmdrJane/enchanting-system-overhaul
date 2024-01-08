@@ -1,6 +1,6 @@
-package aiefu.enchantmentoverhaul;
+package aiefu.enchantingoverhaul;
 
-import aiefu.enchantmentoverhaul.client.EnchantmentOverhaulClient;
+import aiefu.enchantingoverhaul.client.EnchantingOverhaulClient;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -44,7 +44,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
 
     protected SimpleContainer tableInv;
     public OverhauledEnchantmentMenu(int syncId, Inventory inventory, FriendlyByteBuf buf) {
-        this(syncId, inventory, ContainerLevelAccess.NULL, EnchantmentOverhaulClient.getClientPlayer());
+        this(syncId, inventory, ContainerLevelAccess.NULL, EnchantingOverhaulClient.getClientPlayer());
         this.isClientSide = true;
         List<Enchantment> list = new ArrayList<>();
         int r = buf.readInt();
@@ -61,7 +61,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
 
     }
     public OverhauledEnchantmentMenu(int syncId, Inventory inventory, ContainerLevelAccess access, Player owner) {
-        super(EnchantmentOverhaul.enchantment_menu_ovr, syncId);
+        super(EnchantingOverhaul.enchantment_menu_ovr, syncId);
         this.access = access;
         this.tableInv = new SimpleContainer(5){
             @Override
@@ -162,7 +162,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 } else {
                     Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
                     if (target != null) {
-                        if(target.isCurse() && !EnchantmentOverhaul.config.enableCursesAmplifier){
+                        if(target.isCurse() && !EnchantingOverhaul.config.enableCursesAmplifier){
                             return;
                         }
 
@@ -172,7 +172,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                         for (Enchantment e : enchs.keySet()){
                             if(e.isCurse()) curses++;
                         }
-                        if(target.canEnchant(stack) && (enchs.containsKey(target) || target.isCurse() && curses < EnchantmentOverhaul.config.maxCurses
+                        if(target.canEnchant(stack) && (enchs.containsKey(target) || target.isCurse() && curses < EnchantingOverhaul.config.maxCurses
                                 || this.getCurrentLimit(enchs.keySet().size(), curses) < this.getEnchantmentsLimit(curses))) {
 
                             for (Enchantment e : enchs.keySet()) {
@@ -185,7 +185,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                             if (l != null) {
                                 targetLevel = l + 1;
                             }
-                            List<RecipeHolder> holders = EnchantmentOverhaul.recipeMap.get(location);
+                            List<RecipeHolder> holders = EnchantingOverhaul.recipeMap.get(location);
                             if (holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()) {
                                 RecipeHolder holder = holders.get(ordinal);
                                 if (player.getAbilities().instabuild || targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
@@ -204,12 +204,12 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     }
 
     public int getEnchantmentsLimit(int curses){
-        ConfigurationFile cfg = EnchantmentOverhaul.config;
+        ConfigurationFile cfg = EnchantingOverhaul.config;
         return cfg.enableCursesAmplifier ? cfg.maxEnchantments + Math.min(curses, cfg.maxCurses)* cfg.enchantmentLimitIncreasePerCurse : cfg.maxEnchantments;
     }
 
     public int getCurrentLimit(int appliedEnchantments, int curses){
-        ConfigurationFile cfg = EnchantmentOverhaul.config;
+        ConfigurationFile cfg = EnchantingOverhaul.config;
         return cfg.enableCursesAmplifier ? appliedEnchantments - curses : appliedEnchantments;
     }
 
@@ -225,7 +225,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         if(target != null){
             ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
             stack.getOrCreateTag();
-            List<RecipeHolder> holders = EnchantmentOverhaul.recipeMap.get(location);
+            List<RecipeHolder> holders = EnchantingOverhaul.recipeMap.get(location);
             if(holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()){
                 RecipeHolder holder = holders.get(ordinal);
                 if(holder.checkAndConsume(this.tableInv, 1)){

@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "enchantment-overhaul",
+	"id": "enchanting-overhaul",
 	"version": "${version}",
 	"name": "Enchantment Overhaul",
 	"description": "This is an example description! Tell everyone what your mod is about!",
@@ -16,10 +16,10 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"aiefu.enchantmentoverhaul.EnchantmentOverhaul"
+          "aiefu.enchantingoverhaul.EnchantingOverhaul"
 		],
 		"client": [
-			"aiefu.enchantmentoverhaul.client.EnchantmentOverhaulClient"
+			"aiefu.enchantingoverhaul.client.EnchantingOverhaulClient"
 		]
 	},
 	"mixins": [

@@ -1,4 +1,4 @@
-package aiefu.enchantmentoverhaul.client.gui;
+package aiefu.enchantingoverhaul.client.gui;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractScrollWidget;

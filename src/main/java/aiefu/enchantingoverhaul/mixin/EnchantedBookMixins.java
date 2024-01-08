@@ -1,7 +1,7 @@
-package aiefu.enchantmentoverhaul.mixin;
+package aiefu.enchantingoverhaul.mixin;
 
-import aiefu.enchantmentoverhaul.EnchantmentOverhaul;
-import aiefu.enchantmentoverhaul.IServerPlayerAcc;
+import aiefu.enchantingoverhaul.EnchantingOverhaul;
+import aiefu.enchantingoverhaul.IServerPlayerAcc;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -55,7 +55,7 @@ public abstract class EnchantedBookMixins extends Item {
                             .withStyle(ChatFormatting.GOLD), false);
                 }
                 for (Enchantment e: msg) {
-                    if(e.isCurse() && !EnchantmentOverhaul.config.enableCursesAmplifier){
+                    if(e.isCurse() && !EnchantingOverhaul.config.enableCursesAmplifier){
                         continue;
                     }
                     MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);

@@ -1,6 +1,6 @@
-package aiefu.enchantmentoverhaul.mixin;
+package aiefu.enchantingoverhaul.mixin;
 
-import aiefu.enchantmentoverhaul.EnchantmentOverhaul;
+import aiefu.enchantingoverhaul.EnchantingOverhaul;
 import com.google.common.collect.Maps;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -31,7 +31,7 @@ public class SetEnchantmentsFuncMixins  {
         List<Enchantment> list = new ArrayList<>(enchs.keySet());
         Collections.shuffle(list);
         int size = Math.min(list.size(), stack.getItem() == Items.ENCHANTED_BOOK ?
-                EnchantmentOverhaul.config.maxEnchantmentsOnLootBooks : EnchantmentOverhaul.config.maxEnchantmentsOnLootItems);
+                EnchantingOverhaul.config.maxEnchantmentsOnLootBooks : EnchantingOverhaul.config.maxEnchantmentsOnLootItems);
         for (int i = 0; i < size; i++) {
             Enchantment e = list.get(i);
             enchantments.put(e, enchs.get(e));

@@ -1,4 +1,4 @@
-package aiefu.enchantmentoverhaul.client.gui;
+package aiefu.enchantingoverhaul.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
