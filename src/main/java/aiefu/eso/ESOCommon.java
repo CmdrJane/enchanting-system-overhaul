@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -112,6 +113,9 @@ public class ESOCommon implements ModInitializer {
 			if(!server.isDedicatedServer()){
 				server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
 			}
+		});
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+			ESOCommands.register(dispatcher);
 		});
 		LOGGER.info("Hello Fabric world!");
 	}
