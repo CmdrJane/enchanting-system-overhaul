@@ -1,6 +1,6 @@
-package aiefu.enchantingoverhaul.mixin;
+package aiefu.eso.mixin;
 
-import aiefu.enchantingoverhaul.EnchantingOverhaul;
+import aiefu.eso.ESOCommon;
 import com.google.common.collect.Maps;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -31,7 +31,7 @@ public class SetEnchantmentsFuncMixins  {
         List<Enchantment> list = new ArrayList<>(enchs.keySet());
         Collections.shuffle(list);
         int size = Math.min(list.size(), stack.getItem() == Items.ENCHANTED_BOOK ?
-                EnchantingOverhaul.config.maxEnchantmentsOnLootBooks : EnchantingOverhaul.config.maxEnchantmentsOnLootItems);
+                ESOCommon.config.maxEnchantmentsOnLootBooks : ESOCommon.config.maxEnchantmentsOnLootItems);
         for (int i = 0; i < size; i++) {
             Enchantment e = list.get(i);
             enchantments.put(e, enchs.get(e));

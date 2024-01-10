@@ -1,4 +1,4 @@
-package aiefu.enchantingoverhaul.mixin;
+package aiefu.eso.mixin;
 
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AnvilMenu;
@@ -19,7 +19,7 @@ public abstract class AnvilMenuMixins extends ItemCombinerMenu {
 
     /* name = bl4 in dev, $$22 1.20.1 obfuscated */
     @SuppressWarnings("all")
-    @ModifyVariable(method = "createResult", name = "$$22", at = @At(value = "LOAD"))
+    @ModifyVariable(method = "createResult", name = "bl4", at = @At(value = "LOAD"))
     private boolean disableEnchantCombinerFuncEOVR(boolean bl){
         return this.player.getAbilities().instabuild;
     }

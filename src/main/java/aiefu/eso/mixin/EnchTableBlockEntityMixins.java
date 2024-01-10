@@ -1,7 +1,7 @@
-package aiefu.enchantingoverhaul.mixin;
+package aiefu.eso.mixin;
 
-import aiefu.enchantingoverhaul.IServerPlayerAcc;
-import aiefu.enchantingoverhaul.OverhauledEnchantmentMenu;
+import aiefu.eso.IServerPlayerAcc;
+import aiefu.eso.OverhauledEnchantmentMenu;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;

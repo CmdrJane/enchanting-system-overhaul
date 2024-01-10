@@ -1,6 +1,6 @@
-package aiefu.enchantingoverhaul.mixin;
+package aiefu.eso.mixin;
 
-import aiefu.enchantingoverhaul.IServerPlayerAcc;
+import aiefu.eso.IServerPlayerAcc;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;

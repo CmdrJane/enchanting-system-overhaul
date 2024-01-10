@@ -1,12 +1,11 @@
-package aiefu.enchantingoverhaul.client;
+package aiefu.eso.client;
 
-import aiefu.enchantingoverhaul.EnchDescCompat;
-import aiefu.enchantingoverhaul.EnchantingOverhaul;
-import aiefu.enchantingoverhaul.RecipeHolder;
-import aiefu.enchantingoverhaul.client.gui.EnchantingTableScreen;
-import aiefu.enchantingoverhaul.exception.ItemDoesNotExistException;
-import aiefu.enchantingoverhaul.mixin.IClientLanguageAcc;
-import com.google.common.collect.ImmutableMap;
+import aiefu.eso.ESOCommon;
+import aiefu.eso.EnchDescCompat;
+import aiefu.eso.RecipeHolder;
+import aiefu.eso.client.gui.EnchantingTableScreen;
+import aiefu.eso.exception.ItemDoesNotExistException;
+import aiefu.eso.mixin.IClientLanguageAcc;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import com.google.gson.reflect.TypeToken;
@@ -36,22 +35,22 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class EnchantingOverhaulClient implements ClientModInitializer {
+public class ESOClient implements ClientModInitializer {
     private static final ConcurrentHashMap<Enchantment, MutableComponent> descriptions = new ConcurrentHashMap<>();
 
-    private static final ResourceLocation language_reload_listener = new ResourceLocation(EnchantingOverhaul.MOD_ID, "language_reload_listener");
+    private static final ResourceLocation language_reload_listener = new ResourceLocation(ESOCommon.MOD_ID, "language_reload_listener");
 
     private static boolean ench_desc_loaded = false;
 
     @Override
     public void onInitializeClient() {
-        MenuScreens.register(EnchantingOverhaul.enchantment_menu_ovr, EnchantingTableScreen::new);
+        MenuScreens.register(ESOCommon.enchantment_menu_ovr, EnchantingTableScreen::new);
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             if(FabricLoaderImpl.INSTANCE.isModLoaded("enchdesc")){
                 ench_desc_loaded = true;
             }
         });
-        ClientPlayNetworking.registerGlobalReceiver(EnchantingOverhaul.s2c_data_sync, (client, handler, buf, responseSender) -> {
+        ClientPlayNetworking.registerGlobalReceiver(ESOCommon.s2c_data_sync, (client, handler, buf, responseSender) -> {
             this.readData(buf);
         });
 
@@ -68,18 +67,19 @@ public class EnchantingOverhaulClient implements ClientModInitializer {
 
             @Override
             public void onResourceManagerReload(ResourceManager resourceManager) {
-                Optional<Resource> optional = resourceManager.getResource(new ResourceLocation(EnchantingOverhaul.MOD_ID,"ench-desc/" +Minecraft.getInstance().getLanguageManager().getSelected() + "_ench_desc.json"));
-                if(optional.isPresent()){
-                    if(Language.getInstance() instanceof IClientLanguageAcc lacc){
-                        Map<String, String> lmap = lacc.getLanguageMap();
+                List<Resource> resources = resourceManager.getResourceStack(new ResourceLocation(ESOCommon.MOD_ID,"ench-desc/" +Minecraft.getInstance().getLanguageManager().getSelected() + "_ench_desc.json"));
+                if(Language.getInstance() instanceof IClientLanguageAcc lacc){
+                    Map<String, String> lmap = lacc.getLanguageMap();
+                    HashMap<String, String> languageMap = new HashMap<>();
+                    for (Resource resource : resources){
                         try {
-                            Map<String, String> attachment = EnchantingOverhaul.getGson().fromJson(optional.get().openAsReader(), new TypeToken<HashMap<String, String>>(){}.getType());
-                            attachment.putAll(lmap);
-                            lacc.setLanguageMap(ImmutableMap.copyOf(attachment));
+                            languageMap.putAll(ESOCommon.getGson().fromJson(resource.openAsReader(), new TypeToken<HashMap<String, String>>(){}.getType()));
                         } catch (IOException e) {
-                                throw new RuntimeException(e);
+                            throw new RuntimeException(e);
                         }
                     }
+                    languageMap.putAll(lmap);
+                    lacc.setLanguageMap(languageMap);
                 }
             }
         });
@@ -171,6 +171,6 @@ public class EnchantingOverhaulClient implements ClientModInitializer {
             }
             map.put(loc, holders);
         }
-        Minecraft.getInstance().execute(() -> EnchantingOverhaul.recipeMap = map);
+        Minecraft.getInstance().execute(() -> ESOCommon.recipeMap = map);
     }
 }

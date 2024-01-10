@@ -1,4 +1,4 @@
-package aiefu.enchantingoverhaul;
+package aiefu.eso;
 
 public class ConfigurationFile {
     public int maxEnchantments;

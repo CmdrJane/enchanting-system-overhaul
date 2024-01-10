@@ -1,7 +1,7 @@
-package aiefu.enchantingoverhaul.mixin;
+package aiefu.eso.mixin;
 
-import aiefu.enchantingoverhaul.EnchantingOverhaul;
-import aiefu.enchantingoverhaul.IServerPlayerAcc;
+import aiefu.eso.ESOCommon;
+import aiefu.eso.IServerPlayerAcc;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -47,23 +47,23 @@ public abstract class EnchantedBookMixins extends Item {
             }
             if(map.size() != originalSize) {
                 EnchantmentHelper.setEnchantments(map, stack);
-                player.displayClientMessage(Component.translatable("enchantmentoverhaul.absorbingknowledge")
+                player.displayClientMessage(Component.translatable("eso.absorbingknowledge")
                         .withStyle(ChatFormatting.DARK_PURPLE), false);
                 if(map.size() == 0){
                     stack.shrink(1);
-                    player.displayClientMessage(Component.translatable("enchantmentoverhaul.booktoashes")
+                    player.displayClientMessage(Component.translatable("eso.booktoashes")
                             .withStyle(ChatFormatting.GOLD), false);
                 }
                 for (Enchantment e: msg) {
-                    if(e.isCurse() && !EnchantingOverhaul.config.enableCursesAmplifier){
+                    if(e.isCurse() && !ESOCommon.config.enableCursesAmplifier){
                         continue;
                     }
                     MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
                     c.append(Component.translatable(e.getDescriptionId()));
                     c.append(Component.literal("]"));
-                    player.displayClientMessage(Component.translatable("enchantmentoverhaul.youlearned", c).withStyle(ChatFormatting.GOLD), false);
+                    player.displayClientMessage(Component.translatable("eso.youlearned", c).withStyle(ChatFormatting.GOLD), false);
                 }
-            } else player.displayClientMessage(Component.translatable("enchantmentoverhaul.allreadylearned")
+            } else player.displayClientMessage(Component.translatable("eso.allreadylearned")
                     .withStyle(ChatFormatting.DARK_GREEN), false);
 
         }

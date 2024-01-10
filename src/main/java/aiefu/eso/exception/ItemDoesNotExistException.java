@@ -1,4 +1,4 @@
-package aiefu.enchantingoverhaul.exception;
+package aiefu.eso.exception;
 
 public class ItemDoesNotExistException extends Exception{
     public ItemDoesNotExistException(String msg) {

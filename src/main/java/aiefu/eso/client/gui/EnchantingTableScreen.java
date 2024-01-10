@@ -1,10 +1,10 @@
-package aiefu.enchantingoverhaul.client.gui;
+package aiefu.eso.client.gui;
 
-import aiefu.enchantingoverhaul.ConfigurationFile;
-import aiefu.enchantingoverhaul.EnchantingOverhaul;
-import aiefu.enchantingoverhaul.OverhauledEnchantmentMenu;
-import aiefu.enchantingoverhaul.RecipeHolder;
-import aiefu.enchantingoverhaul.client.EnchantingOverhaulClient;
+import aiefu.eso.ConfigurationFile;
+import aiefu.eso.ESOCommon;
+import aiefu.eso.OverhauledEnchantmentMenu;
+import aiefu.eso.RecipeHolder;
+import aiefu.eso.client.ESOClient;
 import com.google.common.collect.Maps;
 import io.netty.buffer.Unpooled;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -40,11 +40,11 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnchantmentMenu> {
-    public static final ResourceLocation ENCHANTING_BACKGROUND_TEXTURE = new ResourceLocation(EnchantingOverhaul.MOD_ID,"textures/gui/ench_screen.png");
+    public static final ResourceLocation ENCHANTING_BACKGROUND_TEXTURE = new ResourceLocation(ESOCommon.MOD_ID,"textures/gui/ench_screen.png");
 
     public static final Style STYLE = Style.EMPTY.withColor(TextColor.fromRgb(5636095));
 
-    public static final List<FormattedCharSequence> emptyMsg = Minecraft.getInstance().font.split(Component.translatable("enchantmentoverhaul.enchantmentsempty"), 110);
+    public static final List<FormattedCharSequence> emptyMsg = Minecraft.getInstance().font.split(Component.translatable("eso.enchantmentsempty"), 110);
 
     private static final Map<Enchantment, Integer> EMPTY_MAP = Maps.newLinkedHashMap();
 
@@ -82,7 +82,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeUtf(Objects.requireNonNull(BuiltInRegistries.ENCHANTMENT.getKey(selectedEnchantment)).toString());
             buf.writeVarInt(ordinal);
-            ClientPlayNetworking.send(EnchantingOverhaul.c2s_enchant_item, buf);
+            ClientPlayNetworking.send(ESOCommon.c2s_enchant_item, buf);
         }));
         this.cancelButton = this.addWidget(new CustomEnchantingButton(leftPos + 130, topPos + 92, 30, 12, CommonComponents.GUI_NO, button -> {
             this.switchOverlayState(true);
@@ -93,7 +93,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton.visible = overlayActive;
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
-        Component searchHint = Component.translatable("enchantmentoverhaul.search");
+        Component searchHint = Component.translatable("eso.search");
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
         this.searchFilter.setHint(searchHint);
@@ -127,10 +127,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     public void switchOverlayState(boolean bl){ //False to activate overlay, true to disable
         if(selectedEnchantment != null && !bl){
-            MutableComponent msg = Component.translatable("enchantmentoverhaul.applyench.1");
-            msg.append(Component.translatable(this.selectedEnchantment.getDescriptionId()).withStyle(STYLE));
-            msg.append(Component.translatable("enchantmentoverhaul.applyench.2"));
-            msg.append(((MutableComponent)this.menu.getTableInv().getItem(0).getDisplayName()).withStyle(STYLE));
+            MutableComponent msg = Component.translatable("eso.applyench.1",
+                    Component.translatable(this.selectedEnchantment.getDescriptionId()).withStyle(STYLE),
+                    ((MutableComponent)this.menu.getTableInv().getItem(0).getDisplayName()).withStyle(STYLE));
             this.confirmMsg = font.split(msg, 190);
         }
         this.searchFilter.active = bl;
@@ -187,7 +186,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         }
         if(enchantmentsScrollList.getEnchantments().isEmpty()){
             int i = 0;
-            int h = (48 - (font.lineHeight * emptyMsg.size() + (emptyMsg.size() - 1) * 14 - font.lineHeight)) / 2;
+            int h = (48 - (8 * emptyMsg.size() + (emptyMsg.size() - 1) * 6)) / 2;
             for (FormattedCharSequence cs : emptyMsg){
                 this.drawCenteredString(guiGraphics, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * i, 4210752, false);
                 i++;
@@ -204,9 +203,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public void renderConfirmOverlay(GuiGraphics graphics, int mx, int my, float pt){
         if(overlayActive){
             graphics.blitNineSliced(ENCHANTING_BACKGROUND_TEXTURE, leftPos + 10, topPos + 48, 200, 60, 20, 20, 140, 60, 0, 196);
-            int h = (50 - (font.lineHeight * this.confirmMsg.size() + (this.confirmMsg.size() - 1) * 14 - font.lineHeight)) / 2;
+            int h = (42 - (8* this.confirmMsg.size() + (this.confirmMsg.size() - 1) * 6)) / 2;
             for (int i = 0; i < this.confirmMsg.size(); i++) {
-                this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 48 + h + 14 * i,4210752, false);
+                this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 50 + h + 14 * i,4210752, false);
             }
         }
     }
@@ -263,10 +262,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             this.displayMsg = null;
         } else {
             int i = Math.max(ml - ec, 0);
-            this.displayMsg = Component.translatable("enchantmentoverhaul.enchantmentsleft", i);
+            this.displayMsg = Component.translatable("eso.enchantmentsleft", i);
         }
 
-        ConfigurationFile cfg = EnchantingOverhaul.config;
+        ConfigurationFile cfg = ESOCommon.config;
 
         HashSet<Enchantment> applicableCurses = bl ? menu.curses : this.filterToNewSet(menu.curses, e -> e.canEnchant(stack));
         if(ec >= ml){
@@ -290,7 +289,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         for (Enchantment enchantment : el) {
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
-                List<RecipeHolder> holders = EnchantingOverhaul.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
+                List<RecipeHolder> holders = ESOCommon.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
                 if(holders != null){
                     int ordinal = 0;
                     for (RecipeHolder holder : holders){
@@ -336,14 +335,14 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         MutableComponent c = translatable.copy();
         c.withStyle(ChatFormatting.AQUA);
         c.append(CommonComponents.NEW_LINE);
-        c.append(EnchantingOverhaulClient.getEnchantmentDescription(enchantment));
+        c.append(ESOClient.getEnchantmentDescription(enchantment));
         if(holder != null){
             c.append(CommonComponents.NEW_LINE);
-            c.append(Component.translatable("enchantmentoverhaul.requires").withStyle(ChatFormatting.GRAY));
+            c.append(Component.translatable("eso.requires").withStyle(ChatFormatting.GRAY));
             for (RecipeHolder.ItemData data : holder.levels.get(targetLevel)) {
                 MutableComponent itemName;
                 if(data.isEmpty()){
-                    itemName = Component.translatable("enchantmentoverhaul.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
+                    itemName = Component.translatable("eso.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
                 } else {
                     Item item;
                     CompoundTag tag = null;
@@ -380,9 +379,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                         if(item instanceof PotionItem){
                             String potion_id = tag.getString("Potion");
                             if(potion_id.contains("strong")){
-                                itemName.append(Component.translatable("enchantmentoverhaul.potionstrong"));
+                                itemName.append(Component.translatable("eso.potionstrong"));
                             } else if(potion_id.contains("long")){
-                                itemName.append(Component.translatable("enchantmentoverhaul.potionlong"));
+                                itemName.append(Component.translatable("eso.potionlong"));
                             }
 
                         }
@@ -408,12 +407,12 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     }
 
     public int getEnchantmentsLimit(int curses){
-        ConfigurationFile cfg = EnchantingOverhaul.config;
+        ConfigurationFile cfg = ESOCommon.config;
         return cfg.enableCursesAmplifier ? cfg.maxEnchantments + Math.min(curses, cfg.maxCurses) * cfg.enchantmentLimitIncreasePerCurse : cfg.maxEnchantments;
     }
 
     public int getCurrentEnchantmentsCount(int appliedEnchantments, int curses){
-        ConfigurationFile cfg = EnchantingOverhaul.config;
+        ConfigurationFile cfg = ESOCommon.config;
         return cfg.enableCursesAmplifier ? appliedEnchantments - curses : appliedEnchantments;
     }
 

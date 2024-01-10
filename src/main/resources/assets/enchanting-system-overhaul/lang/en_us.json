@@ -1,0 +1,15 @@
+{
+  "eso.applyench.1": "Apply %s to %s",
+  "eso.requires": "Crafting Ingredients: ",
+  "eso.slot": "Slot %s :",
+  "eso.emptyitem": "Empty",
+  "eso.enchantmentsempty": "You did not learn any enchantments",
+  "eso.potionstrong": "(Strong)",
+  "eso.potionlong": "(Long)",
+  "eso.search": "Search",
+  "eso.enchantmentsleft": "Enchantments left: %d",
+  "eso.absorbingknowledge": "Glyphs imbued with magical power disappear from the book as you absorb their power",
+  "eso.booktoashes": "Drained of magical power enchanted book crumbles to ashes in your hands",
+  "eso.allreadylearned": "You already know all secrets contained within this book",
+  "eso.youlearned": "You learned: %s"
+}

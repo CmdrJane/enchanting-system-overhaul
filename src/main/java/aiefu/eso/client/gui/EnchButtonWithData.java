@@ -1,6 +1,6 @@
-package aiefu.enchantingoverhaul.client.gui;
+package aiefu.eso.client.gui;
 
-import aiefu.enchantingoverhaul.RecipeHolder;
+import aiefu.eso.RecipeHolder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.enchantment.Enchantment;
 import org.jetbrains.annotations.Nullable;

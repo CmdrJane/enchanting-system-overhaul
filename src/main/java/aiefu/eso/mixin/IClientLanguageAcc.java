@@ -1,4 +1,4 @@
-package aiefu.enchantingoverhaul.mixin;
+package aiefu.eso.mixin;
 
 import net.minecraft.client.resources.language.ClientLanguage;
 import org.spongepowered.asm.mixin.Mixin;

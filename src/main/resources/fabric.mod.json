@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
-	"id": "enchanting-overhaul",
+	"id": "enchanting-system-overhaul",
 	"version": "${version}",
-	"name": "Enchanting Overhaul",
+	"name": "Enchanting System Overhaul",
 	"description": "Overhauls enchanting system. No more RNG and XP grinding (just a lot of exploration instead)",
 	"authors": [
 		"Aiefu"
@@ -12,18 +12,18 @@
 		"sources": "https://github.com/CmdrJane/enchanting-overhaul"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/enchanting-overhaul/icon.png",
+	"icon": "assets/enchanting-system-overhaul/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-          "aiefu.enchantingoverhaul.EnchantingOverhaul"
+			"aiefu.eso.ESOCommon"
 		],
 		"client": [
-			"aiefu.enchantingoverhaul.client.EnchantingOverhaulClient"
+			"aiefu.eso.client.ESOClient"
 		]
 	},
 	"mixins": [
-		"enchantment-overhaul.mixins.json"
+		"eso.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.14.22",

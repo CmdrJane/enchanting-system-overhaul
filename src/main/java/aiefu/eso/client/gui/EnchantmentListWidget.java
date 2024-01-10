@@ -1,4 +1,4 @@
-package aiefu.enchantingoverhaul.client.gui;
+package aiefu.eso.client.gui;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractScrollWidget;

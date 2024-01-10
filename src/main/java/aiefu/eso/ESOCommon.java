@@ -1,4 +1,4 @@
-package aiefu.enchantingoverhaul;
+package aiefu.eso;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -35,14 +35,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
-public class EnchantingOverhaul implements ModInitializer {
+public class ESOCommon implements ModInitializer {
 
-	public static final String MOD_ID = "enchanting-overhaul";
+	public static final String MOD_ID = "enchanting-system-overhaul";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	public static final ResourceLocation c2s_enchant_item = new ResourceLocation(MOD_ID, "c2s_enchant_item");
 
 	public static final ResourceLocation s2c_data_sync = new ResourceLocation(MOD_ID, "s2c_data_sync");
+
+	public static final ResourceLocation enchantment_recipe_loader = new ResourceLocation(MOD_ID,"enchantment_recipe_loader");
 
 	private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -67,7 +69,7 @@ public class EnchantingOverhaul implements ModInitializer {
 			@Override
 			public CompletableFuture<Void> apply(Map<ResourceLocation, Resource> data, ResourceManager manager, ProfilerFiller profiler, Executor executor) {
 				return CompletableFuture.runAsync(() -> {
-					EnchantingOverhaul.recipeMap.clear();
+					ESOCommon.recipeMap.clear();
 					data.forEach((key, value) -> {
 						try {
 							gson.fromJson(value.openAsReader(), RecipeHolder.class).processData();
@@ -80,7 +82,7 @@ public class EnchantingOverhaul implements ModInitializer {
 
 			@Override
 			public ResourceLocation getFabricId() {
-				return new ResourceLocation(MOD_ID, "enchantment_recipe_loader");
+				return enchantment_recipe_loader;
 			}
 
 		});
@@ -103,7 +105,7 @@ public class EnchantingOverhaul implements ModInitializer {
 		ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> {
 			if(!server.isDedicatedServer()){
 				server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
-				server.getPlayerList().getPlayers().forEach(EnchantingOverhaul::syncData);
+				server.getPlayerList().getPlayers().forEach(ESOCommon::syncData);
 			}
 		});
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
@@ -180,7 +182,7 @@ public class EnchantingOverhaul implements ModInitializer {
 	}
 
 	public void readConfig() throws FileNotFoundException {
-		EnchantingOverhaul.config = gson.fromJson(new FileReader("./config/enchantment-overhaul/config.json"), ConfigurationFile.class);
+		ESOCommon.config = gson.fromJson(new FileReader("./config/enchantment-overhaul/config.json"), ConfigurationFile.class);
 	}
 
 	public static Gson getGson(){
