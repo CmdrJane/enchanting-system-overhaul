@@ -123,7 +123,7 @@ public class ESOCommon implements ModInitializer {
 	public void genConfig() throws IOException {
 		Path p = Paths.get("./config/eso");
 		if(!Files.exists(p)){
-			Files.createDirectory(p);
+			Files.createDirectories(p);
 		}
 		String p2 = "./config/eso/config.json";
 		if(!Files.exists(Paths.get(p2))){
