@@ -4,7 +4,7 @@ __Changes the way items are enchanted to give players more control and reduce im
 
 __Required both on client and server. Depends on [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)__
 
-![Overhauled Enchanting Table Menu](https://i.imgur.com/vym5GOw.png)
+![Overhauled Enchanting Table Menu](https://i.imgur.com/CC12Wro.png)
 
 ## Features
 * XP costs are completely eliminated, instead you will have to use wide array of items provided by vanilla game
