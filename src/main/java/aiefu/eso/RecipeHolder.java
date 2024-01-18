@@ -291,7 +291,7 @@ public class RecipeHolder {
                     }
                 }
             } else {
-                if((tagKey != null && stack.is(tagKey) || stack.is(item) && stack.getCount() >= this.amount)){
+                if((tagKey != null && stack.is(tagKey) || stack.is(item)) && stack.getCount() >= this.amount){
                     return testTag(stack);
                 }
             }
