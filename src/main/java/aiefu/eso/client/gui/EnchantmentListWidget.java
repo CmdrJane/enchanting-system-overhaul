@@ -101,5 +101,6 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
 
     public void setEnchantments(List<EnchButtonWithData> enchantments) {
         this.enchantments = enchantments;
+        this.resetScrollAmount();
     }
 }

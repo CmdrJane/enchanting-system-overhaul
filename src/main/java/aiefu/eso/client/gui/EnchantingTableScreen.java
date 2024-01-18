@@ -184,7 +184,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             int x = leftPos + 79;
             this.drawCenteredString(guiGraphics, this.font, displayMsg, x + 124 / 2, topPos + 75, 4210752, false);
         }
-        if(enchantmentsScrollList.getEnchantments().isEmpty()){
+        if(menu.enchantments.isEmpty() && menu.curses.isEmpty()){
             int i = 0;
             int h = (48 - (8 * emptyMsg.size() + (emptyMsg.size() - 1) * 6)) / 2;
             for (FormattedCharSequence cs : emptyMsg){
@@ -406,6 +406,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         return enchs;
     }
 
+    public EditBox getSearchFilter() {
+        return searchFilter;
+    }
+
     public int getEnchantmentsLimit(int curses){
         ConfigurationFile cfg = ESOCommon.config;
         return cfg.enableCursesAmplifier ? cfg.maxEnchantments + Math.min(curses, cfg.maxCurses) * cfg.enchantmentLimitIncreasePerCurse : cfg.maxEnchantments;
@@ -418,11 +422,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     public void updateButtons(){
         this.enchantmentsScrollList.resetScrollAmount();
-        this.enchantmentsScrollList.setEnchantments(craftEnchantmentsButtons(this.getFilterString()));
-    }
-
-    public String getFilterString(){
-        return this.searchFilter.getValue();
+        this.enchantmentsScrollList.setEnchantments(craftEnchantmentsButtons(this.searchFilter.getValue()));
     }
 
     public void recalculateAvailability(SimpleContainer container){
