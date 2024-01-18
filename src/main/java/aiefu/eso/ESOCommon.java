@@ -121,11 +121,11 @@ public class ESOCommon implements ModInitializer {
 	}
 
 	public void genConfig() throws IOException {
-		Path p = Paths.get("./config/enchantment-overhaul");
+		Path p = Paths.get("./config/eso");
 		if(!Files.exists(p)){
 			Files.createDirectory(p);
 		}
-		String p2 = "./config/enchantment-overhaul/config.json";
+		String p2 = "./config/eso/config.json";
 		if(!Files.exists(Paths.get(p2))){
 			try(FileWriter writer = new FileWriter(p2)){
 				gson.toJson(ConfigurationFile.getDefault(), writer);
@@ -186,7 +186,7 @@ public class ESOCommon implements ModInitializer {
 	}
 
 	public void readConfig() throws FileNotFoundException {
-		ESOCommon.config = gson.fromJson(new FileReader("./config/enchantment-overhaul/config.json"), ConfigurationFile.class);
+		ESOCommon.config = gson.fromJson(new FileReader("./config/eso/config.json"), ConfigurationFile.class);
 	}
 
 	public static Gson getGson(){
