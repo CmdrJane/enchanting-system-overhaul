@@ -11,6 +11,6 @@ __Required both on client and server. Depends on [Fabric API](https://www.cursef
 * Enchanting system now is discovery based. You need to obtain enchanted books first and right click them to learn new enchantments
 * Once enchantment learned you can enchant items and books with it
 * Enchantments applied to items can be leveled up at enchanting table at any time
-* You can apply as much enchantments to item as configuration allows at any time. That means you don't need to fully enchant your item in one go
+* You can apply as many enchantments to item as configuration allows at any time. That means you don't need to fully enchant your item in one go
 * Item enchanting and enchantments combining through anvil has been disabled
 * Enchantment recipes are data driven and can be customized through data-packs at any time
