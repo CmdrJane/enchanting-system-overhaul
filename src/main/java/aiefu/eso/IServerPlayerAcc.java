@@ -6,4 +6,5 @@ import java.util.HashSet;
 
 public interface IServerPlayerAcc {
     HashSet<Enchantment> enchantment_overhaul$getUnlockedEnchantments();
+    void enchantment_overhaul$setUnlockedEnchantments(HashSet<Enchantment> map);
 }

@@ -6,6 +6,7 @@ import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -116,6 +117,11 @@ public class ESOCommon implements ModInitializer {
 		});
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			ESOCommands.register(dispatcher);
+		});
+		ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> {
+			IServerPlayerAcc old = ((IServerPlayerAcc) oldPlayer);
+			IServerPlayerAcc np = ((IServerPlayerAcc) newPlayer);
+			np.enchantment_overhaul$setUnlockedEnchantments(old.enchantment_overhaul$getUnlockedEnchantments());
 		});
 		LOGGER.info("Hello Fabric world!");
 	}

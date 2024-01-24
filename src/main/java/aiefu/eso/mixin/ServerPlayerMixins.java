@@ -54,4 +54,9 @@ public class ServerPlayerMixins implements IServerPlayerAcc {
     public HashSet<Enchantment> enchantment_overhaul$getUnlockedEnchantments() {
         return unlockedEnchantments;
     }
+
+    @Override
+    public void enchantment_overhaul$setUnlockedEnchantments(HashSet<Enchantment> map) {
+        this.unlockedEnchantments = map;
+    }
 }
