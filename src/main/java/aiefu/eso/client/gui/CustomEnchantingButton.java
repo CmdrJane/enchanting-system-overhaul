@@ -1,18 +1,26 @@
 package aiefu.eso.client.gui;
 
+import aiefu.eso.ESOCommon;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
 import java.util.Objects;
 
 public class CustomEnchantingButton extends Button {
+    private static final WidgetSprites CUSTOM_SPRITES = new WidgetSprites(
+            new ResourceLocation(ESOCommon.MOD_ID, "enchbutton/button"),
+            new ResourceLocation(ESOCommon.MOD_ID, "enchbutton/button_disabled"),
+            new ResourceLocation(ESOCommon.MOD_ID,"enchbutton/button_highlighted")
+    );
     public CustomEnchantingButton(int x, int y, int width, int height, Component message, OnPress onPress) {
         super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
     }
@@ -23,7 +31,7 @@ public class CustomEnchantingButton extends Button {
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, this.alpha);
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
-        guiGraphics.blitNineSliced(EnchantingTableScreen.ENCHANTING_BACKGROUND_TEXTURE, this.getX(), this.getY(), this.getWidth(), this.getHeight(), 20, 4, 110, 20, 146, this.getTextureY());
+        guiGraphics.blitSprite(CUSTOM_SPRITES.get(this.active, this.isHoveredOrFocused()), this.getX(), this.getY(), this.getWidth(), this.getHeight());
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         int i = this.active ? 4210752 : 10526880;
         this.drawCenteredString(guiGraphics, minecraft.font, this.getMessage(), i | Mth.ceil(this.alpha * 255.0F) << 24);

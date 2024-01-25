@@ -13,13 +13,14 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(AnvilMenu.class)
 public abstract class AnvilMenuMixins extends ItemCombinerMenu {
 
-    public AnvilMenuMixins(@Nullable MenuType<?> type, int containerId, Inventory playerInventory, ContainerLevelAccess access) {
-        super(type, containerId, playerInventory, access);
+
+    public AnvilMenuMixins(@Nullable MenuType<?> menuType, int i, Inventory inventory, ContainerLevelAccess containerLevelAccess) {
+        super(menuType, i, inventory, containerLevelAccess);
     }
 
-    /* name = bl4 in dev, $$22 1.20.1 obfuscated */
+    /* name = bl4 in dev, $$22 1.20.1, 1.20.4 obfuscated */
     @SuppressWarnings("all")
-    @ModifyVariable(method = "createResult", name = "$$22", at = @At(value = "LOAD"))
+    @ModifyVariable(method = "createResult", name = "bl4", at = @At(value = "LOAD"))
     private boolean disableEnchantmentCombinerFuncESO(boolean bl){
         return this.player.getAbilities().instabuild;
     }
