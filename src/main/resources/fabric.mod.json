@@ -11,7 +11,7 @@
 		"homepage": "https://fabricmc.net/",
 		"sources": "https://github.com/CmdrJane/enchanting-overhaul"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/enchanting-system-overhaul/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -26,8 +26,8 @@
 		"eso.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.14.22",
-		"minecraft": "~1.20.1",
+		"fabricloader": ">=0.15.6",
+		"minecraft": ">=1.20.4",
 		"java": ">=17",
 		"fabric-api": "*"
 	},
