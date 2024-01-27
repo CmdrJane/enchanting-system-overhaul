@@ -13,6 +13,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashSet;
 
@@ -32,7 +33,7 @@ public class ESOCommands {
         if(id.equalsIgnoreCase("all")){
             revokeAll(ctx, player);
         } else {
-            Enchantment enchantment = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(id));
+            Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(new ResourceLocation(id));
             if(enchantment != null && player instanceof IServerPlayerAcc acc){
                 MutableComponent discId = Component.translatable(enchantment.getDescriptionId());
                 MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
@@ -51,7 +52,7 @@ public class ESOCommands {
         if(id.equalsIgnoreCase("all")){
             grantAll(ctx, player);
         } else {
-            Enchantment enchantment = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(id));
+            Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(new ResourceLocation(id));
             if(enchantment != null && player instanceof IServerPlayerAcc acc){
                 MutableComponent discId = Component.translatable(enchantment.getDescriptionId());
                 MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
@@ -71,7 +72,7 @@ public class ESOCommands {
     public static void grantAll(CommandContext<CommandSourceStack> ctx, ServerPlayer player){
         if(player instanceof IServerPlayerAcc acc){
             HashSet<Enchantment> enchantments = acc.enchantment_overhaul$getUnlockedEnchantments();
-            for (Enchantment e: BuiltInRegistries.ENCHANTMENT){
+            for (Enchantment e: ForgeRegistries.ENCHANTMENTS){
                 enchantments.add(e);
             }
             ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.grantall", player.getDisplayName()), true);

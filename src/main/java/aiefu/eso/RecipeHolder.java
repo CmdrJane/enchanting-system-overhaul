@@ -5,7 +5,6 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
@@ -19,6 +18,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -186,7 +186,7 @@ public class RecipeHolder {
             if(itemArray != null){
                 this.itemList = new ArrayList<>();
                 for (ItemDataSimple data : itemArray){
-                    Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(data.id));
+                    Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(data.id));
                     if(item == Items.AIR) throw new ItemDoesNotExistException("Item id " + data + " in id array not found in game registry for enchantment recipe " + eid);
                     this.applicableItems.add(item);
                     data.item = item;
@@ -199,7 +199,7 @@ public class RecipeHolder {
                         }
                     }
                     if(data.remainderId != null){
-                        data.rItem = BuiltInRegistries.ITEM.get(new ResourceLocation(data.remainderId));
+                        data.rItem = ForgeRegistries.ITEMS.getValue(new ResourceLocation(data.remainderId));
                         if(data.rItem == Items.AIR) throw new ItemDoesNotExistException("Remainder item id " + data.remainderId + " not found in game registry for enchantment recipe " + eid);
                         if(data.remainderTag != null){
                             try {
@@ -221,7 +221,7 @@ public class RecipeHolder {
                 if(id.startsWith("tags#")){
                     this.tagKey = TagKey.create(Registries.ITEM, new ResourceLocation(id.substring(5)));
                 } else {
-                    this.item = BuiltInRegistries.ITEM.get(new ResourceLocation(this.id));
+                    this.item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(this.id));
                     if(this.item == Items.AIR) throw new ItemDoesNotExistException("Item id " + this.id + " not found in game registry for enchantment recipe " + eid);
                 }
 
@@ -234,7 +234,7 @@ public class RecipeHolder {
                 }
                 if(this.remainderId != null){
                     if(!this.remainderId.isEmpty() && !this.remainderId.isBlank() && !this.remainderId.equalsIgnoreCase("empty")){
-                        this.remainderItem = BuiltInRegistries.ITEM.get(new ResourceLocation(this.remainderId));
+                        this.remainderItem = ForgeRegistries.ITEMS.getValue(new ResourceLocation(this.remainderId));
                         if(remainderItem == Items.AIR) throw new ItemDoesNotExistException("Remainder item id " + this.remainderId + " not found in game registry for enchantment recipe " + eid);
                     } else remainderEmpty = true;
                     if(this.remainderTag != null){
@@ -251,12 +251,12 @@ public class RecipeHolder {
 
         public @Nullable ItemStack getRemainderForStack(ItemStack stack){
             if(this.remainderEmpty){
-                return stack.getRecipeRemainder();
+                return stack.getCraftingRemainingItem();
             } else if(this.remainderItem != Items.AIR){
                 ItemStack s = new ItemStack(this.remainderItem, this.remainderAmount);
                 s.setTag(this.remainderCompoundTag);
                 return s;
-            } else return stack.getRecipeRemainder();
+            } else return stack.getCraftingRemainingItem();
         }
 
         public boolean testTag(ItemStack stack){
@@ -304,8 +304,7 @@ public class RecipeHolder {
 
         public void processTags(){
             if(tagKey != null){
-                for (ResourceLocation location : BuiltInRegistries.ITEM.keySet()){
-                    Item i = BuiltInRegistries.ITEM.get(location);
+                for (Item i : ForgeRegistries.ITEMS){
                     if(i.builtInRegistryHolder().is(tagKey)){
                         this.applicableItems.add(i);
                     }

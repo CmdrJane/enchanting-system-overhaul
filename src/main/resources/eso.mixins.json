@@ -6,7 +6,6 @@
     "AnvilMenuMixins",
     "EnchantedBookMixins",
     "EnchantingTableMixins",
-    "EnchTableBlockEntityMixins",
     "PlayerListMixins",
     "ServerPlayerMixins",
     "SetEnchantmentsFuncMixins"

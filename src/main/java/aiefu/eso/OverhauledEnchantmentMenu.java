@@ -61,7 +61,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
 
     }
     public OverhauledEnchantmentMenu(int syncId, Inventory inventory, ContainerLevelAccess access, Player owner) {
-        super(ESOCommon.enchantment_menu_ovr, syncId);
+        super(ESOCommon.enchantment_menu_ovr.get(), syncId);
         this.access = access;
         this.tableInv = new SimpleContainer(5){
             @Override

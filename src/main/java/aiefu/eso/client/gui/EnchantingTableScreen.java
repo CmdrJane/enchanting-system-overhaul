@@ -7,7 +7,6 @@ import aiefu.eso.RecipeHolder;
 import aiefu.eso.client.ESOClient;
 import com.google.common.collect.Maps;
 import io.netty.buffer.Unpooled;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

@@ -4,23 +4,22 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.fabric.api.resource.SimpleResourceReloadListener;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraftforge.event.AddReloadListenerEvent;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,11 +32,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 
-public class ESOCommon implements ModInitializer {
+@Mod(ESOCommon.MOD_ID)
+public class ESOCommon{
 
 	public static final String MOD_ID = "enchanting-system-overhaul";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
@@ -54,40 +52,38 @@ public class ESOCommon implements ModInitializer {
 
 	public static ConcurrentHashMap<ResourceLocation, List<RecipeHolder>> recipeMap = new ConcurrentHashMap<>();
 
+	public static final DeferredRegister<MenuType<?>> MENU_REGISTER = DeferredRegister.create(ForgeRegistries.MENU_TYPES, ESOCommon.MOD_ID);
+	public static final RegistryObject<MenuType<OverhauledEnchantmentMenu>> enchantment_menu_ovr =
+			MENU_REGISTER.register("enchs_menu_ovr", () -> IForgeMenuType.create(OverhauledEnchantmentMenu::new));
 
-	public static final ExtendedScreenHandlerType<OverhauledEnchantmentMenu> enchantment_menu_ovr =
-			Registry.register(BuiltInRegistries.MENU, new ResourceLocation(MOD_ID, "enchs_menu_ovr"), new ExtendedScreenHandlerType<>(OverhauledEnchantmentMenu::new));
+	public ESOCommon(){
+		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+		modEventBus.addListener(this::onInitialize);
+		modEventBus.addListener(this::reloadListeners);
+		modEventBus.addListener(this::registerCommands);
+		modEventBus.addListener(this::serverStarted);
+		modEventBus.addListener(this::copyPlayerData);
+	}
 
+	public void reloadListeners(final AddReloadListenerEvent event){
+		event.addListener(EnchantmentRecipeDataListener::reload);
+	}
 
-	@Override
-	public void onInitialize() {
-		ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new SimpleResourceReloadListener<Map<ResourceLocation, Resource>>() {
+	public void registerCommands(final RegisterCommandsEvent event){
+		ESOCommands.register(event.getDispatcher());
+	}
 
-			@Override
-			public CompletableFuture<Map<ResourceLocation, Resource>> load(ResourceManager manager, ProfilerFiller profiler, Executor executor) {
-				return CompletableFuture.supplyAsync(() -> manager.listResources("ench-recipes", resourceLocation -> resourceLocation.getPath().endsWith(".json")), executor);
-			}
+	public void serverStarted(final ServerStartedEvent event){
+		recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags));
+	}
 
-			@Override
-			public CompletableFuture<Void> apply(Map<ResourceLocation, Resource> data, ResourceManager manager, ProfilerFiller profiler, Executor executor) {
-				return CompletableFuture.runAsync(() -> {
-					ESOCommon.recipeMap.clear();
-					data.forEach((key, value) -> {
-						try {
-							gson.fromJson(value.openAsReader(), RecipeHolder.class).processData();
-						} catch (IOException ex) {
-							throw new RuntimeException(ex);
-						}
-					});
-				}, executor);
-			}
+	public void copyPlayerData(final PlayerEvent.Clone event){
+		IServerPlayerAcc old = ((IServerPlayerAcc) event.getOriginal());
+		IServerPlayerAcc np = ((IServerPlayerAcc) event.getEntity());
+		np.enchantment_overhaul$setUnlockedEnchantments(old.enchantment_overhaul$getUnlockedEnchantments());
+	}
 
-			@Override
-			public ResourceLocation getFabricId() {
-				return enchantment_recipe_loader;
-			}
-
-		});
+	public void onInitialize(final FMLCommonSetupEvent event) {
 		ServerPlayNetworking.registerGlobalReceiver(c2s_enchant_item, (server, player, handler, buf, responseSender) -> {
 			String s = buf.readUtf();
 			int ordinal = buf.readVarInt();
@@ -104,25 +100,6 @@ public class ESOCommon implements ModInitializer {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> {
-			if(!server.isDedicatedServer()){
-				server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
-				server.getPlayerList().getPlayers().forEach(ESOCommon::syncData);
-			}
-		});
-		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-			if(!server.isDedicatedServer()){
-				server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
-			}
-		});
-		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-			ESOCommands.register(dispatcher);
-		});
-		ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> {
-			IServerPlayerAcc old = ((IServerPlayerAcc) oldPlayer);
-			IServerPlayerAcc np = ((IServerPlayerAcc) newPlayer);
-			np.enchantment_overhaul$setUnlockedEnchantments(old.enchantment_overhaul$getUnlockedEnchantments());
-		});
 		LOGGER.info("Hello Fabric world!");
 	}
 
