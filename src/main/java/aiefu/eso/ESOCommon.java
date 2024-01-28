@@ -1,19 +1,23 @@
 package aiefu.eso;
 
+import aiefu.eso.client.ESOClient;
 import aiefu.eso.network.NetworkManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -33,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mod(ESOCommon.MOD_ID)
 public class ESOCommon{
 
-	public static final String MOD_ID = "enchanting-system-overhaul";
+	public static final String MOD_ID = "enchanting_system_overhaul";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -49,31 +53,15 @@ public class ESOCommon{
 	public ESOCommon(){
 		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		modEventBus.addListener(this::onInitialize);
-		modEventBus.addListener(this::reloadListeners);
-		modEventBus.addListener(this::registerCommands);
-		modEventBus.addListener(this::serverStarted);
-		modEventBus.addListener(this::copyPlayerData);
-	}
-
-	public void reloadListeners(final AddReloadListenerEvent event){
-		event.addListener(EnchantmentRecipeDataListener::reload);
-	}
-
-	public void registerCommands(final RegisterCommandsEvent event){
-		ESOCommands.register(event.getDispatcher());
-	}
-
-	public void serverStarted(final ServerStartedEvent event){
-		recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags));
-	}
-
-	public void copyPlayerData(final PlayerEvent.Clone event){
-		IServerPlayerAcc old = ((IServerPlayerAcc) event.getOriginal());
-		IServerPlayerAcc np = ((IServerPlayerAcc) event.getEntity());
-		np.enchantment_overhaul$setUnlockedEnchantments(old.enchantment_overhaul$getUnlockedEnchantments());
+		MENU_REGISTER.register(modEventBus);
+		if(FMLEnvironment.dist.isClient()){
+			modEventBus.addListener(ESOClient::onInitializeClient);
+			modEventBus.addListener(ESOClient::onLoadComplete);
+		}
 	}
 
 	public void onInitialize(final FMLCommonSetupEvent event) {
+		MinecraftForge.EVENT_BUS.register(this);
 		try {
 			this.genConfig();
 			this.readConfig();
@@ -82,6 +70,28 @@ public class ESOCommon{
 		}
 		NetworkManager.setup();
 		LOGGER.info("ESO Initialized");
+	}
+
+	@SubscribeEvent
+	public void reloadListeners(final AddReloadListenerEvent event){
+		event.addListener(EnchantmentRecipeDataListener::reload);
+	}
+
+	@SubscribeEvent
+	public void registerCommands(final RegisterCommandsEvent event){
+		ESOCommands.register(event.getDispatcher());
+	}
+
+	@SubscribeEvent
+	public void serverStarted(final ServerStartedEvent event){
+		recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags));
+	}
+
+	@SubscribeEvent
+	public void copyPlayerData(final PlayerEvent.Clone event){
+		IServerPlayerAcc old = ((IServerPlayerAcc) event.getOriginal());
+		IServerPlayerAcc np = ((IServerPlayerAcc) event.getEntity());
+		np.enchantment_overhaul$setUnlockedEnchantments(old.enchantment_overhaul$getUnlockedEnchantments());
 	}
 
 	public void genConfig() throws IOException {

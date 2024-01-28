@@ -2,6 +2,8 @@ package aiefu.eso.mixin;
 
 import aiefu.eso.ESOCommon;
 import aiefu.eso.RecipeHolder;
+import aiefu.eso.network.NetworkManager;
+import aiefu.eso.network.packets.SyncEnchantmentsData;
 import net.minecraft.network.Connection;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,7 +21,7 @@ public class PlayerListMixins {
 
     @Inject(method = "placeNewPlayer", at = @At("RETURN"))
     private void sendEOVRDataSyncPacket(Connection p_11262_, ServerPlayer serverPlayer, CallbackInfo ci){
-        ESOCommon.syncData(serverPlayer);
+        NetworkManager.sendToPlayer(new SyncEnchantmentsData(), serverPlayer);
     }
 
     @Inject(method = "reloadResources", at = @At("RETURN"))
@@ -28,11 +30,11 @@ public class PlayerListMixins {
         if(this.server.isSingleplayer()){
             this.server.getPlayerList().getPlayers().forEach(player -> {
                 if(!this.server.isSingleplayerOwner(player.getGameProfile())){
-                    ESOCommon.syncData(player);
+                    NetworkManager.sendToPlayer(new SyncEnchantmentsData(), player);
                 }
             });
         } else {
-            this.server.getPlayerList().getPlayers().forEach(ESOCommon::syncData);
+            this.server.getPlayerList().getPlayers().forEach(p -> NetworkManager.sendToPlayer(new SyncEnchantmentsData(), p));
         }
     }
 }
