@@ -1,12 +1,9 @@
 package aiefu.eso;
 
+import aiefu.eso.network.NetworkManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.netty.buffer.Unpooled;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.AddReloadListenerEvent;
@@ -31,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mod(ESOCommon.MOD_ID)
@@ -39,12 +35,6 @@ public class ESOCommon{
 
 	public static final String MOD_ID = "enchanting-system-overhaul";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-
-	public static final ResourceLocation c2s_enchant_item = new ResourceLocation(MOD_ID, "c2s_enchant_item");
-
-	public static final ResourceLocation s2c_data_sync = new ResourceLocation(MOD_ID, "s2c_data_sync");
-
-	public static final ResourceLocation enchantment_recipe_loader = new ResourceLocation(MOD_ID,"enchantment_recipe_loader");
 
 	private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -84,23 +74,14 @@ public class ESOCommon{
 	}
 
 	public void onInitialize(final FMLCommonSetupEvent event) {
-		ServerPlayNetworking.registerGlobalReceiver(c2s_enchant_item, (server, player, handler, buf, responseSender) -> {
-			String s = buf.readUtf();
-			int ordinal = buf.readVarInt();
-			ResourceLocation location = new ResourceLocation(s);
-			server.execute(() -> {
-				if(player.containerMenu instanceof OverhauledEnchantmentMenu m){
-					m.checkRequirementsAndConsume(location, player, ordinal);
-				}
-			});
-		});
 		try {
 			this.genConfig();
 			this.readConfig();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		LOGGER.info("Hello Fabric world!");
+		NetworkManager.setup();
+		LOGGER.info("ESO Initialized");
 	}
 
 	public void genConfig() throws IOException {
@@ -114,58 +95,6 @@ public class ESOCommon{
 				gson.toJson(ConfigurationFile.getDefault(), writer);
 			}
 		}
-	}
-
-	public static void syncData(ServerPlayer player){
-		FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-		String n = "null";
-
-		buf.writeVarInt(recipeMap.size());
-		for (Map.Entry<ResourceLocation, List<RecipeHolder>> e : recipeMap.entrySet()){
-			buf.writeUtf(e.getKey().toString());
-			List<RecipeHolder> holders = e.getValue();
-			buf.writeVarInt(holders.size());
-			for (RecipeHolder holder : holders){
-				buf.writeUtf(holder.enchantment_id);
-				buf.writeVarInt(holder.maxLevel);
-
-				buf.writeVarInt(holder.levels.size());
-				for (Int2ObjectMap.Entry<RecipeHolder.ItemData[]> entry : holder.levels.int2ObjectEntrySet()){
-					buf.writeVarInt(entry.getIntKey());
-					RecipeHolder.ItemData[] arr = entry.getValue();
-					buf.writeVarInt(arr.length);
-					for (RecipeHolder.ItemData data : arr){
-						String id = data.id == null ? n : data.id;
-						buf.writeUtf(id);
-						if(data.itemArray != null){
-							buf.writeBoolean(true);
-							buf.writeVarInt(data.itemArray.length);
-							for (RecipeHolder.ItemDataSimple ds : data.itemArray){
-								buf.writeUtf(ds.id);
-								buf.writeVarInt(ds.amount);
-								String tag = ds.tag == null ? n : ds.tag;
-								buf.writeUtf(tag);
-								String rid = ds.remainderId == null ? n : ds.remainderId;
-								buf.writeUtf(rid);
-								buf.writeVarInt(ds.remainderAmount);
-								String rtag = ds.remainderTag == null ? n : ds.remainderTag;
-								buf.writeUtf(rtag);
-							}
-						} else buf.writeBoolean(false);
-
-						buf.writeVarInt(data.amount);
-						String tag = data.tag == null ? n : data.tag;
-						buf.writeUtf(tag);
-						String remainder = data.remainderId == null ? n : data.remainderId;
-						buf.writeUtf(remainder);
-						buf.writeVarInt(data.remainderAmount);
-						String remainderTag = data.remainderTag == null ? n : data.remainderTag;
-						buf.writeUtf(remainderTag);
-					}
-				}
-			}
-		}
-		ServerPlayNetworking.send(player, s2c_data_sync, buf);
 	}
 
 	public void readConfig() throws FileNotFoundException {

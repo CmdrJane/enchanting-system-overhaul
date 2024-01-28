@@ -5,8 +5,9 @@ import aiefu.eso.ESOCommon;
 import aiefu.eso.OverhauledEnchantmentMenu;
 import aiefu.eso.RecipeHolder;
 import aiefu.eso.client.ESOClient;
+import aiefu.eso.network.NetworkManager;
+import aiefu.eso.network.packets.EnchantItemData;
 import com.google.common.collect.Maps;
-import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -15,9 +16,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
@@ -34,6 +33,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -78,10 +78,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton = this.addWidget(new CustomEnchantingButton(leftPos + 60, topPos + 92, 30, 12, CommonComponents.GUI_YES, button -> {
             this.switchOverlayState(true);
             this.switchButtonsState(false);
-            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-            buf.writeUtf(Objects.requireNonNull(BuiltInRegistries.ENCHANTMENT.getKey(selectedEnchantment)).toString());
-            buf.writeVarInt(ordinal);
-            ClientPlayNetworking.send(ESOCommon.c2s_enchant_item, buf);
+            NetworkManager.sendToServer(new EnchantItemData(Objects.requireNonNull(ForgeRegistries.ENCHANTMENTS.getKey(selectedEnchantment)).toString(), ordinal));
         }));
         this.cancelButton = this.addWidget(new CustomEnchantingButton(leftPos + 130, topPos + 92, 30, 12, CommonComponents.GUI_NO, button -> {
             this.switchOverlayState(true);
@@ -287,7 +284,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         for (Enchantment enchantment : el) {
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
-                List<RecipeHolder> holders = ESOCommon.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
+                List<RecipeHolder> holders = ESOCommon.recipeMap.get(ForgeRegistries.ENCHANTMENTS.getKey(enchantment));
                 if(holders != null){
                     int ordinal = 0;
                     for (RecipeHolder holder : holders){

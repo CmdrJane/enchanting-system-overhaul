@@ -2,7 +2,6 @@ package aiefu.eso;
 
 import aiefu.eso.client.ESOClient;
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
@@ -23,6 +22,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -51,7 +51,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         for (int i = 0; i < r; i++) {
             String s = buf.readUtf();
             ResourceLocation loc = new ResourceLocation(s);
-            list.add(BuiltInRegistries.ENCHANTMENT.get(loc));
+            list.add(ForgeRegistries.ENCHANTMENTS.getValue(loc));
         }
         for (Enchantment e : list){
             if(e.isCurse()){
@@ -160,7 +160,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 if(stack.is(Items.BOOK)) {
                     this.enchantBook(location, player, ordinal);
                 } else {
-                    Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
+                    Enchantment target = ForgeRegistries.ENCHANTMENTS.getValue(location);
                     if (target != null) {
                         if(target.isCurse() && !ESOCommon.config.enableCursesAmplifier){
                             return;
@@ -221,7 +221,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     }
 
     public void enchantBook(ResourceLocation location, Player player, int ordinal){
-        Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
+        Enchantment target = ForgeRegistries.ENCHANTMENTS.getValue(location);
         if(target != null){
             ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
             stack.getOrCreateTag();
