@@ -26,7 +26,7 @@ public class CustomEnchantingButton extends Button {
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, this.alpha);
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
-        guiGraphics.blitNineSliced(ench_buttons, this.getX(), this.getY(), this.getWidth(), this.getHeight(), 20, 4, 110, 20, 146, this.getTextureY());
+        guiGraphics.blitNineSliced(ench_buttons, this.getX(), this.getY(), this.getWidth(), this.getHeight(), 20, 4, 200, 20, 0, this.getTextureY());
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         int i = this.active ? 4210752 : 10526880;
         this.drawCenteredString(guiGraphics, minecraft.font, this.getMessage(), i | Mth.ceil(this.alpha * 255.0F) << 24);
@@ -62,7 +62,7 @@ public class CustomEnchantingButton extends Button {
             i = 2;
         }
 
-        return 196 + i * 20;
+        return i * 20;
     }
 
 }
