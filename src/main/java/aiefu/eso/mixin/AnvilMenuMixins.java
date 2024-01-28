@@ -18,7 +18,7 @@ public abstract class AnvilMenuMixins extends ItemCombinerMenu {
         super(menuType, i, inventory, containerLevelAccess);
     }
 
-    /* name = bl4 in dev, $$22 1.20.1, 1.20.4 obfuscated */
+    /* name = bl4 in dev, flag1 forge, $$22 1.20.1, 1.20.4 obfuscated */
     @SuppressWarnings("all")
     @ModifyVariable(method = "createResult", name = "flag1", at = @At(value = "LOAD"))
     private boolean disableEnchantmentCombinerFuncESO(boolean bl){
