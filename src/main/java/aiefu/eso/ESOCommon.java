@@ -105,15 +105,19 @@ public class ESOCommon implements ModInitializer {
 			throw new RuntimeException(e);
 		}
 		ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> {
-			if(!server.isDedicatedServer()){
-				server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
+			server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
+			if(server.isSingleplayer()){
+				for (ServerPlayer player : server.getPlayerList().getPlayers()){
+					if(!server.isSingleplayerOwner(player.getGameProfile())){
+						ESOCommon.syncData(player);
+					}
+				}
+			} else {
 				server.getPlayerList().getPlayers().forEach(ESOCommon::syncData);
 			}
 		});
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-			if(!server.isDedicatedServer()){
-				server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
-			}
+			server.execute(() -> recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags)));
 		});
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 			ESOCommands.register(dispatcher);
