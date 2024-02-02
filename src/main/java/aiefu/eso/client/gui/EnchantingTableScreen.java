@@ -1,9 +1,6 @@
 package aiefu.eso.client.gui;
 
-import aiefu.eso.ConfigurationFile;
-import aiefu.eso.ESOCommon;
-import aiefu.eso.OverhauledEnchantmentMenu;
-import aiefu.eso.RecipeHolder;
+import aiefu.eso.*;
 import aiefu.eso.client.ESOClient;
 import com.google.common.collect.Maps;
 import io.netty.buffer.Unpooled;
@@ -255,8 +252,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         Map<Enchantment, Integer> enchs = stackIsEmpty ? EMPTY_MAP : EnchantmentHelper.getEnchantments(stack);
         HashSet<Enchantment> el = stackIsEmpty || bl ? menu.enchantments : this.filterToNewSet(menu.enchantments, enchantment -> enchantment.canEnchant(stack));
         HashSet<Enchantment> curses = this.filterToNewSet(enchs.keySet(), Enchantment::isCurse);
+        MaterialData matData = this.getMatData(stack.getItem());
         int ec = this.getCurrentEnchantmentsCount(enchs.size(), curses.size());
-        int ml = this.getEnchantmentsLimit(curses.size());
+        int ml = this.getEnchantmentsLimit(curses.size(), matData);
         if(stackIsEmpty){
             this.displayMsg = null;
         } else {
@@ -270,7 +268,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         if(ec >= ml){
             el = new HashSet<>(enchs.keySet());
             if(cfg.enableCursesAmplifier){
-                if(curses.size() < cfg.maxCurses){
+                if(curses.size() < matData.getMaxCurses()){
                     el.addAll(applicableCurses);
                 } else {
                     for (Enchantment c : curses){
@@ -280,7 +278,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     }
                 }
             }
-        } else if(cfg.enableCursesAmplifier && curses.size() < cfg.maxCurses){
+        } else if(cfg.enableCursesAmplifier && curses.size() < matData.getMaxCurses()){
             el.addAll(applicableCurses);
         }
         int offset = 0;
@@ -288,7 +286,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         for (Enchantment enchantment : el) {
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
-                List<RecipeHolder> holders = ESOCommon.recipeMap.get(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
+                List<RecipeHolder> holders = ESOCommon.getRecipeHolders(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
                 if(holders != null){
                     int ordinal = 0;
                     for (RecipeHolder holder : holders){
@@ -409,9 +407,13 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         return searchFilter;
     }
 
-    public int getEnchantmentsLimit(int curses){
+    public int getEnchantmentsLimit(int curses, MaterialData data){
         ConfigurationFile cfg = ESOCommon.config;
-        return cfg.enableCursesAmplifier ? cfg.maxEnchantments + Math.min(curses, cfg.maxCurses) * cfg.enchantmentLimitIncreasePerCurse : cfg.maxEnchantments;
+        return cfg.enableCursesAmplifier ? data.getMaxEnchantments() + Math.min(curses, data.getMaxCurses()) * data.getCurseMultiplier() : data.getMaxEnchantments();
+    }
+
+    public MaterialData getMatData(Item item){
+        return ESOCommon.config.enableEnchantability ? ESOCommon.mat_config.getMaterialData(item) : MaterialOverrides.defaultMatData;
     }
 
     public int getCurrentEnchantmentsCount(int appliedEnchantments, int curses){
