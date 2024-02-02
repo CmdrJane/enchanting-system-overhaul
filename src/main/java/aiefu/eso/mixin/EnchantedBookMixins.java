@@ -13,9 +13,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 
 import java.util.*;
 
@@ -46,7 +48,7 @@ public abstract class EnchantedBookMixins extends Item {
                 }
             }
             if(map.size() != originalSize) {
-                EnchantmentHelper.setEnchantments(map, stack);
+                enchantment_overhaul$esoApplyEnchantments(map, stack);
                 player.displayClientMessage(Component.translatable("eso.absorbingknowledge")
                         .withStyle(ChatFormatting.DARK_PURPLE), false);
                 if(map.size() == 0){
@@ -68,6 +70,12 @@ public abstract class EnchantedBookMixins extends Item {
 
         }
         return InteractionResultHolder.pass(stack);
+    }
+
+    @Unique
+    private void enchantment_overhaul$esoApplyEnchantments(Map<Enchantment, Integer> map, ItemStack stack){
+        stack.removeTagKey("StoredEnchantments");
+        map.forEach((k, v) -> EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(k, v)));
     }
 
 }

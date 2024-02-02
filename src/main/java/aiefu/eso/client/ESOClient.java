@@ -50,4 +50,8 @@ public class ESOClient{
     public static Player getClientPlayer(){
         return Minecraft.getInstance().player;
     }
+
+    public static void copyToClipboard(String s){
+        Minecraft.getInstance().keyboardHandler.setClipboard(s);
+    }
 }

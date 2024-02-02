@@ -1,6 +1,7 @@
 package aiefu.eso.network;
 
 import aiefu.eso.ESOCommon;
+import aiefu.eso.network.packets.CopyToClipboardData;
 import aiefu.eso.network.packets.EnchantItemData;
 import aiefu.eso.network.packets.SyncEnchantmentsData;
 import net.minecraft.resources.ResourceLocation;
@@ -18,6 +19,8 @@ public class NetworkManager {
     public static void setup(){
         network.messageBuilder(SyncEnchantmentsData.class, id++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(SyncEnchantmentsData::encode).decoder(SyncEnchantmentsData::decode).consumerMainThread(SyncEnchantmentsData::handle).add();
+        network.messageBuilder(CopyToClipboardData.class,id++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(CopyToClipboardData::encode).decoder(CopyToClipboardData::decode).consumerMainThread(CopyToClipboardData::handle).add();
         network.messageBuilder(EnchantItemData.class, id++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(EnchantItemData::encode).decoder(EnchantItemData::decode).consumerMainThread(EnchantItemData::handle).add();
     }

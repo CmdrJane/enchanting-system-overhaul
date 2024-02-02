@@ -7,7 +7,6 @@ import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -156,7 +155,7 @@ public class SyncEnchantmentsData {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         if(FMLEnvironment.dist.isClient()){
-            Minecraft.getInstance().execute(() -> ESOCommon.recipeMap = this.recipes);
+            ctx.get().enqueueWork(() -> ESOCommon.recipeMap = this.recipes);
         }
     }
 }

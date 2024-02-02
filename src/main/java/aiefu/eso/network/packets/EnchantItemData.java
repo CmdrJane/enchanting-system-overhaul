@@ -34,9 +34,11 @@ public class EnchantItemData {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ServerPlayer player = ctx.get().getSender();
-        if(player != null && player.containerMenu instanceof OverhauledEnchantmentMenu m){
-            m.checkRequirementsAndConsume(this.id, player, this.ordinal);
-        }
+        ctx.get().enqueueWork(() -> {
+            ServerPlayer player = ctx.get().getSender();
+            if(player != null && player.containerMenu instanceof OverhauledEnchantmentMenu m){
+                m.checkRequirementsAndConsume(this.id, player, this.ordinal);
+            }
+        });
     }
 }
