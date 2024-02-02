@@ -15,10 +15,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.EnchantedBookItem;
-import net.minecraft.world.item.Equipable;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
@@ -172,8 +169,9 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                         for (Enchantment e : enchs.keySet()){
                             if(e.isCurse()) curses++;
                         }
-                        if(target.canEnchant(stack) && (enchs.containsKey(target) || target.isCurse() && curses < ESOCommon.config.maxCurses
-                                || this.getCurrentLimit(enchs.keySet().size(), curses) < this.getEnchantmentsLimit(curses))) {
+                        MaterialData data = this.getMatData(stack.getItem());
+                        if(target.canEnchant(stack) && (enchs.containsKey(target) || target.isCurse() && curses < data.getMaxCurses()
+                                || this.getCurrentLimit(enchs.keySet().size(), curses) < this.getEnchantmentsLimit(curses, data))) {
 
                             for (Enchantment e : enchs.keySet()) {
                                 if (e != target && !e.isCompatibleWith(target)) {
@@ -185,7 +183,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                             if (l != null) {
                                 targetLevel = l + 1;
                             }
-                            List<RecipeHolder> holders = ESOCommon.recipeMap.get(location);
+                            List<RecipeHolder> holders = ESOCommon.getRecipeHolders(location);
                             if (holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()) {
                                 RecipeHolder holder = holders.get(ordinal);
                                 if (player.getAbilities().instabuild || targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
@@ -203,9 +201,13 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         });
     }
 
-    public int getEnchantmentsLimit(int curses){
+    public int getEnchantmentsLimit(int curses, MaterialData data){
         ConfigurationFile cfg = ESOCommon.config;
-        return cfg.enableCursesAmplifier ? cfg.maxEnchantments + Math.min(curses, cfg.maxCurses)* cfg.enchantmentLimitIncreasePerCurse : cfg.maxEnchantments;
+        return cfg.enableCursesAmplifier ? data.getMaxEnchantments() + Math.min(curses, data.getMaxCurses()) * data.getCurseMultiplier() : data.getMaxEnchantments();
+    }
+
+    public MaterialData getMatData(Item item){
+        return ESOCommon.config.enableEnchantability ? ESOCommon.mat_config.getMaterialData(item) : MaterialOverrides.defaultMatData;
     }
 
     public int getCurrentLimit(int appliedEnchantments, int curses){
@@ -225,7 +227,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         if(target != null){
             ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
             stack.getOrCreateTag();
-            List<RecipeHolder> holders = ESOCommon.recipeMap.get(location);
+            List<RecipeHolder> holders = ESOCommon.getRecipeHolders(location);
             if(holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()){
                 RecipeHolder holder = holders.get(ordinal);
                 if(holder.checkAndConsume(this.tableInv, 1)){

@@ -53,6 +53,10 @@ public class ESOClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ESOCommon.s2c_data_sync, (client, handler, buf, responseSender) -> {
             this.readData(buf);
         });
+        ClientPlayNetworking.registerGlobalReceiver(ESOCommon.s2c_string_to_clipboard, (client, handler, buf, responseSender) -> {
+            String s = buf.readUtf();
+            client.execute(() -> client.keyboardHandler.setClipboard(s));
+        });
 
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
             @Override
