@@ -48,6 +48,9 @@ public class MaterialOverrides {
         }
     }
 
+    public MaterialOverrides() {
+    }
+
     public MaterialData getMaterialData(Item item){
         MaterialData data = hardOverridesCompiled.get(item);
         if(data != null){
@@ -139,6 +142,31 @@ public class MaterialOverrides {
         items.putAll(hardOverrides);
 
         return new MaterialOverrides(tools, armor, items);
+    }
+
+    public static MaterialOverrides reconstructFromPacket(HashMap<String, MaterialData> tools, HashMap<String, MaterialData> armor, HashMap<String, MaterialData> items){
+        HashMap<Item, MaterialData> toolsOverrides = new HashMap<>();
+        tools.forEach((k, v) -> {
+            Item i = BuiltInRegistries.ITEM.get(new ResourceLocation(k));
+            toolsOverrides.put(i, v);
+        });
+
+        HashMap<Item, MaterialData> armorOverrides = new HashMap<>();
+        armor.forEach((k, v) -> {
+            Item i = BuiltInRegistries.ITEM.get(new ResourceLocation(k));
+            armorOverrides.put(i, v);
+        });
+
+        HashMap<Item, MaterialData> hardOverrides = new HashMap<>();
+        items.forEach((k, v) -> {
+            Item i = BuiltInRegistries.ITEM.get(new ResourceLocation(k));
+            hardOverrides.put(i, v);
+        });
+        MaterialOverrides m = new MaterialOverrides();
+        m.hardOverridesCompiled = hardOverrides;
+        m.toolsMatOverridesCompiled = toolsOverrides;
+        m.armorMatOverridesCompiled = armorOverrides;
+        return m;
     }
 
 }

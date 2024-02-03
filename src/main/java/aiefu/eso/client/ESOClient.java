@@ -1,8 +1,6 @@
 package aiefu.eso.client;
 
-import aiefu.eso.ESOCommon;
-import aiefu.eso.EnchDescCompat;
-import aiefu.eso.RecipeHolder;
+import aiefu.eso.*;
 import aiefu.eso.client.gui.EnchantingTableScreen;
 import aiefu.eso.exception.ItemDoesNotExistException;
 import aiefu.eso.mixin.IClientLanguageAcc;
@@ -50,13 +48,12 @@ public class ESOClient implements ClientModInitializer {
                 ench_desc_loaded = true;
             }
         });
-        ClientPlayNetworking.registerGlobalReceiver(ESOCommon.s2c_data_sync, (client, handler, buf, responseSender) -> {
-            this.readData(buf);
-        });
+        ClientPlayNetworking.registerGlobalReceiver(ESOCommon.s2c_data_sync, (client, handler, buf, responseSender) -> this.readData(buf));
         ClientPlayNetworking.registerGlobalReceiver(ESOCommon.s2c_string_to_clipboard, (client, handler, buf, responseSender) -> {
             String s = buf.readUtf();
             client.execute(() -> client.keyboardHandler.setClipboard(s));
         });
+        ClientPlayNetworking.registerGlobalReceiver(ESOCommon.s2c_mat_config_sync, (client, handler, buf, responseSender) -> this.readMatConfigData(buf));
 
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
             @Override
@@ -103,6 +100,31 @@ public class ESOClient implements ClientModInitializer {
 
     public static Player getClientPlayer(){
         return Minecraft.getInstance().player;
+    }
+
+    public void readMatConfigData(FriendlyByteBuf buf){
+        int ts = buf.readVarInt();
+        HashMap<String, MaterialData> tools = new HashMap<>();
+        for (int i = 0; i < ts; i++) {
+            String id = buf.readUtf();
+            MaterialData data = new MaterialData(buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+            tools.put(id, data);
+        }
+        int as = buf.readVarInt();
+        HashMap<String, MaterialData> armor = new HashMap<>();
+        for (int i = 0; i < as; i++) {
+            String id = buf.readUtf();
+            MaterialData data = new MaterialData(buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+            armor.put(id, data);
+        }
+        int hs = buf.readVarInt();
+        HashMap<String, MaterialData> items = new HashMap<>();
+        for (int i = 0; i < hs; i++) {
+            String id = buf.readUtf();
+            MaterialData data = new MaterialData(buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+            items.put(id, data);
+        }
+        Minecraft.getInstance().execute(() -> ESOCommon.mat_config = MaterialOverrides.reconstructFromPacket(tools, armor, items));
     }
 
     public void readData(FriendlyByteBuf buf){

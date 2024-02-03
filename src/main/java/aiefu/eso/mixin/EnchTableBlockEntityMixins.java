@@ -1,5 +1,6 @@
 package aiefu.eso.mixin;
 
+import aiefu.eso.ESOCommon;
 import aiefu.eso.IServerPlayerAcc;
 import aiefu.eso.OverhauledEnchantmentMenu;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
@@ -37,7 +38,7 @@ public abstract class EnchTableBlockEntityMixins extends BlockEntity implements 
 
     @Override
     public void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
-        if(player.getAbilities().instabuild){
+        if(player.getAbilities().instabuild || ESOCommon.config.disableDiscoverySystem){
             Set<ResourceLocation> keyset = BuiltInRegistries.ENCHANTMENT.keySet();
             buf.writeInt(keyset.size());
             for (ResourceLocation loc : keyset){
