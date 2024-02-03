@@ -11,20 +11,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Tier;
-import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashSet;
+import java.util.Map;
 
 public class ESOCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher){
@@ -40,6 +41,8 @@ public class ESOCommands {
                 .executes(ESOCommands::getMaterialId)));
         dispatcher.register(Commands.literal("eso").requires(stack -> stack.hasPermission(4)).then(Commands.literal("get-item-id-in-hand")
                 .executes(ESOCommands::getItemId)));
+        dispatcher.register(Commands.literal("eso").requires(stack -> stack.hasPermission(4)).then(Commands.literal("get-enchantment-id-in-hand")
+                .executes(ESOCommands::getEnchantmentId)));
     }
 
     public static int getMaterialId(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -68,6 +71,31 @@ public class ESOCommands {
         ctx.getSource().sendSuccess(() -> Component.literal(loc.toString()), true);
         copyToClipboard(player, loc.toString());
         return 0;
+    }
+
+    public static int getEnchantmentId(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        ItemStack stack = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if(stack.isEnchanted() || containsStoredEnchantments(stack)){
+            Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
+            StringBuilder enchantments = new StringBuilder();
+            for (Map.Entry<Enchantment, Integer> e : enchs.entrySet()) {
+                ResourceLocation loc = ForgeRegistries.ENCHANTMENTS.getKey(e.getKey());
+                if(loc != null){
+                    String s = loc.toString();
+                    ctx.getSource().sendSuccess(() -> Component.literal(s), true);
+                    enchantments.append(s).append(" ");
+                }
+            }
+            String s = enchantments.toString();
+            copyToClipboard(player, s.substring(0, s.length() - 1));
+        }
+        return 0;
+    }
+
+    public static boolean containsStoredEnchantments(ItemStack stack){
+        CompoundTag tag = stack.getOrCreateTag();
+        return tag.contains("StoredEnchantments", Tag.TAG_LIST);
     }
 
     public static void copyToClipboard(ServerPlayer player, String s){
