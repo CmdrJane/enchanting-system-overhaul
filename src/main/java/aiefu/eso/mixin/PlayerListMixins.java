@@ -13,7 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(PlayerList.class)
 public class PlayerListMixins {
     @Inject(method = "placeNewPlayer", at = @At("RETURN"))
-    private void sendEOVRDataSyncPacket(Connection connection, ServerPlayer serverPlayer, CommonListenerCookie commonListenerCookie, CallbackInfo ci){
-        ESOCommon.syncData(serverPlayer);
+    private void sendEOVRDataSyncPacket(Connection connection, ServerPlayer player, CommonListenerCookie commonListenerCookie, CallbackInfo ci){
+        if(!player.server.isSingleplayerOwner(player.getGameProfile())){
+            ESOCommon.syncData(player);
+            ESOCommon.syncMatConfig(player);
+        }
     }
 }

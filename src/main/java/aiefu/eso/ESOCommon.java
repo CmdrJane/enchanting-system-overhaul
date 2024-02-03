@@ -22,6 +22,7 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,8 @@ public class ESOCommon implements ModInitializer {
 	public static final ResourceLocation c2s_enchant_item = new ResourceLocation(MOD_ID, "c2s_enchant_item");
 
 	public static final ResourceLocation s2c_data_sync = new ResourceLocation(MOD_ID, "s2c_data_sync");
+
+	public static final ResourceLocation s2c_mat_config_sync = new ResourceLocation(MOD_ID, "s2c_mat_config_sync");
 	public static final ResourceLocation s2c_string_to_clipboard = new ResourceLocation(MOD_ID, "s2c_string_to_clipboard");
 
 	public static final ResourceLocation enchantment_recipe_loader = new ResourceLocation(MOD_ID,"enchantment_recipe_loader");
@@ -175,10 +178,14 @@ public class ESOCommon implements ModInitializer {
 					for (ServerPlayer player : server.getPlayerList().getPlayers()){
 						if(!server.isSingleplayerOwner(player.getGameProfile())){
 							ESOCommon.syncData(player);
+							ESOCommon.syncMatConfig(player);
 						}
 					}
 				} else {
-					server.getPlayerList().getPlayers().forEach(ESOCommon::syncData);
+					server.getPlayerList().getPlayers().forEach(player -> {
+						ESOCommon.syncData(player);
+						ESOCommon.syncMatConfig(player);
+					});
 				}
 			});
 		});
@@ -214,6 +221,10 @@ public class ESOCommon implements ModInitializer {
 		}
 		if(!jsonObject.has("enableDefaultRecipe")){
 			jsonObject.addProperty("enableDefaultRecipe", true);
+			shouldSave = true;
+		}
+		if(!jsonObject.has("disableDiscoverySystem")){
+			jsonObject.addProperty("disableDiscoverySystem", false);
 			shouldSave = true;
 		}
 		ESOCommon.config = gson.fromJson(jsonObject, ConfigurationFile.class);
@@ -266,6 +277,38 @@ public class ESOCommon implements ModInitializer {
 	public static List<RecipeHolder> getRecipeHolders(ResourceLocation location){
 		List<RecipeHolder> holders = ESOCommon.recipeMap.get(location);
 		return holders != null ? holders : config.enableDefaultRecipe ? ESOCommon.recipeMap.get(defaultRecipe) : null;
+	}
+
+	public static void syncMatConfig(ServerPlayer player){
+		FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+		HashMap<Item, MaterialData> tools = mat_config.toolsMatOverridesCompiled;
+		buf.writeVarInt(tools.size());
+		tools.forEach((k, v) -> {
+			String loc = BuiltInRegistries.ITEM.getKey(k).toString();
+			buf.writeUtf(loc);
+			buf.writeVarInt(v.maxEnchantments);
+			buf.writeVarInt(v.maxCurses);
+			buf.writeVarInt(v.curseMultiplier);
+		});
+		HashMap<Item, MaterialData> armor = mat_config.armorMatOverridesCompiled;
+		buf.writeVarInt(armor.size());
+		armor.forEach((k, v) -> {
+			String loc = BuiltInRegistries.ITEM.getKey(k).toString();
+			buf.writeUtf(loc);
+			buf.writeVarInt(v.maxEnchantments);
+			buf.writeVarInt(v.maxCurses);
+			buf.writeVarInt(v.curseMultiplier);
+		});
+		HashMap<Item, MaterialData> items = mat_config.hardOverridesCompiled;
+		buf.writeVarInt(items.size());
+		items.forEach((k, v) -> {
+			String loc = BuiltInRegistries.ITEM.getKey(k).toString();
+			buf.writeUtf(loc);
+			buf.writeVarInt(v.maxEnchantments);
+			buf.writeVarInt(v.maxCurses);
+			buf.writeVarInt(v.curseMultiplier);
+		});
+		ServerPlayNetworking.send(player, s2c_mat_config_sync, buf);
 	}
 
 	public static void syncData(ServerPlayer player){
