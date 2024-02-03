@@ -4,6 +4,7 @@ import aiefu.eso.ESOCommon;
 import aiefu.eso.RecipeHolder;
 import aiefu.eso.network.NetworkManager;
 import aiefu.eso.network.packets.SyncEnchantmentsData;
+import aiefu.eso.network.packets.SyncMatData;
 import net.minecraft.network.Connection;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,21 +21,21 @@ public class PlayerListMixins {
     @Shadow @Final private MinecraftServer server;
 
     @Inject(method = "placeNewPlayer", at = @At("RETURN"))
-    private void sendEOVRDataSyncPacket(Connection p_11262_, ServerPlayer serverPlayer, CallbackInfo ci){
-        NetworkManager.sendToPlayer(new SyncEnchantmentsData(), serverPlayer);
+    private void sendEOVRDataSyncPacket(Connection p_11262_, ServerPlayer player, CallbackInfo ci){
+        if(!player.server.isSingleplayerOwner(player.getGameProfile())){
+            NetworkManager.sendToPlayer(new SyncEnchantmentsData(), player);
+            NetworkManager.sendToPlayer(new SyncMatData(), player);
+        }
     }
 
     @Inject(method = "reloadResources", at = @At("RETURN"))
     private void sendEOVRDataSyncPacketOnReload(CallbackInfo ci){
         ESOCommon.recipeMap.values().forEach(l -> l.forEach(RecipeHolder::processTags));
-        if(this.server.isSingleplayer()){
-            this.server.getPlayerList().getPlayers().forEach(player -> {
-                if(!this.server.isSingleplayerOwner(player.getGameProfile())){
-                    NetworkManager.sendToPlayer(new SyncEnchantmentsData(), player);
-                }
-            });
-        } else {
-            this.server.getPlayerList().getPlayers().forEach(p -> NetworkManager.sendToPlayer(new SyncEnchantmentsData(), p));
-        }
+        this.server.getPlayerList().getPlayers().forEach(player -> {
+            if(!this.server.isSingleplayerOwner(player.getGameProfile())){
+                NetworkManager.sendToPlayer(new SyncEnchantmentsData(), player);
+                NetworkManager.sendToPlayer(new SyncMatData(), player);
+            }
+        });
     }
 }

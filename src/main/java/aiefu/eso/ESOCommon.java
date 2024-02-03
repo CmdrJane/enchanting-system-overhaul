@@ -129,6 +129,10 @@ public class ESOCommon{
 			jsonObject.addProperty("enableDefaultRecipe", true);
 			shouldSave = true;
 		}
+		if(!jsonObject.has("disableDiscoverySystem")){
+			jsonObject.addProperty("disableDiscoverySystem", false);
+			shouldSave = true;
+		}
 		ESOCommon.config = gson.fromJson(jsonObject, ConfigurationFile.class);
 		if(shouldSave){
 			try(FileWriter writer = new FileWriter("./config/eso/config.json")){

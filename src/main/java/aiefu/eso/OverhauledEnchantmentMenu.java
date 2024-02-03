@@ -159,6 +159,10 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 } else {
                     Enchantment target = ForgeRegistries.ENCHANTMENTS.getValue(location);
                     if (target != null) {
+                        HashSet<Enchantment> learnedEnchantments = ((IServerPlayerAcc)player).enchantment_overhaul$getUnlockedEnchantments();
+                        if(!learnedEnchantments.contains(target) && !ESOCommon.config.disableDiscoverySystem){
+                            return;
+                        }
                         if(target.isCurse() && !ESOCommon.config.enableCursesAmplifier){
                             return;
                         }
