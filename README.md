@@ -24,4 +24,4 @@ __[Modrinth](https://modrinth.com/mod/enchanting-system-overhaul)__
 * You can apply as many enchantments to item as configuration allows at any time. That means you don't need to fully enchant your item in one go
 * Item enchanting and enchantments combining through anvil has been disabled
 * Enchantment recipes are data driven and can be customized through data-packs at any time
-* Materials override feature allows to customize enchantability of materials or idividiual items
+* Materials override feature allows to customize enchantability of materials or individual items
