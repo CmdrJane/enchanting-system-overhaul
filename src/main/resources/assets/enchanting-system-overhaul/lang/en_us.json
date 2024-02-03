@@ -12,7 +12,7 @@
   "eso.booktoashes": "Drained of magical power enchanted book crumbles to ashes in your hands",
   "eso.allreadylearned": "You already know all secrets contained within this book",
   "eso.youlearned": "You learned: %s",
-  "eso.youforgot": "You forgot: &s",
+  "eso.youforgot": "You forgot: %s",
   "eso.command.encantmentnotfound": "Enchantment id %s not found in game registries",
   "eso.command.allreadylearned": "You already know how to enchant stuff with %s ",
   "eso.command.allknowledge": "You have been granted with immense knowledge of all enchantments there is to know",
