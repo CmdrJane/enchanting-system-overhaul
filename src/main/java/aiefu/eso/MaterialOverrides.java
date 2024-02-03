@@ -127,4 +127,18 @@ public class MaterialOverrides {
         return new MaterialOverrides(toolsMat, armorMat, hardOverrides);
     }
 
+    public static MaterialOverrides readWithAttachments(HashMap<String, MaterialData> tools, HashMap<String, MaterialData> armor, HashMap<String, MaterialData> items) throws FileNotFoundException {
+        Gson gson = ESOCommon.getGson();
+        Type type = new TypeToken<HashMap<String, MaterialData>>(){}.getType();
+        HashMap<String, MaterialData> toolsMat = gson.fromJson(new FileReader("./config/eso/material-overrides/tools.json"), type);
+        HashMap<String, MaterialData>  armorMat = gson.fromJson(new FileReader("./config/eso/material-overrides/armor.json"), type);
+        HashMap<String, MaterialData>  hardOverrides = gson.fromJson(new FileReader("./config/eso/material-overrides/items.json"), type);
+
+        tools.putAll(toolsMat);
+        armor.putAll(armorMat);
+        items.putAll(hardOverrides);
+
+        return new MaterialOverrides(tools, armor, items);
+    }
+
 }

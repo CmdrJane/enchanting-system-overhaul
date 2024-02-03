@@ -1,9 +1,6 @@
 package aiefu.eso;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -36,6 +33,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +52,8 @@ public class ESOCommon implements ModInitializer {
 	public static final ResourceLocation s2c_string_to_clipboard = new ResourceLocation(MOD_ID, "s2c_string_to_clipboard");
 
 	public static final ResourceLocation enchantment_recipe_loader = new ResourceLocation(MOD_ID,"enchantment_recipe_loader");
+
+	public static final ResourceLocation mat_data_loader = new ResourceLocation(MOD_ID,"mat_data_loader");
 
 	private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -106,6 +106,50 @@ public class ESOCommon implements ModInitializer {
 			}
 
 		});
+		ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new SimpleResourceReloadListener<Map<ResourceLocation, Resource>>() {
+			@Override
+			public ResourceLocation getFabricId() {
+				return mat_data_loader;
+			}
+
+			@Override
+			public CompletableFuture<Map<ResourceLocation, Resource>> load(ResourceManager manager, ProfilerFiller profiler, Executor executor) {
+				return CompletableFuture.supplyAsync(() -> manager.listResources("mat-overrides", resourceLocation -> resourceLocation.getPath().endsWith(".json")), executor);
+			}
+
+			@Override
+			public CompletableFuture<Void> apply(Map<ResourceLocation, Resource> data, ResourceManager manager, ProfilerFiller profiler, Executor executor) {
+				return CompletableFuture.runAsync(() -> {
+					HashMap<String, MaterialData> armor = new HashMap<>();
+					HashMap<String, MaterialData> tools = new HashMap<>();
+					HashMap<String, MaterialData> items = new HashMap<>();
+					data.forEach((l, r) -> {
+						try {
+							JsonElement jsonTree = JsonParser.parseReader(r.openAsReader());
+							JsonObject obj = jsonTree.getAsJsonObject();
+							String id = obj.get("material_id").getAsString();
+							String type = obj.get("type").getAsString();
+							MaterialData md = gson.fromJson(jsonTree, MaterialData.class);
+							if(type.equalsIgnoreCase("armor")){
+								armor.put(id, md);
+							} else if(type.equalsIgnoreCase("tool")){
+								tools.put(id, md);
+							} else if(type.equalsIgnoreCase("item")){
+								items.put(id, md);
+							}
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+					});
+					try {
+						mat_config = MaterialOverrides.readWithAttachments(tools, armor, items);
+					} catch (FileNotFoundException e) {
+						throw new RuntimeException(e);
+					}
+				}, executor);
+			}
+
+		});
 		ServerPlayNetworking.registerGlobalReceiver(c2s_enchant_item, (server, player, handler, buf, responseSender) -> {
 			String s = buf.readUtf();
 			int ordinal = buf.readVarInt();
@@ -121,7 +165,6 @@ public class ESOCommon implements ModInitializer {
 			this.readConfig();
 			this.genDefaultRecipe();
 			MaterialOverrides.generateDefault();
-			mat_config = MaterialOverrides.read();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

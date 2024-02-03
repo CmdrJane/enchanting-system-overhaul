@@ -199,7 +199,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     public void renderConfirmOverlay(GuiGraphics graphics, int mx, int my, float pt){
         if(overlayActive){
-            graphics.blitNineSliced(ENCHANTING_BACKGROUND_TEXTURE, leftPos + 10, topPos + 48, 200, 60, 20, 20, 140, 60, 0, 196);
+            graphics.blit(ENCHANTING_BACKGROUND_TEXTURE, leftPos + 10, topPos + 48, 0,196,200, 60);
             int h = (42 - (8* this.confirmMsg.size() + (this.confirmMsg.size() - 1) * 6)) / 2;
             for (int i = 0; i < this.confirmMsg.size(); i++) {
                 this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 50 + h + 14 * i,4210752, false);
