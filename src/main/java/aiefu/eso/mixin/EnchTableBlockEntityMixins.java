@@ -2,7 +2,9 @@ package aiefu.eso.mixin;
 
 import aiefu.eso.ESOCommon;
 import aiefu.eso.IServerPlayerAcc;
-import aiefu.eso.OverhauledEnchantmentMenu;
+import aiefu.eso.menu.OverhauledEnchantmentMenu;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -40,17 +41,19 @@ public abstract class EnchTableBlockEntityMixins extends BlockEntity implements 
     public void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
         if(player.getAbilities().instabuild || ESOCommon.config.disableDiscoverySystem){
             Set<ResourceLocation> keyset = BuiltInRegistries.ENCHANTMENT.keySet();
-            buf.writeInt(keyset.size());
+            buf.writeVarInt(keyset.size());
             for (ResourceLocation loc : keyset){
                 buf.writeUtf(loc.toString());
+                buf.writeVarInt(ESOCommon.getMaximumPossibleEnchantmentLevel(BuiltInRegistries.ENCHANTMENT.get(loc)));
             }
         } else {
-            HashSet<Enchantment> enchantments = ((IServerPlayerAcc) player).enchantment_overhaul$getUnlockedEnchantments();
+            Object2IntOpenHashMap<Enchantment> enchantments = ((IServerPlayerAcc) player).enchantment_overhaul$getUnlockedEnchantments();
             buf.writeInt(enchantments.size());
-            for (Enchantment e : enchantments) {
-                ResourceLocation loc = BuiltInRegistries.ENCHANTMENT.getKey(e);
+            for (Object2IntMap.Entry<Enchantment> e : enchantments.object2IntEntrySet()) {
+                ResourceLocation loc = BuiltInRegistries.ENCHANTMENT.getKey(e.getKey());
                 Objects.requireNonNull(loc);
                 buf.writeUtf(loc.toString());
+                buf.writeVarInt(e.getIntValue());
             }
         }
     }

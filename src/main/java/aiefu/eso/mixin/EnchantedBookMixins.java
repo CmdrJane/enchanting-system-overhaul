@@ -2,6 +2,7 @@ package aiefu.eso.mixin;
 
 import aiefu.eso.ESOCommon;
 import aiefu.eso.IServerPlayerAcc;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -19,7 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 @Mixin(EnchantedBookItem.class)
 public abstract class EnchantedBookMixins extends Item {
@@ -32,7 +36,7 @@ public abstract class EnchantedBookMixins extends Item {
     public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
         if(!level.isClientSide() && player instanceof IServerPlayerAcc acc){
-            HashSet<Enchantment> set = acc.enchantment_overhaul$getUnlockedEnchantments();
+            Object2IntOpenHashMap<Enchantment> set = acc.enchantment_overhaul$getUnlockedEnchantments();
             Map<Enchantment, Integer> map = EnchantmentHelper.getEnchantments(stack);
 
             int originalSize = map.size();
@@ -40,9 +44,9 @@ public abstract class EnchantedBookMixins extends Item {
             Iterator<Map.Entry<Enchantment, Integer>> iterator = map.entrySet().iterator();
             while (iterator.hasNext()){
                 Map.Entry<Enchantment, Integer> entry = iterator.next();
-                if(!set.contains(entry.getKey())){
+                if(!set.containsKey(entry.getKey())){
                     Enchantment e = entry.getKey();
-                    set.add(e);
+                    set.put(entry.getKey(), entry.getValue().intValue());
                     msg.add(e);
                     iterator.remove();
                 }

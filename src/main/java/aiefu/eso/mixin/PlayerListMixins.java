@@ -1,6 +1,6 @@
 package aiefu.eso.mixin;
 
-import aiefu.eso.ESOCommon;
+import aiefu.eso.network.ServersideNetworkManager;
 import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
@@ -14,8 +14,8 @@ public class PlayerListMixins {
     @Inject(method = "placeNewPlayer", at = @At("RETURN"))
     private void sendEOVRDataSyncPacket(Connection netManager, ServerPlayer player, CallbackInfo ci){
         if(!player.server.isSingleplayerOwner(player.getGameProfile())){
-            ESOCommon.syncData(player);
-            ESOCommon.syncMatConfig(player);
+            ServersideNetworkManager.syncData(player);
+            ServersideNetworkManager.syncMatConfig(player);
         }
     }
 }

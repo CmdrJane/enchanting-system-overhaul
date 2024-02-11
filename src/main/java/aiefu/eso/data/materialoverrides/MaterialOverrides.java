@@ -1,5 +1,6 @@
-package aiefu.eso;
+package aiefu.eso.data.materialoverrides;
 
+import aiefu.eso.ESOCommon;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import net.minecraft.core.registries.BuiltInRegistries;

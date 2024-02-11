@@ -1,7 +1,14 @@
-package aiefu.eso;
+package aiefu.eso.menu;
 
+import aiefu.eso.ConfigurationFile;
+import aiefu.eso.ESOCommon;
+import aiefu.eso.IServerPlayerAcc;
 import aiefu.eso.client.ESOClient;
+import aiefu.eso.data.RecipeHolder;
+import aiefu.eso.data.materialoverrides.MaterialData;
+import aiefu.eso.data.materialoverrides.MaterialOverrides;
 import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -22,7 +29,9 @@ import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.block.Blocks;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public static final ResourceLocation[] TEXTURE_EMPTY_SLOTS = new ResourceLocation[]{InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS,
@@ -33,9 +42,9 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public static final ResourceLocation SWORD_EMPTY_ICON = new ResourceLocation("item/empty_slot_sword");
     public static final ResourceLocation INGOT_EMPTY_ICON = new ResourceLocation("item/empty_slot_ingot");
     private final ContainerLevelAccess access;
-    public HashSet<Enchantment> enchantments = new HashSet<>();
+    public Object2IntOpenHashMap<Enchantment> enchantments = new Object2IntOpenHashMap<>();
 
-    public HashSet<Enchantment> curses = new HashSet<>();
+    public Object2IntOpenHashMap<Enchantment> curses = new Object2IntOpenHashMap<>();
 
     public boolean isClientSide = false;
 
@@ -43,17 +52,16 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public OverhauledEnchantmentMenu(int syncId, Inventory inventory, FriendlyByteBuf buf) {
         this(syncId, inventory, ContainerLevelAccess.NULL, ESOClient.getClientPlayer());
         this.isClientSide = true;
-        List<Enchantment> list = new ArrayList<>();
-        int r = buf.readInt();
+        int r = buf.readVarInt();
         for (int i = 0; i < r; i++) {
             String s = buf.readUtf();
-            ResourceLocation loc = new ResourceLocation(s);
-            list.add(BuiltInRegistries.ENCHANTMENT.get(loc));
-        }
-        for (Enchantment e : list){
-            if(e.isCurse()){
-                curses.add(e);
-            } else enchantments.add(e);
+            int l = buf.readVarInt();
+            Enchantment e = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(s));
+            if(e != null){
+                if(e.isCurse()){
+                    curses.put(e, l);
+                } else enchantments.put(e, l);
+            }
         }
 
     }
@@ -152,6 +160,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
 
     public void checkRequirementsAndConsume(ResourceLocation location, Player player, int ordinal){
         this.access.execute((level, blockPos) -> {
+            boolean instabuild = player.getAbilities().instabuild;
             ItemStack stack = this.tableInv.getItem(0);
             if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)) {
                 if(stack.is(Items.BOOK)) {
@@ -159,8 +168,9 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 } else {
                     Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
                     if (target != null) {
-                        HashSet<Enchantment> learnedEnchantments = ((IServerPlayerAcc)player).enchantment_overhaul$getUnlockedEnchantments();
-                        if(!learnedEnchantments.contains(target) && !ESOCommon.config.disableDiscoverySystem){
+                        Object2IntOpenHashMap<Enchantment> learnedEnchantments = ((IServerPlayerAcc)player).enchantment_overhaul$getUnlockedEnchantments();
+                        int learnedLevel = learnedEnchantments.getInt(target);
+                        if(learnedLevel == 0 && !ESOCommon.config.disableDiscoverySystem && !instabuild){
                             return;
                         }
                         if(target.isCurse() && !ESOCommon.config.enableCursesAmplifier){
@@ -187,14 +197,17 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                             if (l != null) {
                                 targetLevel = l + 1;
                             }
+                            if(targetLevel > learnedLevel && ESOCommon.config.enableEnchantmentsLeveling && !instabuild){
+                                return;
+                            }
                             List<RecipeHolder> holders = ESOCommon.getRecipeHolders(location);
                             if (holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()) {
                                 RecipeHolder holder = holders.get(ordinal);
-                                if (player.getAbilities().instabuild || targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
+                                if (instabuild || targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
                                     enchs.put(target, targetLevel);
                                     this.applyAndBroadcast(player, enchs, stack);
                                 }
-                            } else if (player.getAbilities().instabuild && targetLevel <= target.getMaxLevel()) {
+                            } else if (instabuild && targetLevel <= target.getMaxLevel()) {
                                 enchs.put(target, targetLevel);
                                 this.applyAndBroadcast(player, enchs, stack);
                             }

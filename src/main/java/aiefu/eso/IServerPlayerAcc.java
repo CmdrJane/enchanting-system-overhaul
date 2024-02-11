@@ -1,10 +1,9 @@
 package aiefu.eso;
 
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.world.item.enchantment.Enchantment;
 
-import java.util.HashSet;
-
 public interface IServerPlayerAcc {
-    HashSet<Enchantment> enchantment_overhaul$getUnlockedEnchantments();
-    void enchantment_overhaul$setUnlockedEnchantments(HashSet<Enchantment> map);
+    Object2IntOpenHashMap<Enchantment> enchantment_overhaul$getUnlockedEnchantments();
+    void enchantment_overhaul$setUnlockedEnchantments(Object2IntOpenHashMap<Enchantment> map);
 }
