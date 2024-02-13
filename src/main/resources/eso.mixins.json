@@ -7,9 +7,9 @@
     "EnchantedBookMixins",
     "EnchantingTableMixins",
     "EnchTableBlockEntityMixins",
+    "LootPoolMixins",
     "PlayerListMixins",
-    "ServerPlayerMixins",
-    "SetEnchantmentsFuncMixins"
+    "ServerPlayerMixins"
   ],
   "injectors": {
     "defaultRequire": 1

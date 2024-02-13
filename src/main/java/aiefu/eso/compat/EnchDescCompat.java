@@ -1,4 +1,4 @@
-package aiefu.eso;
+package aiefu.eso.compat;
 
 import net.darkhax.enchdesc.DescriptionManager;
 import net.minecraft.network.chat.MutableComponent;

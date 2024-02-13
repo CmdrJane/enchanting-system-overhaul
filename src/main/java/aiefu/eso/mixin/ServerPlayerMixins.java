@@ -1,10 +1,11 @@
 package aiefu.eso.mixin;
 
+import aiefu.eso.ESOCommon;
 import aiefu.eso.IServerPlayerAcc;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,23 +16,26 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.HashSet;
-
 @Mixin(ServerPlayer.class)
 public class ServerPlayerMixins implements IServerPlayerAcc {
     @Unique
-    private HashSet<Enchantment> unlockedEnchantments = new HashSet<>();
+    private Object2IntOpenHashMap<Enchantment> unlockedEnchantments = new Object2IntOpenHashMap<>();
 
     @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
     private void saveUnlockedEnchantmentsDataEOVR(CompoundTag compound, CallbackInfo ci){
         ListTag enchantments = new ListTag();
-        for (Enchantment e : unlockedEnchantments){
-            ResourceLocation key = BuiltInRegistries.ENCHANTMENT.getKey(e);
+        unlockedEnchantments.forEach((k, v) -> {
+            ResourceLocation key = BuiltInRegistries.ENCHANTMENT.getKey(k);
             if(key != null){
-                enchantments.add(StringTag.valueOf(key.toString()));
+                CompoundTag enchantmentData = new CompoundTag();
+                enchantmentData.putString("identifier", key.toString());
+                enchantmentData.putInt("level", v);
+                enchantments.add(enchantmentData);
             }
-        }
-        compound.put("UnlockedEnchs", enchantments);
+        });
+        CompoundTag tag = new CompoundTag();
+        tag.put("LearnedEnchantments", enchantments);
+        compound.put("esodata", tag);
     }
 
     @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
@@ -43,20 +47,37 @@ public class ServerPlayerMixins implements IServerPlayerAcc {
                 String id = t.getAsString();
                 Enchantment e = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(id));
                 if(e != null){
-                    this.unlockedEnchantments.add(e);
+                    this.unlockedEnchantments.put(e, ESOCommon.getMaximumPossibleEnchantmentLevel(e));
+                }
+            }
+            compound.remove("UnlockedEnchs");
+        }
+        if(compound.contains("esodata", Tag.TAG_COMPOUND)){
+            CompoundTag esoData = compound.getCompound("esodata");
+            if(esoData.contains("LearnedEnchantments", Tag.TAG_LIST)){
+                ListTag enchantments = esoData.getList("LearnedEnchantments", Tag.TAG_COMPOUND);
+                for (Tag t : enchantments){
+                    CompoundTag ct = (CompoundTag) t;
+                    String id = ct.getString("identifier");
+                    int level = ct.getInt("level");
+                    Enchantment e = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(id));
+                    if(e != null){
+                        this.unlockedEnchantments.put(e, level);
+                    }
                 }
             }
         }
+
     }
 
 
     @Override
-    public HashSet<Enchantment> enchantment_overhaul$getUnlockedEnchantments() {
+    public Object2IntOpenHashMap<Enchantment> enchantment_overhaul$getUnlockedEnchantments() {
         return unlockedEnchantments;
     }
 
     @Override
-    public void enchantment_overhaul$setUnlockedEnchantments(HashSet<Enchantment> map) {
+    public void enchantment_overhaul$setUnlockedEnchantments(Object2IntOpenHashMap<Enchantment> map) {
         this.unlockedEnchantments = map;
     }
 }

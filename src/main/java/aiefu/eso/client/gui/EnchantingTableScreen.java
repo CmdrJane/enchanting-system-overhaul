@@ -1,9 +1,18 @@
 package aiefu.eso.client.gui;
 
-import aiefu.eso.*;
+import aiefu.eso.ConfigurationFile;
+import aiefu.eso.ESOCommon;
 import aiefu.eso.client.ESOClient;
+import aiefu.eso.data.RecipeHolder;
+import aiefu.eso.data.itemdata.ItemDataPrepared;
+import aiefu.eso.data.materialoverrides.MaterialData;
+import aiefu.eso.data.materialoverrides.MaterialOverrides;
+import aiefu.eso.menu.OverhauledEnchantmentMenu;
+import aiefu.eso.network.PacketIdentifiers;
 import com.google.common.collect.Maps;
 import io.netty.buffer.Unpooled;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -34,7 +43,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 import java.util.*;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 
 public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnchantmentMenu> {
     public static final ResourceLocation ENCHANTING_BACKGROUND_TEXTURE = new ResourceLocation(ESOCommon.MOD_ID,"textures/gui/ench_screen.png");
@@ -79,7 +88,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeUtf(Objects.requireNonNull(BuiltInRegistries.ENCHANTMENT.getKey(selectedEnchantment)).toString());
             buf.writeVarInt(ordinal);
-            ClientPlayNetworking.send(ESOCommon.c2s_enchant_item, buf);
+            ClientPlayNetworking.send(PacketIdentifiers.c2s_enchant_item, buf);
         }));
         this.cancelButton = this.addWidget(new CustomEnchantingButton(leftPos + 130, topPos + 92, 30, 12, CommonComponents.GUI_NO, button -> {
             this.switchOverlayState(true);
@@ -250,40 +259,42 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         boolean stackIsEmpty = stack.isEmpty();
         boolean bl = stack.is(Items.BOOK);
         Map<Enchantment, Integer> enchs = stackIsEmpty ? EMPTY_MAP : EnchantmentHelper.getEnchantments(stack);
-        HashSet<Enchantment> el = stackIsEmpty || bl ? menu.enchantments : this.filterToNewSet(menu.enchantments, enchantment -> enchantment.canEnchant(stack));
-        HashSet<Enchantment> curses = this.filterToNewSet(enchs.keySet(), Enchantment::isCurse);
+        Object2IntOpenHashMap<Enchantment> availableEnchantments = stackIsEmpty || bl ? menu.enchantments : this.filterToNewSet(menu.enchantments, (enchantment, level) -> enchantment.canEnchant(stack));
+        Object2IntOpenHashMap<Enchantment> curses = this.filterToNewSet(enchs, (enchantment, integer) -> enchantment.isCurse());
         MaterialData matData = this.getMatData(stack.getItem());
-        int ec = this.getCurrentEnchantmentsCount(enchs.size(), curses.size());
-        int ml = this.getEnchantmentsLimit(curses.size(), matData);
+        int currentEnchantmentsCount = this.getCurrentEnchantmentsCount(enchs.size(), curses.size());
+        int enchantmentsLimit = this.getEnchantmentsLimit(curses.size(), matData);
         if(stackIsEmpty){
             this.displayMsg = null;
         } else {
-            int i = Math.max(ml - ec, 0);
+            int i = Math.max(enchantmentsLimit - currentEnchantmentsCount, 0);
             this.displayMsg = Component.translatable("eso.enchantmentsleft", i);
         }
 
         ConfigurationFile cfg = ESOCommon.config;
 
-        HashSet<Enchantment> applicableCurses = bl ? menu.curses : this.filterToNewSet(menu.curses, e -> e.canEnchant(stack));
-        if(ec >= ml){
-            el = new HashSet<>(enchs.keySet());
+        Object2IntOpenHashMap<Enchantment> applicableCurses = bl ? menu.curses : this.filterToNewSet(menu.curses, (e, l) -> e.canEnchant(stack));
+        if(currentEnchantmentsCount >= enchantmentsLimit){
+            availableEnchantments = new Object2IntOpenHashMap<>(enchs);
             if(cfg.enableCursesAmplifier){
                 if(curses.size() < matData.getMaxCurses()){
-                    el.addAll(applicableCurses);
+                    availableEnchantments.putAll(applicableCurses);
                 } else {
-                    for (Enchantment c : curses){
-                        if(c.getMaxLevel() > 1){
-                            el.add(c);
+                    for (Object2IntMap.Entry<Enchantment> c : curses.object2IntEntrySet()){
+                        if(enchs.containsKey(c.getKey())){
+                            availableEnchantments.put(c.getKey(), c.getIntValue());
                         }
                     }
                 }
             }
         } else if(cfg.enableCursesAmplifier && curses.size() < matData.getMaxCurses()){
-            el.addAll(applicableCurses);
+            availableEnchantments.putAll(applicableCurses);
         }
         int offset = 0;
 
-        for (Enchantment enchantment : el) {
+        for (Object2IntMap.Entry<Enchantment> entry : availableEnchantments.object2IntEntrySet()) {
+            Enchantment enchantment = entry.getKey();
+            int level = entry.getIntValue();
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
                 List<RecipeHolder> holders = ESOCommon.getRecipeHolders(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
@@ -300,7 +311,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                             this.ordinal = ((EnchButtonWithData)button).getOrdinal();
                             this.switchOverlayState(false);
                             this.switchButtonsState(false);
-                        }, holder, enchantment, ordinal);
+                        }, holder, enchantment, level, ordinal);
                         this.composeTooltipAndApply(translatable, enchantment, holder, targetLevel, b, true);
                         list.add(b);
                         offset++;
@@ -317,7 +328,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                         this.ordinal = -1;
                         this.switchOverlayState(false);
                         this.switchButtonsState(false);
-                    }, null, enchantment, -1);
+                    }, null, enchantment, level, -1);
                     this.composeTooltipAndApply(translatable, enchantment, null, targetLevel, b, true);
                     list.add(b);
                     offset++;
@@ -333,10 +344,13 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         c.withStyle(ChatFormatting.AQUA);
         c.append(CommonComponents.NEW_LINE);
         c.append(ESOClient.getEnchantmentDescription(enchantment));
+        if(ESOCommon.config.enableEnchantmentsLeveling && targetLevel > button.enchantmentInstance.level){
+            c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(button.enchantmentInstance.level)));
+        }
         if(holder != null){
             c.append(CommonComponents.NEW_LINE);
             c.append(Component.translatable("eso.requires").withStyle(ChatFormatting.GRAY));
-            for (RecipeHolder.ItemData data : holder.levels.get(targetLevel)) {
+            for (ItemDataPrepared data : holder.levels.get(targetLevel)) {
                 MutableComponent itemName;
                 if(data.isEmpty()){
                     itemName = Component.translatable("eso.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
@@ -350,7 +364,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                             this.tickingButtons.add(button);
                             data.resetPos();
                         }
-                        RecipeHolder.ItemDataSimple ids = data.getSimpleData();
+                        ItemDataPrepared ids = data.getNotNestedData();
                         item = ids.item;
                         tag = ids.compoundTag;
                         amount = ids.amount;
@@ -393,11 +407,21 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         button.setTooltip(Tooltip.create(c));
     }
 
-    public HashSet<Enchantment> filterToNewSet(Set<Enchantment> set , Predicate<Enchantment> predicate){
-        HashSet<Enchantment> enchs = new HashSet<>();
-        for (Enchantment e : set){
-            if(predicate.test(e)){
-                enchs.add(e);
+    public Object2IntOpenHashMap<Enchantment> filterToNewSet(Object2IntOpenHashMap<Enchantment> map, BiPredicate<Enchantment, Integer> predicate){
+        Object2IntOpenHashMap<Enchantment> enchs = new Object2IntOpenHashMap<>();
+        for (Object2IntMap.Entry<Enchantment> e : map.object2IntEntrySet()){
+            if(predicate.test(e.getKey(), e.getIntValue())){
+                enchs.put(e.getKey(), e.getIntValue());
+            }
+        }
+        return enchs;
+    }
+
+    public Object2IntOpenHashMap<Enchantment> filterToNewSet(Map<Enchantment, Integer> map, BiPredicate<Enchantment, Integer> predicate){
+        Object2IntOpenHashMap<Enchantment> enchs = new Object2IntOpenHashMap<>();
+        for (Map.Entry<Enchantment, Integer> e : map.entrySet()){
+            if(predicate.test(e.getKey(), e.getValue())){
+                enchs.put(e.getKey(), e.getValue().intValue());
             }
         }
         return enchs;
@@ -433,17 +457,22 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
             label1:
             for (EnchButtonWithData b : this.enchantmentsScrollList.getEnchantments()) {
+                Integer targetLevel = enchs.get(b.getEnchantment());
+                targetLevel = targetLevel == null ? 1 : targetLevel + 1;
+
+                if(ESOCommon.config.enableEnchantmentsLeveling && targetLevel > b.enchantmentInstance.level){
+                    b.active = false;
+                    continue;
+                }
+
                 if(!stack.is(Items.BOOK)) {
                     for (Enchantment e : enchs.keySet()) {
-                        if (e != b.enchantment && !e.isCompatibleWith(b.enchantment)) {
+                        if (e != b.getEnchantment() && !e.isCompatibleWith(b.getEnchantment())) {
                             b.active = false;
                             continue label1;
                         }
                     }
                 }
-
-                Integer targetLevel = enchs.get(b.getEnchantment());
-                targetLevel = targetLevel == null ? 1 : targetLevel + 1;
                 RecipeHolder holder = b.getRecipe();
                 if (holder != null) {
                     b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && (player.getAbilities().instabuild || holder.check(container, targetLevel));
