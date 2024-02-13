@@ -1,5 +1,6 @@
 package aiefu.eso.mixin;
 
+import aiefu.eso.ESOCommon;
 import aiefu.eso.IServerPlayerAcc;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -46,9 +47,10 @@ public class ServerPlayerMixins implements IServerPlayerAcc {
                 String id = t.getAsString();
                 Enchantment e = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(id));
                 if(e != null){
-                    this.unlockedEnchantments.put(e, 1);
+                    this.unlockedEnchantments.put(e, ESOCommon.getMaximumPossibleEnchantmentLevel(e));
                 }
             }
+            compound.remove("UnlockedEnchs");
         }
         if(compound.contains("esodata", Tag.TAG_COMPOUND)){
             CompoundTag esoData = compound.getCompound("esodata");

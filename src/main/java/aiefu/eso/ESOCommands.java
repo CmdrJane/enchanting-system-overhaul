@@ -63,7 +63,7 @@ public class ESOCommands {
                     int r = Math.min(maxLevel, i + level);
                     learnedEnchantments.put(enchantment, r);
                     ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
-                    targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", ((MutableComponent)enchantment.getFullname(r)).withStyle(ChatFormatting.DARK_PURPLE).withStyle(ChatFormatting.GOLD)), true);
+                    targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", getFormattedNameLeveled(enchantment, r)).withStyle(ChatFormatting.GOLD), true);
                 }
                 case "set" -> {
                     int r = Math.min(level, maxLevel);
@@ -72,7 +72,7 @@ public class ESOCommands {
                     } else {
                         learnedEnchantments.put(enchantment, Math.min(level, maxLevel));
                         ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
-                        targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", ((MutableComponent)enchantment.getFullname(r)).withStyle(ChatFormatting.DARK_PURPLE).withStyle(ChatFormatting.GOLD)), true);
+                        targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", getFormattedNameLeveled(enchantment, r)).withStyle(ChatFormatting.GOLD), true);
                     }
                 }
                 case "sub", "subtract" -> {
@@ -84,12 +84,20 @@ public class ESOCommands {
                     } else {
                         learnedEnchantments.put(enchantment, r);
                         ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
-                        targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", ((MutableComponent)enchantment.getFullname(r)).withStyle(ChatFormatting.DARK_PURPLE).withStyle(ChatFormatting.GOLD)), true);
+                        targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", getFormattedNameLeveled(enchantment, r)).withStyle(ChatFormatting.GOLD), true);
                     }
                 }
+                default -> ctx.getSource().sendFailure(Component.translatable("eso.command.feedback.invalidoperation"));
             }
-        }
+        } else ctx.getSource().sendFailure(Component.translatable("eso.command.encantmentnotfound", enchantmentId));
         return 0;
+    }
+
+    public static MutableComponent getFormattedNameLeveled(Enchantment e, int l){
+        MutableComponent msg = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
+        msg.append(e.getFullname(l));
+        msg.append(Component.literal("]"));
+        return msg;
     }
 
     public static int getMaterialId(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {

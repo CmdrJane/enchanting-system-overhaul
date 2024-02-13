@@ -20,9 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 @Mixin(EnchantedBookItem.class)
@@ -40,19 +38,26 @@ public abstract class EnchantedBookMixins extends Item {
             Map<Enchantment, Integer> map = EnchantmentHelper.getEnchantments(stack);
 
             int originalSize = map.size();
-            List<Enchantment> msg = new ArrayList<>();
             Iterator<Map.Entry<Enchantment, Integer>> iterator = map.entrySet().iterator();
             while (iterator.hasNext()){
                 Map.Entry<Enchantment, Integer> entry = iterator.next();
-                if(!set.containsKey(entry.getKey())){
-                    Enchantment e = entry.getKey();
-                    set.put(entry.getKey(), entry.getValue().intValue());
-                    msg.add(e);
+                Enchantment e = entry.getKey();
+                int i = set.getInt(e);
+                int r = entry.getValue();
+                if(i > 0){
+                    if(ESOCommon.config.enableEnchantmentsLeveling && r > i){
+                        set.put(e, r);
+                        iterator.remove();
+                        this.esoSendMessage(e, r, player);
+                    }
+                } else {
+                    set.put(e, r);
                     iterator.remove();
+                    this.esoSendMessage(e, r, player);
                 }
             }
             if(map.size() != originalSize) {
-                esoApplyEnchantments(map, stack);
+                this.esoApplyEnchantments(map, stack);
                 player.displayClientMessage(Component.translatable("eso.absorbingknowledge")
                         .withStyle(ChatFormatting.DARK_PURPLE), false);
                 if(map.size() == 0){
@@ -60,20 +65,23 @@ public abstract class EnchantedBookMixins extends Item {
                     player.displayClientMessage(Component.translatable("eso.booktoashes")
                             .withStyle(ChatFormatting.GOLD), false);
                 }
-                for (Enchantment e: msg) {
-                    if(e.isCurse() && !ESOCommon.config.enableCursesAmplifier){
-                        continue;
-                    }
-                    MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
-                    c.append(Component.translatable(e.getDescriptionId()));
-                    c.append(Component.literal("]"));
-                    player.displayClientMessage(Component.translatable("eso.youlearned", c).withStyle(ChatFormatting.GOLD), false);
-                }
             } else player.displayClientMessage(Component.translatable("eso.allreadylearned")
                     .withStyle(ChatFormatting.DARK_GREEN), false);
 
         }
         return InteractionResultHolder.pass(stack);
+    }
+
+    @Unique
+    private void esoSendMessage(Enchantment e, int level, Player player){
+        if(e.isCurse() && !ESOCommon.config.enableCursesAmplifier){
+            return;
+        }
+        MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
+        MutableComponent eName = ESOCommon.config.enableEnchantmentsLeveling ? (MutableComponent) e.getFullname(level) : Component.translatable(e.getDescriptionId());
+        c.append(eName);
+        c.append(Component.literal("]"));
+        player.displayClientMessage(Component.translatable("eso.youlearned", c).withStyle(ChatFormatting.GOLD), false);
     }
 
     @Unique
