@@ -1,4 +1,4 @@
-package aiefu.eso;
+package aiefu.eso.data.materialoverrides;
 
 public class MaterialData {
     protected int maxEnchantments;

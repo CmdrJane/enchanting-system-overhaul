@@ -1,8 +1,8 @@
 package aiefu.eso.network.packets;
 
 import aiefu.eso.ESOCommon;
-import aiefu.eso.MaterialData;
-import aiefu.eso.MaterialOverrides;
+import aiefu.eso.data.materialoverrides.MaterialData;
+import aiefu.eso.data.materialoverrides.MaterialOverrides;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.network.NetworkEvent;

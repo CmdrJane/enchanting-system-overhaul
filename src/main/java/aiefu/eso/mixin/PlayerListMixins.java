@@ -1,7 +1,7 @@
 package aiefu.eso.mixin;
 
 import aiefu.eso.ESOCommon;
-import aiefu.eso.RecipeHolder;
+import aiefu.eso.data.RecipeHolder;
 import aiefu.eso.network.NetworkManager;
 import aiefu.eso.network.packets.SyncEnchantmentsData;
 import aiefu.eso.network.packets.SyncMatData;

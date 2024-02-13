@@ -1,7 +1,10 @@
 package aiefu.eso.mixin;
 
+import aiefu.eso.ESOCommon;
 import aiefu.eso.IServerPlayerAcc;
-import aiefu.eso.OverhauledEnchantmentMenu;
+import aiefu.eso.menu.OverhauledEnchantmentMenu;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,7 +27,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -43,19 +45,21 @@ public abstract class EnchantingTableMixins extends BaseEntityBlock{
             if(level.getBlockEntity(pos) instanceof EnchantmentTableBlockEntity ee){
                 NetworkHooks.openScreen((ServerPlayer) player, new SimpleMenuProvider((id, playerInv, p)
                         -> new OverhauledEnchantmentMenu(id, playerInv, ContainerLevelAccess.create(level, pos), p), ee.getName()), buf -> {
-                    if(player.getAbilities().instabuild){
+                    if(player.getAbilities().instabuild || ESOCommon.config.disableDiscoverySystem){
                         Set<ResourceLocation> keyset = ForgeRegistries.ENCHANTMENTS.getKeys();
-                        buf.writeInt(keyset.size());
+                        buf.writeVarInt(keyset.size());
                         for (ResourceLocation loc : keyset){
                             buf.writeUtf(loc.toString());
+                            buf.writeVarInt(ESOCommon.getMaximumPossibleEnchantmentLevel(ForgeRegistries.ENCHANTMENTS.getValue(loc)));
                         }
                     } else {
-                        HashSet<Enchantment> enchantments = ((IServerPlayerAcc) player).enchantment_overhaul$getUnlockedEnchantments();
+                        Object2IntOpenHashMap<Enchantment> enchantments = ((IServerPlayerAcc) player).enchantment_overhaul$getUnlockedEnchantments();
                         buf.writeInt(enchantments.size());
-                        for (Enchantment e : enchantments) {
-                            ResourceLocation loc = ForgeRegistries.ENCHANTMENTS.getKey(e);
+                        for (Object2IntMap.Entry<Enchantment> e : enchantments.object2IntEntrySet()) {
+                            ResourceLocation loc = ForgeRegistries.ENCHANTMENTS.getKey(e.getKey());
                             Objects.requireNonNull(loc);
                             buf.writeUtf(loc.toString());
+                            buf.writeVarInt(e.getIntValue());
                         }
                     }
                 });

@@ -1,8 +1,8 @@
 package aiefu.eso.client;
 
 import aiefu.eso.ESOCommon;
-import aiefu.eso.EnchDescCompat;
 import aiefu.eso.client.gui.EnchantingTableScreen;
+import aiefu.eso.compat.EnchDescCompat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;

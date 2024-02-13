@@ -1,8 +1,12 @@
 package aiefu.eso;
 
 import aiefu.eso.client.ESOClient;
-import aiefu.eso.datalisteners.EnchantmentRecipeDataListener;
-import aiefu.eso.datalisteners.MaterialOverridesDataListener;
+import aiefu.eso.data.EnchantmentRecipesLoader;
+import aiefu.eso.data.MaterialDataLoader;
+import aiefu.eso.data.RecipeHolder;
+import aiefu.eso.data.itemdata.ItemData;
+import aiefu.eso.data.materialoverrides.MaterialOverrides;
+import aiefu.eso.menu.OverhauledEnchantmentMenu;
 import aiefu.eso.network.NetworkManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -10,6 +14,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.AddReloadListenerEvent;
@@ -84,8 +89,8 @@ public class ESOCommon{
 
 	@SubscribeEvent
 	public void reloadListeners(final AddReloadListenerEvent event){
-		event.addListener(EnchantmentRecipeDataListener::reload);
-		event.addListener(MaterialOverridesDataListener::reload);
+		event.addListener(EnchantmentRecipesLoader::reload);
+		event.addListener(MaterialDataLoader::reload);
 	}
 
 	@SubscribeEvent
@@ -144,32 +149,32 @@ public class ESOCommon{
 	public void genDefaultRecipe() throws IOException{
 		String p = "./config/eso/default-recipe.json";
 		if(!Files.exists(Paths.get(p))){
-			LinkedHashMap<Integer, RecipeHolder.ItemData[]> levels = new LinkedHashMap<>();
+			LinkedHashMap<Integer, ItemData[]> levels = new LinkedHashMap<>();
 			int level = 1;
 			for (int i = 0; i < 3; i++) {
-				RecipeHolder.ItemData[] dataArr = new RecipeHolder.ItemData[4];
-				dataArr[0] = new RecipeHolder.ItemData("minecraft:lapis_lazuli", 12);
-				dataArr[1] = new RecipeHolder.ItemData("minecraft:amethyst_shard", 3);
-				dataArr[2] = new RecipeHolder.ItemData("minecraft:gold_ingot", 6);
-				dataArr[3] = new RecipeHolder.ItemData("minecraft:diamond", 3);
+				ItemData[] dataArr = new ItemData[4];
+				dataArr[0] = new ItemData("minecraft:lapis_lazuli", 12);
+				dataArr[1] = new ItemData("minecraft:amethyst_shard", 3);
+				dataArr[2] = new ItemData("minecraft:gold_ingot", 6);
+				dataArr[3] = new ItemData("minecraft:diamond", 3);
 				levels.put(level, dataArr);
 				level++;
 			}
 			for (int i = 0; i < 4; i++) {
-				RecipeHolder.ItemData[] dataArr = new RecipeHolder.ItemData[4];
-				dataArr[0] = new RecipeHolder.ItemData("minecraft:lapis_lazuli", 32);
-				dataArr[1] = new RecipeHolder.ItemData("minecraft:amethyst_shard", 7);
-				dataArr[2] = new RecipeHolder.ItemData("minecraft:gold_ingot", 24);
-				dataArr[3] = new RecipeHolder.ItemData("minecraft:diamond", 7);
+				ItemData[] dataArr = new ItemData[4];
+				dataArr[0] = new ItemData("minecraft:lapis_lazuli", 32);
+				dataArr[1] = new ItemData("minecraft:amethyst_shard", 7);
+				dataArr[2] = new ItemData("minecraft:gold_ingot", 24);
+				dataArr[3] = new ItemData("minecraft:diamond", 7);
 				levels.put(level, dataArr);
 				level++;
 			}
 			for (int i = 0; i < 3; i++) {
-				RecipeHolder.ItemData[] dataArr = new RecipeHolder.ItemData[4];
-				dataArr[0] = new RecipeHolder.ItemData("minecraft:lapis_lazuli", 48);
-				dataArr[1] = new RecipeHolder.ItemData("minecraft:amethyst_shard", 16);
-				dataArr[2] = new RecipeHolder.ItemData("minecraft:gold_ingot", 32);
-				dataArr[3] = new RecipeHolder.ItemData("minecraft:diamond", 16);
+				ItemData[] dataArr = new ItemData[4];
+				dataArr[0] = new ItemData("minecraft:lapis_lazuli", 48);
+				dataArr[1] = new ItemData("minecraft:amethyst_shard", 16);
+				dataArr[2] = new ItemData("minecraft:gold_ingot", 32);
+				dataArr[3] = new ItemData("minecraft:diamond", 16);
 				levels.put(level, dataArr);
 				level++;
 			}
@@ -183,6 +188,21 @@ public class ESOCommon{
 	public static List<RecipeHolder> getRecipeHolders(ResourceLocation location){
 		List<RecipeHolder> holders = ESOCommon.recipeMap.get(location);
 		return holders != null ? holders : config.enableDefaultRecipe ? ESOCommon.recipeMap.get(defaultRecipe) : null;
+	}
+
+	public static int getMaximumPossibleEnchantmentLevel(Enchantment enchantment){
+		ResourceLocation location = ForgeRegistries.ENCHANTMENTS.getKey(enchantment);
+		List<RecipeHolder> holders = ESOCommon.recipeMap.get(location);
+		int maxLevel = 0;
+		if(holders != null && !holders.isEmpty()){
+			for (RecipeHolder holder : holders){
+				int l = holder.getMaxLevel(enchantment);
+				if(l > maxLevel){
+					maxLevel = l;
+				}
+			}
+		} else maxLevel = enchantment.getMaxLevel();
+		return maxLevel;
 	}
 
 	public static Gson getGson(){

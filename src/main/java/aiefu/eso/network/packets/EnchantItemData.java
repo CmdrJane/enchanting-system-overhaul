@@ -1,6 +1,7 @@
 package aiefu.eso.network.packets;
 
-import aiefu.eso.OverhauledEnchantmentMenu;
+
+import aiefu.eso.menu.OverhauledEnchantmentMenu;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
