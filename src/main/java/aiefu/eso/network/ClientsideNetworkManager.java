@@ -1,9 +1,9 @@
 package aiefu.eso.network;
 
 import aiefu.eso.ESOCommon;
+import aiefu.eso.data.RecipeData;
 import aiefu.eso.data.RecipeHolder;
 import aiefu.eso.data.itemdata.ItemData;
-import aiefu.eso.data.itemdata.RecipeData;
 import aiefu.eso.data.materialoverrides.MaterialData;
 import aiefu.eso.data.materialoverrides.MaterialOverrides;
 import com.google.common.collect.Interner;
@@ -104,8 +104,7 @@ public class ClientsideNetworkManager {
                         int remainderAmount = buf.readVarInt();
                         String remainderTag = interner.intern(buf.readUtf());
                         remainderTag = n == remainderTag ? null : remainderTag;
-                        arr[l] = idsArr == null ? new ItemData(id, amount, tag, remainder, remainderAmount, remainderTag) :
-                                new ItemData(id, tag, idsArr, amount, remainder, remainderAmount, remainderTag);
+                        arr[l] = new ItemData(id, tag, idsArr, amount, remainder, remainderAmount, remainderTag);
                     }
                     int2ObjMap.put(level, arr);
                 }

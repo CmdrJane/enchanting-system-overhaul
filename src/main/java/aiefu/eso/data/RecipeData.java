@@ -1,6 +1,7 @@
-package aiefu.eso.data.itemdata;
+package aiefu.eso.data;
 
-import aiefu.eso.data.RecipeHolder;
+import aiefu.eso.data.itemdata.ItemData;
+import aiefu.eso.data.itemdata.ItemDataPrepared;
 import aiefu.eso.exception.ItemDoesNotExistException;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.resources.ResourceLocation;

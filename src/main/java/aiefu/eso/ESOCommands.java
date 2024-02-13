@@ -2,6 +2,7 @@ package aiefu.eso;
 
 import aiefu.eso.network.PacketIdentifiers;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -43,6 +44,52 @@ public class ESOCommands {
                 .executes(ESOCommands::getItemId)));
         dispatcher.register(Commands.literal("eso").requires(stack -> stack.hasPermission(4)).then(Commands.literal("get-enchantment-id-in-hand")
                 .executes(ESOCommands::getEnchantmentId)));
+        dispatcher.register(Commands.literal("eso").requires(stack -> stack.hasPermission(4)).then(Commands.literal("learn-leveled")
+                .then(Commands.argument("player", EntityArgument.player()).then(Commands.argument("enchantment-id", StringArgumentType.greedyString())
+                        .then(Commands.argument("operation", StringArgumentType.string()).then(Commands.argument("level", IntegerArgumentType.integer(1)).executes(context ->
+                                setLeveledEnchantment(context, EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "enchantment-id"),
+                                        StringArgumentType.getString(context, "operation"), IntegerArgumentType.getInteger(context, "level")))))))));
+    }
+
+    public static int setLeveledEnchantment(CommandContext<CommandSourceStack> ctx, ServerPlayer targetPlayer, String enchantmentId, String operation, int level){
+        Enchantment enchantment = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(enchantmentId));
+        if(enchantment != null){
+            MutableComponent c  = Component.translatable(enchantment.getDescriptionId());
+            Object2IntOpenHashMap<Enchantment> learnedEnchantments = ((IServerPlayerAcc)targetPlayer).enchantment_overhaul$getUnlockedEnchantments();
+            int maxLevel = ESOCommon.getMaximumPossibleEnchantmentLevel(enchantment);
+            int i = learnedEnchantments.getInt(enchantment);
+            switch (operation){
+                case "add" -> {
+                    int r = Math.min(maxLevel, i + level);
+                    learnedEnchantments.put(enchantment, r);
+                    ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
+                    targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", ((MutableComponent)enchantment.getFullname(r)).withStyle(ChatFormatting.DARK_PURPLE).withStyle(ChatFormatting.GOLD)), true);
+                }
+                case "set" -> {
+                    int r = Math.min(level, maxLevel);
+                    if(r == i){
+                        ctx.getSource().sendFailure(Component.translatable("eso.command.feedback.playerknows", targetPlayer.getDisplayName(), c));
+                    } else {
+                        learnedEnchantments.put(enchantment, Math.min(level, maxLevel));
+                        ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
+                        targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", ((MutableComponent)enchantment.getFullname(r)).withStyle(ChatFormatting.DARK_PURPLE).withStyle(ChatFormatting.GOLD)), true);
+                    }
+                }
+                case "sub", "subtract" -> {
+                    int r = i - level;
+                    if(r < 1){
+                        learnedEnchantments.removeInt(enchantment);
+                        targetPlayer.sendSystemMessage(Component.translatable("eso.youforgot", c), true);
+                        ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.removedEnchantment", c, targetPlayer.getDisplayName()), true);
+                    } else {
+                        learnedEnchantments.put(enchantment, r);
+                        ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
+                        targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", ((MutableComponent)enchantment.getFullname(r)).withStyle(ChatFormatting.DARK_PURPLE).withStyle(ChatFormatting.GOLD)), true);
+                    }
+                }
+            }
+        }
+        return 0;
     }
 
     public static int getMaterialId(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {

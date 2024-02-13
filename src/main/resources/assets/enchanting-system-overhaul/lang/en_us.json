@@ -23,5 +23,6 @@
   "eso.command.feedback.doesnotknow": "Player %s does not know enchantment %s",
   "eso.command.feedback.grantall": "Successfully discovered all enchantments for player %s",
   "eso.command.feedback.revokeall": "Successfully revoked all enchantments knowledge from player %s",
-  "eso.knowledgerequired": "Knowledge required: %s"
+  "eso.knowledgerequired": "Knowledge required: %s",
+  "eso.command.feedback.successfullyadded": "Now %s level is %s for player %s"
 }
