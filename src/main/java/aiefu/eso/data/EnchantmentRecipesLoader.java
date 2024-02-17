@@ -39,7 +39,6 @@ public class EnchantmentRecipesLoader {
                     ESOCommon.recipeMap.clear();
                     container.recipes.forEach((key, value) -> {
                         try {
-                            System.out.println(key.toString());
                             RecipeHolder holder = RecipeHolder.deserialize(JsonParser.parseReader(value.openAsReader()).getAsJsonObject(), key, container.fallbacks);
                             if(holder != null){
                                 holder.register();
