@@ -475,7 +475,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 }
                 RecipeHolder holder = b.getRecipe();
                 if (holder != null) {
-                    b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && (player.getAbilities().instabuild || holder.check(container, targetLevel));
+                    b.active = targetLevel <= holder.getMaxLevel(b.getEnchantment()) && (player.getAbilities().instabuild || holder.check(container, targetLevel, player));
                 } else b.active = player.getAbilities().instabuild && targetLevel <= b.getEnchantment().getMaxLevel();
             }
         } else this.enchantmentsScrollList.enchantments.forEach(b -> b.active = false);

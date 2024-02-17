@@ -50,7 +50,7 @@ public abstract class EnchTableBlockEntityMixins extends BlockEntity implements 
             }
         } else {
             Object2IntOpenHashMap<Enchantment> enchantments = ((IServerPlayerAcc) player).enchantment_overhaul$getUnlockedEnchantments();
-            buf.writeInt(enchantments.size());
+            buf.writeVarInt(enchantments.size());
             for (Object2IntMap.Entry<Enchantment> e : enchantments.object2IntEntrySet()) {
                 ResourceLocation loc = BuiltInRegistries.ENCHANTMENT.getKey(e.getKey());
                 Objects.requireNonNull(loc);
