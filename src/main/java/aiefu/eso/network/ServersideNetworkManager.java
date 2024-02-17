@@ -7,6 +7,7 @@ import aiefu.eso.data.itemdata.ItemDataPrepared;
 import aiefu.eso.data.materialoverrides.MaterialData;
 import aiefu.eso.menu.OverhauledEnchantmentMenu;
 import io.netty.buffer.Unpooled;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -78,6 +79,7 @@ public class ServersideNetworkManager {
             for (RecipeHolder holder : holders){
                 buf.writeUtf(holder.enchantment_id);
                 buf.writeVarInt(holder.maxLevel);
+                buf.writeBoolean(holder.mode);
 
                 buf.writeVarInt(holder.levels.size());
                 for (Int2ObjectMap.Entry<ItemDataPrepared[]> entry : holder.levels.int2ObjectEntrySet()){
@@ -112,6 +114,11 @@ public class ServersideNetworkManager {
                         String remainderTag = data.data.remainderTag == null ? n : data.data.remainderTag;
                         buf.writeUtf(remainderTag);
                     }
+                }
+                buf.writeVarInt(holder.xpMap.size());
+                for (Int2IntMap.Entry entry : holder.xpMap.int2IntEntrySet()){
+                    buf.writeVarInt(entry.getIntKey());
+                    buf.writeVarInt(entry.getIntValue());
                 }
             }
         }

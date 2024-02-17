@@ -8,6 +8,7 @@ import aiefu.eso.data.materialoverrides.MaterialData;
 import aiefu.eso.data.materialoverrides.MaterialOverrides;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
@@ -69,6 +70,7 @@ public class ClientsideNetworkManager {
             for (int b = 0; b < jk; b++) {
                 String eid = buf.readUtf();
                 int maxLevel = buf.readVarInt();
+                boolean xpMode = buf.readBoolean();
                 int r = buf.readVarInt();
                 Int2ObjectOpenHashMap<ItemData[]> int2ObjMap = new Int2ObjectOpenHashMap<>();
                 for (int k = 0; k < r; k++) {
@@ -108,7 +110,12 @@ public class ClientsideNetworkManager {
                     }
                     int2ObjMap.put(level, arr);
                 }
-                RecipeData holder = new RecipeData(eid, maxLevel, int2ObjMap);
+                Int2IntOpenHashMap xpMap = new Int2IntOpenHashMap();
+                int z = buf.readVarInt();
+                for (int k = 0; k < z ; k++) {
+                    xpMap.put(buf.readVarInt(), buf.readVarInt());
+                }
+                RecipeData holder = new RecipeData(eid, maxLevel, xpMode, int2ObjMap, xpMap);
                 holders.add(holder);
             }
             map.put(loc, holders);

@@ -203,7 +203,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                             List<RecipeHolder> holders = ESOCommon.getRecipeHolders(location);
                             if (holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()) {
                                 RecipeHolder holder = holders.get(ordinal);
-                                if (instabuild || targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel)) {
+                                if (instabuild || targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel, player)) {
                                     enchs.put(target, targetLevel);
                                     this.applyAndBroadcast(player, enchs, stack);
                                 }
@@ -247,7 +247,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             List<RecipeHolder> holders = ESOCommon.getRecipeHolders(location);
             if(holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()){
                 RecipeHolder holder = holders.get(ordinal);
-                if(holder.checkAndConsume(this.tableInv, 1)){
+                if(holder.checkAndConsume(this.tableInv, 1, player)){
                     EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(target, 1));
                     this.tableInv.setItem(0, stack);
                     player.onEnchantmentPerformed(stack, 0);
