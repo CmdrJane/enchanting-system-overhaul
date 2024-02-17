@@ -11,6 +11,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -54,7 +55,7 @@ public class ESOCommon implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		EnchantmentRecipesLoader.registerReloadListener(getGson());
+		EnchantmentRecipesLoader.registerReloadListener();
 		MaterialDataLoader.registerReloadListener(getGson());
 		ServersideNetworkManager.registerReceivers();
 		try {
@@ -158,8 +159,17 @@ public class ESOCommon implements ModInitializer {
 				levels.put(level, dataArr);
 				level++;
 			}
-			try(FileWriter writer = new FileWriter("./config/eso/default-recipe.json")){
+			try(FileWriter writer = new FileWriter(p)){
 				gson.toJson(levels, writer);
+			}
+		}
+		String p2 = "./config/eso/default-xp-map.json";
+		if(!Files.exists(Paths.get(p2))){
+			JsonObject tree = new JsonObject();
+			tree.addProperty("useExpPoints", false);
+			tree.add("xp", gson.toJsonTree(new Int2IntOpenHashMap()));
+			try(FileWriter writer = new FileWriter(p2)){
+				gson.toJson(tree, writer);
 			}
 		}
 	}
