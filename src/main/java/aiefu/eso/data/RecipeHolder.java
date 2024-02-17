@@ -22,6 +22,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -238,8 +240,15 @@ public class RecipeHolder {
         return null;
     }
 
-    public static RecipeHolder deserializeDefaultRecipe(Int2ObjectOpenHashMap<ItemData[]> levels, ResourceLocation location){
+    public static RecipeHolder deserializeDefaultRecipe(ResourceLocation location) throws FileNotFoundException {
         String id = "default";
+
+        Int2ObjectOpenHashMap<ItemData[]> levels = ESOCommon.getGson().fromJson(new FileReader("./config/eso/default-recipe.json"), new TypeToken<Int2ObjectOpenHashMap<ItemData[]>>(){}.getType());
+        JsonObject jsonTree = JsonParser.parseReader(new FileReader("./config/eso/default-xp-map.json")).getAsJsonObject();
+        boolean useXPPoints = jsonTree.has("useExpPoints") && jsonTree.get("useExpPoints").getAsBoolean();
+        JsonElement xp = jsonTree.get("xp");
+        Int2IntOpenHashMap xpMap = ESOCommon.getGson().fromJson(xp, new TypeToken<Int2IntOpenHashMap>(){}.getType());
+
         Int2ObjectOpenHashMap<ItemDataPrepared[]> levelsProcessed = new Int2ObjectOpenHashMap<>();
         levels.forEach((k, v) -> {
             ItemDataPrepared[] prepArr = new ItemDataPrepared[v.length];
@@ -253,6 +262,6 @@ public class RecipeHolder {
             }
             levelsProcessed.put(k.intValue(), prepArr);
         });
-        return new RecipeHolder(new ResourceLocation(id), false, id, 0, levelsProcessed, new Int2IntOpenHashMap());
+        return new RecipeHolder(new ResourceLocation(id), useXPPoints, id, 0, levelsProcessed, xpMap);
     }
 }
