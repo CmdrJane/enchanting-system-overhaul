@@ -8,6 +8,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.network.chat.CommonComponents;
@@ -16,10 +17,13 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraftforge.fml.ModList;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,21 +32,20 @@ import java.util.Map;
 public class RecipeHolder {
     public static final ItemDataPrepared EMPTY = new ItemDataPrepared(null);
     public transient ResourceLocation ench_location;
+    public transient boolean mode;
+
     public String enchantment_id;
     public int maxLevel;
     public Int2ObjectOpenHashMap<ItemDataPrepared[]> levels;
+    public Int2IntOpenHashMap xpMap;
 
-    public RecipeHolder(ResourceLocation ench_location, String enchantment_id, int maxLevel, Int2ObjectOpenHashMap<ItemDataPrepared[]> levels) {
+    public RecipeHolder(ResourceLocation ench_location, boolean mode, String enchantment_id, int maxLevel, Int2ObjectOpenHashMap<ItemDataPrepared[]> levels, Int2IntOpenHashMap xpMap) {
         this.ench_location = ench_location;
+        this.mode = mode;
         this.enchantment_id = enchantment_id;
         this.maxLevel = maxLevel;
         this.levels = levels;
-    }
-
-    public RecipeHolder(ResourceLocation ench_location, String enchantment_id, int maxLevel) {
-        this.ench_location = ench_location;
-        this.enchantment_id = enchantment_id;
-        this.maxLevel = maxLevel;
+        this.xpMap = xpMap;
     }
 
     public void register(){
@@ -56,7 +59,7 @@ public class RecipeHolder {
         }
     }
 
-    public boolean check(SimpleContainer container, int targetLevel){
+    public boolean check(SimpleContainer container, int targetLevel, Player player){
         int x = 0;
         ItemDataPrepared[] array = this.levels.get(targetLevel);
         if(array != null) {
@@ -64,7 +67,7 @@ public class RecipeHolder {
                 ItemStack stack = container.getItem(i + 1);
                 ItemDataPrepared data = array[i];
                 if (data != null) {
-                    if (data.isEmpty() || data.testItemStackMatch(stack)) {
+                    if (data.isEmpty() || data.testItemStackMatch(stack) && this.checkXPRequirements(player, xpMap.get(targetLevel))) {
                         x++;
                     }
                 } else {
@@ -76,7 +79,7 @@ public class RecipeHolder {
         return false;
     }
 
-    public boolean checkAndConsume(SimpleContainer container, int targetLevel){
+    public boolean checkAndConsume(SimpleContainer container, int targetLevel, Player player){
         int x = 0;
         ItemDataPrepared[] arr = this.levels.get(targetLevel);
         if(arr != null) {
@@ -84,7 +87,7 @@ public class RecipeHolder {
                 ItemStack stack = container.getItem(i + 1);
                 ItemDataPrepared data = arr[i];
                 if (data != null) {
-                    if (data.isEmpty() || data.testItemStackMatch(stack)) {
+                    if (data.isEmpty() || data.testItemStackMatch(stack) && this.checkXPRequirementsAndConsume(player, xpMap.get(targetLevel))) {
                         x++;
                     }
                 } else {
@@ -106,6 +109,61 @@ public class RecipeHolder {
             }
         }
         return false;
+    }
+
+    public boolean checkXPRequirements(Player player, int cost){
+        if(cost < 1){
+            return true;
+        }
+        if(mode){
+            int level = player.experienceLevel;
+            float progress = player.experienceProgress - (float) cost / player.getXpNeededForNextLevel();
+            while (progress < 0.0F){
+                float f = progress * getXpNeededForLevel(level);
+                if(level > 0){
+                    level--;
+                    progress = 1.0F +  f / getXpNeededForLevel(level);
+                }
+            }
+            return progress >= 0.0F;
+        } else {
+            return player.experienceLevel >= cost;
+        }
+    }
+
+    public boolean checkXPRequirementsAndConsume(Player player, int cost){
+        if(cost < 1){
+            return true;
+        }
+        if(mode){
+            int level = player.experienceLevel;
+            float progress = player.experienceProgress - (float) cost / player.getXpNeededForNextLevel();
+            while (progress < 0.0F){
+                float f = progress * getXpNeededForLevel(level);
+                if(level > 0){
+                    level--;
+                    progress = 1.0F +  f / getXpNeededForLevel(level);
+                }
+            }
+            if(progress >= 0.0F){
+                player.giveExperiencePoints(-cost);
+                return true;
+            }
+        } else {
+            if(player.experienceLevel >= cost){
+                player.giveExperienceLevels(-cost);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int getXpNeededForLevel(int level) {
+        if (level >= 30) {
+            return 112 + (level - 30) * 9;
+        } else {
+            return level >= 15 ? 37 + (level - 15) * 5 : 7 + level * 2;
+        }
     }
 
     public void processTags(){
@@ -149,8 +207,11 @@ public class RecipeHolder {
         }
 
         int maxLevel = jsonTree.has("maxLevel") ? jsonTree.get("maxLevel").getAsInt() : 0;
+        boolean useXPPoints = jsonTree.has("useExpPoints") && jsonTree.get("useExpPoints").getAsBoolean();
         JsonElement map = jsonTree.get("levels");
+        JsonElement map2 = jsonTree.has("xp") ? jsonTree.get("xp") : null;
         Int2ObjectOpenHashMap<ItemData[]> levels = ESOCommon.getGson().fromJson(map, new TypeToken<Int2ObjectOpenHashMap<ItemData[]>>(){}.getType());
+        Int2IntOpenHashMap xpMap = map2 == null ? new Int2IntOpenHashMap() : ESOCommon.getGson().fromJson(map2,new TypeToken<Int2IntOpenHashMap>(){}.getType());
         Int2ObjectOpenHashMap<ItemDataPrepared[]> levelsProcessed = new Int2ObjectOpenHashMap<>();
         try {
             for (Int2ObjectMap.Entry<ItemData[]> e : levels.int2ObjectEntrySet()){
@@ -162,9 +223,11 @@ public class RecipeHolder {
                 levelsProcessed.put(e.getIntKey(), prepArr);
             }
         } catch (ItemDoesNotExistException exception){
-                return deserializeFallback(fallback, fallbacks);
+            exception.printStackTrace();
+            ESOCommon.LOGGER.warn("Failed to deserialize recipe " + location.toString() + " trying to load fallback...");
+            return deserializeFallback(fallback, fallbacks);
         }
-        return new RecipeHolder(new ResourceLocation(id), id, maxLevel, levelsProcessed);
+        return new RecipeHolder(new ResourceLocation(id), useXPPoints, id, maxLevel, levelsProcessed, xpMap);
     }
 
     private static RecipeHolder deserializeFallback(ResourceLocation fallback, Map<ResourceLocation, Resource> fallbacks) throws IOException {
@@ -177,8 +240,15 @@ public class RecipeHolder {
         return null;
     }
 
-    public static RecipeHolder deserializeDefaultRecipe(Int2ObjectOpenHashMap<ItemData[]> levels, ResourceLocation location){
+    public static RecipeHolder deserializeDefaultRecipe(ResourceLocation location) throws FileNotFoundException {
         String id = "default";
+
+        Int2ObjectOpenHashMap<ItemData[]> levels = ESOCommon.getGson().fromJson(new FileReader("./config/eso/default-recipe.json"), new TypeToken<Int2ObjectOpenHashMap<ItemData[]>>(){}.getType());
+        JsonObject jsonTree = JsonParser.parseReader(new FileReader("./config/eso/default-xp-map.json")).getAsJsonObject();
+        boolean useXPPoints = jsonTree.has("useExpPoints") && jsonTree.get("useExpPoints").getAsBoolean();
+        JsonElement xp = jsonTree.get("xp");
+        Int2IntOpenHashMap xpMap = ESOCommon.getGson().fromJson(xp, new TypeToken<Int2IntOpenHashMap>(){}.getType());
+
         Int2ObjectOpenHashMap<ItemDataPrepared[]> levelsProcessed = new Int2ObjectOpenHashMap<>();
         levels.forEach((k, v) -> {
             ItemDataPrepared[] prepArr = new ItemDataPrepared[v.length];
@@ -192,6 +262,6 @@ public class RecipeHolder {
             }
             levelsProcessed.put(k.intValue(), prepArr);
         });
-        return new RecipeHolder(new ResourceLocation(id), id, 0, levelsProcessed);
+        return new RecipeHolder(new ResourceLocation(id), useXPPoints, id, 0, levelsProcessed, xpMap);
     }
 }

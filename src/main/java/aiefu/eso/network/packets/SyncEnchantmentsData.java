@@ -7,6 +7,8 @@ import aiefu.eso.data.itemdata.ItemData;
 import aiefu.eso.data.itemdata.ItemDataPrepared;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.network.FriendlyByteBuf;
@@ -47,6 +49,7 @@ public class SyncEnchantmentsData {
             for (int b = 0; b < jk; b++) {
                 String eid = buf.readUtf();
                 int maxLevel = buf.readVarInt();
+                boolean xpMode = buf.readBoolean();
                 int r = buf.readVarInt();
                 Int2ObjectOpenHashMap<ItemData[]> int2ObjMap = new Int2ObjectOpenHashMap<>();
                 for (int k = 0; k < r; k++) {
@@ -86,7 +89,12 @@ public class SyncEnchantmentsData {
                     }
                     int2ObjMap.put(level, arr);
                 }
-                RecipeData holder = new RecipeData(eid, maxLevel, int2ObjMap);
+                Int2IntOpenHashMap xpMap = new Int2IntOpenHashMap();
+                int z = buf.readVarInt();
+                for (int k = 0; k < z ; k++) {
+                    xpMap.put(buf.readVarInt(), buf.readVarInt());
+                }
+                RecipeData holder = new RecipeData(eid, maxLevel, xpMode, int2ObjMap, xpMap);
                 holders.add(holder);
             }
             map.put(loc, holders);
@@ -105,6 +113,7 @@ public class SyncEnchantmentsData {
             for (RecipeHolder holder : holders){
                 buf.writeUtf(holder.enchantment_id);
                 buf.writeVarInt(holder.maxLevel);
+                buf.writeBoolean(holder.mode);
 
                 buf.writeVarInt(holder.levels.size());
                 for (Int2ObjectMap.Entry<ItemDataPrepared[]> entry : holder.levels.int2ObjectEntrySet()){
@@ -139,6 +148,11 @@ public class SyncEnchantmentsData {
                         String remainderTag = data.data.remainderTag == null ? n : data.data.remainderTag;
                         buf.writeUtf(remainderTag);
                     }
+                }
+                buf.writeVarInt(holder.xpMap.size());
+                for (Int2IntMap.Entry entry : holder.xpMap.int2IntEntrySet()){
+                    buf.writeVarInt(entry.getIntKey());
+                    buf.writeVarInt(entry.getIntValue());
                 }
             }
         }

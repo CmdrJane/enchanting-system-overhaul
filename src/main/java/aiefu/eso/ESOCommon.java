@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -138,6 +139,10 @@ public class ESOCommon{
 			jsonObject.addProperty("disableDiscoverySystem", false);
 			shouldSave = true;
 		}
+		if(!jsonObject.has("enableEnchantmentsLeveling")){
+			jsonObject.addProperty("enableEnchantmentsLeveling", false);
+			shouldSave = true;
+		}
 		ESOCommon.config = gson.fromJson(jsonObject, ConfigurationFile.class);
 		if(shouldSave){
 			try(FileWriter writer = new FileWriter("./config/eso/config.json")){
@@ -178,8 +183,17 @@ public class ESOCommon{
 				levels.put(level, dataArr);
 				level++;
 			}
-			try(FileWriter writer = new FileWriter("./config/eso/default-recipe.json")){
+			try(FileWriter writer = new FileWriter(p)){
 				gson.toJson(levels, writer);
+			}
+		}
+		String p2 = "./config/eso/default-xp-map.json";
+		if(!Files.exists(Paths.get(p2))){
+			JsonObject tree = new JsonObject();
+			tree.addProperty("useExpPoints", false);
+			tree.add("xp", gson.toJsonTree(new Int2IntOpenHashMap()));
+			try(FileWriter writer = new FileWriter(p2)){
+				gson.toJson(tree, writer);
 			}
 		}
 	}

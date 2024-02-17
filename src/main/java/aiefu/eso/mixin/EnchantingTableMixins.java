@@ -54,7 +54,7 @@ public abstract class EnchantingTableMixins extends BaseEntityBlock{
                         }
                     } else {
                         Object2IntOpenHashMap<Enchantment> enchantments = ((IServerPlayerAcc) player).enchantment_overhaul$getUnlockedEnchantments();
-                        buf.writeInt(enchantments.size());
+                        buf.writeVarInt(enchantments.size());
                         for (Object2IntMap.Entry<Enchantment> e : enchantments.object2IntEntrySet()) {
                             ResourceLocation loc = ForgeRegistries.ENCHANTMENTS.getKey(e.getKey());
                             Objects.requireNonNull(loc);
