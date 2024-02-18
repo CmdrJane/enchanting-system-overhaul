@@ -1,6 +1,7 @@
 package aiefu.eso.data;
 
 import aiefu.eso.ESOCommon;
+import aiefu.eso.Utils;
 import aiefu.eso.data.itemdata.ItemData;
 import aiefu.eso.data.itemdata.ItemDataPrepared;
 import aiefu.eso.exception.ItemDoesNotExistException;
@@ -67,14 +68,14 @@ public class RecipeHolder {
                 ItemStack stack = container.getItem(i + 1);
                 ItemDataPrepared data = array[i];
                 if (data != null) {
-                    if (data.isEmpty() || data.testItemStackMatch(stack) && this.checkXPRequirements(player, xpMap.get(targetLevel))) {
+                    if (data.isEmpty() || data.testItemStackMatch(stack)) {
                         x++;
                     }
                 } else {
                     x++;
                 }
             }
-            return x > array.length - 1;
+            return x > array.length - 1 && this.checkXPRequirements(player, xpMap.get(targetLevel));
         }
         return false;
     }
@@ -87,7 +88,7 @@ public class RecipeHolder {
                 ItemStack stack = container.getItem(i + 1);
                 ItemDataPrepared data = arr[i];
                 if (data != null) {
-                    if (data.isEmpty() || data.testItemStackMatch(stack) && this.checkXPRequirementsAndConsume(player, xpMap.get(targetLevel))) {
+                    if (data.isEmpty() || data.testItemStackMatch(stack)) {
                         x++;
                     }
                 } else {
@@ -96,7 +97,7 @@ public class RecipeHolder {
                 }
             }
 
-            if(x >= arr.length){
+            if(x >= arr.length && this.checkXPRequirementsAndConsume(player, xpMap.get(targetLevel))){
                 for (int i = 0; i < arr.length; i++) {
                     ItemStack stack = container.getItem(i + 1);
                     ItemDataPrepared data = arr[i];
@@ -116,16 +117,7 @@ public class RecipeHolder {
             return true;
         }
         if(mode){
-            int level = player.experienceLevel;
-            float progress = player.experienceProgress - (float) cost / player.getXpNeededForNextLevel();
-            while (progress < 0.0F){
-                float f = progress * getXpNeededForLevel(level);
-                if(level > 0){
-                    level--;
-                    progress = 1.0F +  f / getXpNeededForLevel(level);
-                }
-            }
-            return progress >= 0.0F;
+            return cost <= Utils.getTotalAvailableXPPoints(player);
         } else {
             return player.experienceLevel >= cost;
         }
@@ -136,16 +128,7 @@ public class RecipeHolder {
             return true;
         }
         if(mode){
-            int level = player.experienceLevel;
-            float progress = player.experienceProgress - (float) cost / player.getXpNeededForNextLevel();
-            while (progress < 0.0F){
-                float f = progress * getXpNeededForLevel(level);
-                if(level > 0){
-                    level--;
-                    progress = 1.0F +  f / getXpNeededForLevel(level);
-                }
-            }
-            if(progress >= 0.0F){
+            if(cost <= Utils.getTotalAvailableXPPoints(player)){
                 player.giveExperiencePoints(-cost);
                 return true;
             }
@@ -156,14 +139,6 @@ public class RecipeHolder {
             }
         }
         return false;
-    }
-
-    public int getXpNeededForLevel(int level) {
-        if (level >= 30) {
-            return 112 + (level - 30) * 9;
-        } else {
-            return level >= 15 ? 37 + (level - 15) * 5 : 7 + level * 2;
-        }
     }
 
     public void processTags(){
