@@ -2,6 +2,7 @@ package aiefu.eso.client.gui;
 
 import aiefu.eso.ConfigurationFile;
 import aiefu.eso.ESOCommon;
+import aiefu.eso.Utils;
 import aiefu.eso.client.ESOClient;
 import aiefu.eso.data.RecipeHolder;
 import aiefu.eso.data.itemdata.ItemDataPrepared;
@@ -42,6 +43,7 @@ import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.BiPredicate;
 
@@ -53,6 +55,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public static final List<FormattedCharSequence> emptyMsg = Minecraft.getInstance().font.split(Component.translatable("eso.enchantmentsempty"), 110);
 
     private static final Map<Enchantment, Integer> EMPTY_MAP = Maps.newLinkedHashMap();
+
+    private static final DecimalFormat decimal_formatter = new DecimalFormat("#.##");
 
     protected EnchantmentListWidget enchantmentsScrollList;
     protected EditBox searchFilter;
@@ -345,7 +349,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         c.append(CommonComponents.NEW_LINE);
         c.append(ESOClient.getEnchantmentDescription(enchantment));
         if(ESOCommon.config.enableEnchantmentsLeveling && targetLevel > button.enchantmentInstance.level){
-            c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(button.enchantmentInstance.level)));
+            c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(button.enchantmentInstance.level)).withStyle(ChatFormatting.DARK_RED));
         }
         if(holder != null){
             c.append(CommonComponents.NEW_LINE);
@@ -402,6 +406,25 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 c.append(CommonComponents.NEW_LINE);
                 c.append(itemName);
 
+            }
+            int cost = holder.xpMap.get(targetLevel);
+            if(cost > 0){
+                Player player = Minecraft.getInstance().player;
+                MutableComponent costMsg;
+                if(holder.mode){
+                    int totalXP = Utils.getTotalAvailableXPPoints(player);
+                    costMsg = Component.translatable("eso.xprequirementpoints", cost, decimal_formatter.format(Utils.getXPCostInLevels(player, cost, totalXP)));
+                    if(cost > totalXP){
+                        costMsg.withStyle(ChatFormatting.DARK_RED);
+                    } else costMsg.withStyle(ChatFormatting.DARK_GREEN);
+                } else {
+                    costMsg = Component.translatable("eso.xprequirementlevels", cost);
+                    if(cost > player.experienceLevel){
+                        costMsg.withStyle(ChatFormatting.DARK_RED);
+                    } else costMsg.withStyle(ChatFormatting.DARK_GREEN);
+                }
+                c.append(CommonComponents.NEW_LINE);
+                c.append(costMsg);
             }
         }
         button.setTooltip(Tooltip.create(c));

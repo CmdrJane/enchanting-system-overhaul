@@ -25,5 +25,7 @@
   "eso.command.feedback.revokeall": "Successfully revoked all enchantments knowledge from player %s",
   "eso.knowledgerequired": "Knowledge required: %s",
   "eso.command.feedback.successfullyadded": "Now %s level is %s for player %s",
-  "eso.command.feedback.invalidoperation": "Invalid operation specified, valid values are add, set, sub or subtract"
+  "eso.command.feedback.invalidoperation": "Invalid operation specified, valid values are add, set, sub or subtract",
+  "eso.xprequirementlevels": "XP required: %s",
+  "eso.xprequirementpoints": "XP required: %s, (%s levels)"
 }
