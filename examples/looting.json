@@ -3,7 +3,8 @@
   "maxLevel": 0,
   "useExpPoints": true,
   "xp": {
-    "1" : 200
+    "1" : 200,
+    "2": 400
   },
   "levels": {
     "1": [
