@@ -1,6 +1,9 @@
 package aiefu.eso;
 
+import aiefu.eso.data.materialoverrides.MaterialData;
+import aiefu.eso.data.materialoverrides.MaterialOverrides;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 
 public class Utils {
     public static int getTotalAvailableXPPoints(Player player){
@@ -53,4 +56,19 @@ public class Utils {
             return level >= 15 ? 37 + (level - 15) * 5 : 7 + level * 2;
         }
     }
+
+    public static int getEnchantmentsLimit(int curses, MaterialData data){
+        ConfigurationFile cfg = ESOCommon.config;
+        return cfg.enableCursesAmplifier ? data.getMaxEnchantments() + Math.min(curses, data.getMaxCurses()) * data.getCurseMultiplier() : data.getMaxEnchantments();
+    }
+
+    public static MaterialData getMatData(Item item){
+        return ESOCommon.config.enableEnchantability ? ESOCommon.mat_config.getMaterialData(item) : MaterialOverrides.defaultMatData;
+    }
+
+    public static int getCurrentLimit(int appliedEnchantments, int curses){
+        ConfigurationFile cfg = ESOCommon.config;
+        return cfg.enableCursesAmplifier ? appliedEnchantments - curses : appliedEnchantments;
+    }
+
 }
