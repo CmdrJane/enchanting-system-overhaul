@@ -67,6 +67,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     protected EnchantmentListWidget enchantmentsScrollList;
     protected EditBox searchFilter;
 
+    protected Component searchHint;
+
     protected CustomEnchantingButton confirmButton;
     protected CustomEnchantingButton cancelButton;
     protected Enchantment selectedEnchantment;
@@ -111,7 +113,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton.visible = overlayActive;
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
-        Component searchHint = Component.translatable("eso.search");
+        this.searchHint = Component.translatable("eso.search");
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
         List<EnchButtonWithData> list = this.craftEnchantmentsButtons(this.searchFilter.getValue());
@@ -196,6 +198,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
         super.render(poseStack, mouseX, mouseY, partialTick);
         this.searchFilter.render(poseStack, mouseX, mouseY, partialTick);
+        if(!this.searchFilter.isFocused() && searchHint != null){
+            this.font.drawShadow(poseStack, searchHint, leftPos + 81, topPos + 9, 16777215);
+        }
         if(!overlayActive) this.renderTooltip(poseStack, mouseX, mouseY);
         if(displayMsg != null){
             int x = leftPos + 79;
