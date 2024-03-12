@@ -13,7 +13,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -52,7 +52,7 @@ public class ESOCommands {
     }
 
     public static int setLeveledEnchantment(CommandContext<CommandSourceStack> ctx, ServerPlayer targetPlayer, String enchantmentId, String operation, int level){
-        Enchantment enchantment = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(enchantmentId));
+        Enchantment enchantment = Registry.ENCHANTMENT.get(new ResourceLocation(enchantmentId));
         if(enchantment != null){
             MutableComponent c  = Component.translatable(enchantment.getDescriptionId());
             Object2IntOpenHashMap<Enchantment> learnedEnchantments = ((IServerPlayerAcc)targetPlayer).enchantment_overhaul$getUnlockedEnchantments();
@@ -62,7 +62,7 @@ public class ESOCommands {
                 case "add" -> {
                     int r = Math.min(maxLevel, i + level);
                     learnedEnchantments.put(enchantment, r);
-                    ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
+                    ctx.getSource().sendSuccess(Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
                     targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", getFormattedNameLeveled(enchantment, r)).withStyle(ChatFormatting.GOLD), true);
                 }
                 case "set" -> {
@@ -71,7 +71,7 @@ public class ESOCommands {
                         ctx.getSource().sendFailure(Component.translatable("eso.command.feedback.playerknows", targetPlayer.getDisplayName(), c));
                     } else {
                         learnedEnchantments.put(enchantment, Math.min(level, maxLevel));
-                        ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
+                        ctx.getSource().sendSuccess(Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
                         targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", getFormattedNameLeveled(enchantment, r)).withStyle(ChatFormatting.GOLD), true);
                     }
                 }
@@ -80,10 +80,10 @@ public class ESOCommands {
                     if(r < 1){
                         learnedEnchantments.removeInt(enchantment);
                         targetPlayer.sendSystemMessage(Component.translatable("eso.youforgot", c), true);
-                        ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.removedEnchantment", c, targetPlayer.getDisplayName()), true);
+                        ctx.getSource().sendSuccess(Component.translatable("eso.command.feedback.removedEnchantment", c, targetPlayer.getDisplayName()), true);
                     } else {
                         learnedEnchantments.put(enchantment, r);
-                        ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
+                        ctx.getSource().sendSuccess(Component.translatable("eso.command.feedback.successfullyadded", c, r, targetPlayer.getDisplayName()), true);
                         targetPlayer.sendSystemMessage(Component.translatable("eso.youlearned", getFormattedNameLeveled(enchantment, r)).withStyle(ChatFormatting.GOLD), true);
                     }
                 }
@@ -114,7 +114,7 @@ public class ESOCommands {
         } else {
             mat = "null";
         }
-        ctx.getSource().sendSuccess(() -> Component.literal(mat), true);
+        ctx.getSource().sendSuccess(Component.literal(mat), true);
         copyToClipboard(player, mat);
         return 0;
     }
@@ -122,8 +122,8 @@ public class ESOCommands {
     public static int getItemId(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         Item item = player.getItemInHand(InteractionHand.MAIN_HAND).getItem();
-        ResourceLocation loc = BuiltInRegistries.ITEM.getKey(item);
-        ctx.getSource().sendSuccess(() -> Component.literal(loc.toString()), true);
+        ResourceLocation loc = Registry.ITEM.getKey(item);
+        ctx.getSource().sendSuccess(Component.literal(loc.toString()), true);
         copyToClipboard(player, loc.toString());
         return 0;
     }
@@ -135,10 +135,10 @@ public class ESOCommands {
             Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
             StringBuilder enchantments = new StringBuilder();
             for (Map.Entry<Enchantment, Integer> e : enchs.entrySet()) {
-                ResourceLocation loc = BuiltInRegistries.ENCHANTMENT.getKey(e.getKey());
+                ResourceLocation loc = Registry.ENCHANTMENT.getKey(e.getKey());
                 if(loc != null){
                     String s = loc.toString();
-                    ctx.getSource().sendSuccess(() -> Component.literal(s), true);
+                    ctx.getSource().sendSuccess(Component.literal(s), true);
                     enchantments.append(s).append(" ");
                 }
             }
@@ -163,7 +163,7 @@ public class ESOCommands {
         if(id.equalsIgnoreCase("all")){
             revokeAll(ctx, player);
         } else {
-            Enchantment enchantment = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(id));
+            Enchantment enchantment = Registry.ENCHANTMENT.get(new ResourceLocation(id));
             if(enchantment != null && player instanceof IServerPlayerAcc acc){
                 MutableComponent discId = Component.translatable(enchantment.getDescriptionId());
                 MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
@@ -171,7 +171,7 @@ public class ESOCommands {
                 c.append(Component.literal("]"));
                 if(acc.enchantment_overhaul$getUnlockedEnchantments().removeInt(enchantment) != 0){
                     player.sendSystemMessage(Component.translatable("eso.youforgot", c), true);
-                    ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.removedEnchantment", discId, player.getDisplayName()), true);
+                    ctx.getSource().sendSuccess(Component.translatable("eso.command.feedback.removedEnchantment", discId, player.getDisplayName()), true);
                 } else ctx.getSource().sendFailure(Component.translatable("eso.command.feedback.doesnotknow", player.getDisplayName(), discId));
             } else ctx.getSource().sendFailure(Component.translatable("eso.command.encantmentnotfound", id));
         }
@@ -182,7 +182,7 @@ public class ESOCommands {
         if(id.equalsIgnoreCase("all")){
             grantAll(ctx, player);
         } else {
-            Enchantment enchantment = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(id));
+            Enchantment enchantment = Registry.ENCHANTMENT.get(new ResourceLocation(id));
             if(enchantment != null && player instanceof IServerPlayerAcc acc){
                 MutableComponent discId = Component.translatable(enchantment.getDescriptionId());
                 MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
@@ -190,9 +190,9 @@ public class ESOCommands {
                 c.append(Component.literal("]"));
                 if(acc.enchantment_overhaul$getUnlockedEnchantments().put(enchantment, ESOCommon.getMaximumPossibleEnchantmentLevel(enchantment)) < 1) {
                     player.sendSystemMessage(Component.translatable("eso.youlearned", c).withStyle(ChatFormatting.GOLD), true);
-                    ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.addedEnchantment", discId, player.getDisplayName()).withStyle(ChatFormatting.GOLD), true);
+                    ctx.getSource().sendSuccess(Component.translatable("eso.command.feedback.addedEnchantment", discId, player.getDisplayName()).withStyle(ChatFormatting.GOLD), true);
                 } else {
-                    ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.playerknows", player.getDisplayName(), discId).withStyle(ChatFormatting.DARK_GREEN), true);
+                    ctx.getSource().sendSuccess(Component.translatable("eso.command.feedback.playerknows", player.getDisplayName(), discId).withStyle(ChatFormatting.DARK_GREEN), true);
                 }
             } else ctx.getSource().sendFailure(Component.translatable("eso.command.encantmentnotfound", id));
         }
@@ -202,10 +202,10 @@ public class ESOCommands {
     public static void grantAll(CommandContext<CommandSourceStack> ctx, ServerPlayer player){
         if(player instanceof IServerPlayerAcc acc){
             Object2IntOpenHashMap<Enchantment> enchantments = acc.enchantment_overhaul$getUnlockedEnchantments();
-            for (Enchantment e: BuiltInRegistries.ENCHANTMENT){
+            for (Enchantment e: Registry.ENCHANTMENT){
                 enchantments.put(e, ESOCommon.getMaximumPossibleEnchantmentLevel(e));
             }
-            ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.grantall", player.getDisplayName()), true);
+            ctx.getSource().sendSuccess(Component.translatable("eso.command.feedback.grantall", player.getDisplayName()), true);
             player.sendSystemMessage(Component.translatable("eso.command.allknowledge").withStyle(ChatFormatting.GOLD));
         }
     }
@@ -213,7 +213,7 @@ public class ESOCommands {
     public static void revokeAll(CommandContext<CommandSourceStack> ctx, ServerPlayer player){
         if(player instanceof IServerPlayerAcc acc){
             acc.enchantment_overhaul$getUnlockedEnchantments().clear();
-            ctx.getSource().sendSuccess(() -> Component.translatable("eso.command.feedback.revokeall", player.getDisplayName()), true);
+            ctx.getSource().sendSuccess(Component.translatable("eso.command.feedback.revokeall", player.getDisplayName()), true);
             player.sendSystemMessage(Component.translatable("eso.command.lostallknowledge").withStyle(ChatFormatting.GOLD));
         }
     }

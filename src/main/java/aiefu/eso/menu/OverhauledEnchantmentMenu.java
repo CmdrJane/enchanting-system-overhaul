@@ -9,7 +9,7 @@ import aiefu.eso.data.materialoverrides.MaterialData;
 import aiefu.eso.data.materialoverrides.MaterialOverrides;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
@@ -22,7 +22,10 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.EnchantedBookItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
@@ -38,9 +41,9 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE, InventoryMenu.EMPTY_ARMOR_SLOT_HELMET};
     protected static final EquipmentSlot[] SLOT_IDS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};;
 
-    public static final ResourceLocation LAZURITE_EMPTY_ICON = new ResourceLocation("item/empty_slot_lapis_lazuli");
-    public static final ResourceLocation SWORD_EMPTY_ICON = new ResourceLocation("item/empty_slot_sword");
-    public static final ResourceLocation INGOT_EMPTY_ICON = new ResourceLocation("item/empty_slot_ingot");
+    public static final ResourceLocation LAZURITE_EMPTY_ICON = new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/empty_slot_lapis_lazuli.png");
+    public static final ResourceLocation SWORD_EMPTY_ICON = new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/empty_slot_sword.png");
+    public static final ResourceLocation INGOT_EMPTY_ICON = new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/empty_slot_ingot.png");
     private final ContainerLevelAccess access;
     public Object2IntOpenHashMap<Enchantment> enchantments = new Object2IntOpenHashMap<>();
 
@@ -56,7 +59,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         for (int i = 0; i < r; i++) {
             String s = buf.readUtf();
             int l = buf.readVarInt();
-            Enchantment e = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(s));
+            Enchantment e = Registry.ENCHANTMENT.get(new ResourceLocation(s));
             if(e != null){
                 if(e.isCurse()){
                     curses.put(e, l);
@@ -92,9 +95,10 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             for(i = 0; i < 2; ++i) {
                 final EquipmentSlot equipmentSlot = SLOT_IDS[slotId];
                 this.addSlot(new Slot(inventory, 39 - slotId, 175 + i * 18, 108 + j * 18) {
-                    public void setByPlayer(ItemStack stack) {
-                        OverhauledEnchantmentMenu.onEquipItem(owner, equipmentSlot, stack, this.getItem());
-                        super.setByPlayer(stack);
+                    public void set(ItemStack stack) {
+                        ItemStack oldStack = this.getItem();
+                        super.set(stack);
+                        OverhauledEnchantmentMenu.onEquipItem(owner, equipmentSlot, stack, oldStack);
                     }
 
                     public int getMaxStackSize() {
@@ -119,9 +123,10 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         }
         //Offhand
         this.addSlot(new Slot(inventory, 40, 175, 157) {
-            public void setByPlayer(ItemStack stack) {
-                OverhauledEnchantmentMenu.onEquipItem(owner, EquipmentSlot.OFFHAND, stack, this.getItem());
-                super.setByPlayer(stack);
+            public void set(ItemStack stack) {
+                ItemStack oldStack = this.getItem();
+                super.set(stack);
+                OverhauledEnchantmentMenu.onEquipItem(owner, EquipmentSlot.OFFHAND, stack, oldStack);
             }
 
             public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
@@ -139,22 +144,10 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             public int getMaxStackSize() {
                 return 1;
             }
-
-            public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                return Pair.of(InventoryMenu.BLOCK_ATLAS, SWORD_EMPTY_ICON);
-            }
         });
-        this.addSlot(new Slot(this.tableInv, 1, 42,31){
-            public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                return Pair.of(InventoryMenu.BLOCK_ATLAS, LAZURITE_EMPTY_ICON);
-            }
-        });
+        this.addSlot(new Slot(this.tableInv, 1, 42,31));
         for (int j = 0; j < 3; j++) {
-            this.addSlot(new Slot(this.tableInv, j + 2, 15 + j * 18, 49){
-                public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                    return Pair.of(InventoryMenu.BLOCK_ATLAS, INGOT_EMPTY_ICON);
-                }
-            });
+            this.addSlot(new Slot(this.tableInv, j + 2, 15 + j * 18, 49));
         }
     }
 
@@ -166,7 +159,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                 if(stack.is(Items.BOOK)) {
                     this.enchantBook(location, player, ordinal);
                 } else {
-                    Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
+                    Enchantment target = Registry.ENCHANTMENT.get(location);
                     if (target != null) {
                         Object2IntOpenHashMap<Enchantment> learnedEnchantments = ((IServerPlayerAcc)player).enchantment_overhaul$getUnlockedEnchantments();
                         int learnedLevel = learnedEnchantments.getInt(target);
@@ -240,7 +233,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     }
 
     public void enchantBook(ResourceLocation location, Player player, int ordinal){
-        Enchantment target = BuiltInRegistries.ENCHANTMENT.get(location);
+        Enchantment target = Registry.ENCHANTMENT.get(location);
         if(target != null){
             ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
             stack.getOrCreateTag();
@@ -283,10 +276,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     }
 
     public static void onEquipItem(Player player, EquipmentSlot slot, ItemStack newItem, ItemStack oldItem) {
-        Equipable equipable = Equipable.get(newItem);
-        if (equipable != null) {
-            player.onEquipItem(slot, oldItem, newItem);
-        }
+        player.onEquipItem(slot, oldItem, newItem);
     }
 
     @Override
@@ -298,7 +288,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             returnStack = stack.copy();
             if(i == 41){
                 EquipmentSlot eqs = Mob.getEquipmentSlotForItem(stack);
-                if(eqs.isArmor()){
+                if(eqs.getType() == EquipmentSlot.Type.ARMOR){
                     int o = 39 - eqs.getIndex();
                     if(!moveItemStackTo(stack, o, o + 1, true) && !moveItemStackTo(stack, 0, 36, true)){
                         return ItemStack.EMPTY;
@@ -317,10 +307,11 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                ItemStack stack2 = stack.copyWithCount(1);
+                ItemStack stack2 = stack.copy();
+                stack2.setCount(1);
                 if(!this.slots.get(41).hasItem() && this.slots.get(41).mayPlace(stack2)){
                     stack.shrink(1);
-                    this.slots.get(41).setByPlayer(stack2);
+                    this.slots.get(41).set(stack2);
                     returnStack = ItemStack.EMPTY;
                 } else if(!moveItemStackTo(stack, 42, 46, false)){
                     return ItemStack.EMPTY;
@@ -328,7 +319,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             }
 
             if (stack.isEmpty()) {
-                slot.setByPlayer(ItemStack.EMPTY);
+                slot.set(ItemStack.EMPTY);
             } else {
                 slot.setChanged();
             }

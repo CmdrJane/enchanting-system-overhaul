@@ -3,7 +3,7 @@ package aiefu.eso.data.materialoverrides;
 import aiefu.eso.ESOCommon;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.*;
 
@@ -27,12 +27,12 @@ public class MaterialOverrides {
 
     public MaterialOverrides(HashMap<String, MaterialData>  toolsMatOverrides, HashMap<String, MaterialData>  armorMatOverrides, HashMap<String, MaterialData>  hardOverrides){
         hardOverrides.forEach((k, v) -> {
-            Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(k));
+            Item item = Registry.ITEM.get(new ResourceLocation(k));
             if(item != Items.AIR){
                 this.hardOverridesCompiled.put(item, v);
             }
         });
-        for (Item item : BuiltInRegistries.ITEM){
+        for (Item item : Registry.ITEM){
             if(item instanceof TieredItem ti){
                 Tier mat = ti.getTier();
                 String name = mat instanceof Enum<?> e ? e.name() : mat.getClass().getSimpleName();
@@ -148,19 +148,19 @@ public class MaterialOverrides {
     public static MaterialOverrides reconstructFromPacket(HashMap<String, MaterialData> tools, HashMap<String, MaterialData> armor, HashMap<String, MaterialData> items){
         HashMap<Item, MaterialData> toolsOverrides = new HashMap<>();
         tools.forEach((k, v) -> {
-            Item i = BuiltInRegistries.ITEM.get(new ResourceLocation(k));
+            Item i = Registry.ITEM.get(new ResourceLocation(k));
             toolsOverrides.put(i, v);
         });
 
         HashMap<Item, MaterialData> armorOverrides = new HashMap<>();
         armor.forEach((k, v) -> {
-            Item i = BuiltInRegistries.ITEM.get(new ResourceLocation(k));
+            Item i = Registry.ITEM.get(new ResourceLocation(k));
             armorOverrides.put(i, v);
         });
 
         HashMap<Item, MaterialData> hardOverrides = new HashMap<>();
         items.forEach((k, v) -> {
-            Item i = BuiltInRegistries.ITEM.get(new ResourceLocation(k));
+            Item i = Registry.ITEM.get(new ResourceLocation(k));
             hardOverrides.put(i, v);
         });
         MaterialOverrides m = new MaterialOverrides();

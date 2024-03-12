@@ -10,7 +10,7 @@ import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -40,7 +40,7 @@ public class ServersideNetworkManager {
         HashMap<Item, MaterialData> tools = ESOCommon.mat_config.toolsMatOverridesCompiled;
         buf.writeVarInt(tools.size());
         tools.forEach((k, v) -> {
-            String loc = BuiltInRegistries.ITEM.getKey(k).toString();
+            String loc = Registry.ITEM.getKey(k).toString();
             buf.writeUtf(loc);
             buf.writeVarInt(v.getMaxEnchantments());
             buf.writeVarInt(v.getMaxCurses());
@@ -49,7 +49,7 @@ public class ServersideNetworkManager {
         HashMap<Item, MaterialData> armor = ESOCommon.mat_config.armorMatOverridesCompiled;
         buf.writeVarInt(armor.size());
         armor.forEach((k, v) -> {
-            String loc = BuiltInRegistries.ITEM.getKey(k).toString();
+            String loc = Registry.ITEM.getKey(k).toString();
             buf.writeUtf(loc);
             buf.writeVarInt(v.getMaxEnchantments());
             buf.writeVarInt(v.getMaxCurses());
@@ -58,7 +58,7 @@ public class ServersideNetworkManager {
         HashMap<Item, MaterialData> items = ESOCommon.mat_config.hardOverridesCompiled;
         buf.writeVarInt(items.size());
         items.forEach((k, v) -> {
-            String loc = BuiltInRegistries.ITEM.getKey(k).toString();
+            String loc = Registry.ITEM.getKey(k).toString();
             buf.writeUtf(loc);
             buf.writeVarInt(v.getMaxEnchantments());
             buf.writeVarInt(v.getMaxCurses());

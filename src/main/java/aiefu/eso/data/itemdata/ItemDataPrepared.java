@@ -4,8 +4,7 @@ import aiefu.eso.TagsUtils;
 import aiefu.eso.exception.ItemDoesNotExistException;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
@@ -61,7 +60,7 @@ public class ItemDataPrepared {
         if (data.itemArray != null && shouldProcessArrays) {
             this.itemList = new ArrayList<>();
             for(ItemData d : data.itemArray) {
-                Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(d.id));
+                Item item = Registry.ITEM.get(new ResourceLocation(d.id));
                 if (item == Items.AIR)
                     throw new ItemDoesNotExistException("Item id " + d + " in id array not found in game registry for enchantment recipe " + eid);
 
@@ -76,9 +75,9 @@ public class ItemDataPrepared {
                 return;
             }
             if (data.id.startsWith("tags#")) {
-                this.tagKey = TagKey.create(Registries.ITEM, new ResourceLocation(data.id.substring(5)));
+                this.tagKey = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(data.id.substring(5)));
             } else {
-                this.item = BuiltInRegistries.ITEM.get(new ResourceLocation(data.id));
+                this.item = Registry.ITEM.get(new ResourceLocation(data.id));
                 if (this.item == Items.AIR)
                     throw new ItemDoesNotExistException("Item id " + data.id + " not found in game registry for enchantment recipe " + eid);
             }
@@ -94,7 +93,7 @@ public class ItemDataPrepared {
             }
             if (data.remainderId != null) {
                 if (!data.remainderId.isEmpty() && !data.remainderId.isBlank() && !data.remainderId.equalsIgnoreCase("empty")) {
-                    this.remainderItem = BuiltInRegistries.ITEM.get(new ResourceLocation(data.remainderId));
+                    this.remainderItem = Registry.ITEM.get(new ResourceLocation(data.remainderId));
                     if (remainderItem == Items.AIR)
                         throw new ItemDoesNotExistException("Remainder item id " + data.remainderId + " not found in game registry for enchantment recipe " + eid);
                 } else remainderEmpty = true;
@@ -162,7 +161,7 @@ public class ItemDataPrepared {
 
     public void processTags() {
         if (tagKey != null) {
-            for(Item i : BuiltInRegistries.ITEM){
+            for(Item i : Registry.ITEM){
                 if (i.builtInRegistryHolder().is(tagKey)) {
                     this.applicableItems.add(i);
                 }

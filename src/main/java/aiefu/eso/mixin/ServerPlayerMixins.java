@@ -3,7 +3,7 @@ package aiefu.eso.mixin;
 import aiefu.eso.ESOCommon;
 import aiefu.eso.IServerPlayerAcc;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -25,7 +25,7 @@ public class ServerPlayerMixins implements IServerPlayerAcc {
     private void saveUnlockedEnchantmentsDataEOVR(CompoundTag compound, CallbackInfo ci){
         ListTag enchantments = new ListTag();
         unlockedEnchantments.forEach((k, v) -> {
-            ResourceLocation key = BuiltInRegistries.ENCHANTMENT.getKey(k);
+            ResourceLocation key = Registry.ENCHANTMENT.getKey(k);
             if(key != null){
                 CompoundTag enchantmentData = new CompoundTag();
                 enchantmentData.putString("identifier", key.toString());
@@ -45,7 +45,7 @@ public class ServerPlayerMixins implements IServerPlayerAcc {
             ListTag enchantments = compound.getList("UnlockedEnchs", Tag.TAG_STRING);
             for (Tag t : enchantments){
                 String id = t.getAsString();
-                Enchantment e = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(id));
+                Enchantment e = Registry.ENCHANTMENT.get(new ResourceLocation(id));
                 if(e != null){
                     this.unlockedEnchantments.put(e, ESOCommon.getMaximumPossibleEnchantmentLevel(e));
                 }
@@ -60,14 +60,13 @@ public class ServerPlayerMixins implements IServerPlayerAcc {
                     CompoundTag ct = (CompoundTag) t;
                     String id = ct.getString("identifier");
                     int level = ct.getInt("level");
-                    Enchantment e = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(id));
+                    Enchantment e = Registry.ENCHANTMENT.get(new ResourceLocation(id));
                     if(e != null){
                         this.unlockedEnchantments.put(e, level);
                     }
                 }
             }
         }
-
     }
 
 

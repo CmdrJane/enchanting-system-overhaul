@@ -18,7 +18,6 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.enchantment.Enchantment;
 import org.jetbrains.annotations.Nullable;
@@ -50,7 +49,7 @@ public class ESOCommon implements ModInitializer {
 	public static ConcurrentHashMap<ResourceLocation, List<RecipeHolder>> recipeMap = new ConcurrentHashMap<>();
 
 	public static final ExtendedScreenHandlerType<OverhauledEnchantmentMenu> enchantment_menu_ovr =
-			Registry.register(BuiltInRegistries.MENU, new ResourceLocation(MOD_ID, "enchs_menu_ovr"), new ExtendedScreenHandlerType<>(OverhauledEnchantmentMenu::new));
+			Registry.register(Registry.MENU, new ResourceLocation(MOD_ID, "enchs_menu_ovr"), new ExtendedScreenHandlerType<>(OverhauledEnchantmentMenu::new));
 
 
 	@Override
@@ -181,7 +180,7 @@ public class ESOCommon implements ModInitializer {
 	}
 
 	public static int getMaximumPossibleEnchantmentLevel(Enchantment enchantment){
-		ResourceLocation location = BuiltInRegistries.ENCHANTMENT.getKey(enchantment);
+		ResourceLocation location = Registry.ENCHANTMENT.getKey(enchantment);
 		List<RecipeHolder> holders = ESOCommon.recipeMap.get(location);
 		int maxLevel = 0;
 		if(holders != null && !holders.isEmpty()){

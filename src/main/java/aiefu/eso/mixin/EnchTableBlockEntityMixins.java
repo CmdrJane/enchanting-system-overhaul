@@ -7,7 +7,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -40,17 +40,17 @@ public abstract class EnchTableBlockEntityMixins extends BlockEntity implements 
     @Override
     public void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
         if(player.getAbilities().instabuild || ESOCommon.config.disableDiscoverySystem){
-            Set<ResourceLocation> keyset = BuiltInRegistries.ENCHANTMENT.keySet();
+            Set<ResourceLocation> keyset = Registry.ENCHANTMENT.keySet();
             buf.writeVarInt(keyset.size());
             for (ResourceLocation loc : keyset){
                 buf.writeUtf(loc.toString());
-                buf.writeVarInt(ESOCommon.getMaximumPossibleEnchantmentLevel(BuiltInRegistries.ENCHANTMENT.get(loc)));
+                buf.writeVarInt(ESOCommon.getMaximumPossibleEnchantmentLevel(Registry.ENCHANTMENT.get(loc)));
             }
         } else {
             Object2IntOpenHashMap<Enchantment> enchantments = ((IServerPlayerAcc) player).enchantment_overhaul$getUnlockedEnchantments();
             buf.writeVarInt(enchantments.size());
             for (Object2IntMap.Entry<Enchantment> e : enchantments.object2IntEntrySet()) {
-                ResourceLocation loc = BuiltInRegistries.ENCHANTMENT.getKey(e.getKey());
+                ResourceLocation loc = Registry.ENCHANTMENT.getKey(e.getKey());
                 Objects.requireNonNull(loc);
                 buf.writeUtf(loc.toString());
                 buf.writeVarInt(e.getIntValue());

@@ -13,7 +13,6 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
-import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -156,7 +155,7 @@ public class RecipeHolder {
     public static MutableComponent getFullName(Enchantment e, int level, int maxLevel){
         MutableComponent mutableComponent = Component.translatable(e.getDescriptionId());
         if (level != 1 || maxLevel != 1) {
-            mutableComponent.append(CommonComponents.SPACE).append(Component.translatable("enchantment.level." + level));
+            mutableComponent.append(" ").append(Component.translatable("enchantment.level." + level));
         }
         return mutableComponent;
     }
