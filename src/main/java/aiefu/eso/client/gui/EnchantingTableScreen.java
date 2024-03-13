@@ -214,18 +214,6 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 g++;
             }
         }
-        int q = 0;
-        for (int i = 41; i < 46; i++) {
-            Slot s = menu.slots.get(i);
-            if(s.getItem().isEmpty()){
-                RenderSystem.setShader(GameRenderer::getPositionTexShader);
-                RenderSystem.setShaderTexture(0, EMPTY_LOCATIONS[q]);
-                blit(poseStack, leftPos + s.x,  topPos + s.y, 0, 0, 16, 16, 16, 16);
-            }
-            if(q < 2){
-                q++;
-            }
-        }
 
         poseStack.pushPose();
         poseStack.translate(0.0F, 0.0F, 1000.0F);
@@ -285,6 +273,19 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, ENCHANTING_BACKGROUND_TEXTURE);
         blit(poseStack, x, g, 0, 0, this.imageWidth, this.imageHeight);
+
+        int q = 0;
+        for (int r = 41; r < 46; r++) {
+            Slot s = menu.slots.get(r);
+            if(s.getItem().isEmpty()){
+                RenderSystem.setShader(GameRenderer::getPositionTexShader);
+                RenderSystem.setShaderTexture(0, EMPTY_LOCATIONS[q]);
+                blit(poseStack, leftPos + s.x,  topPos + s.y, 0, 0, 16, 16, 16, 16);
+            }
+            if(q < 2){
+                q++;
+            }
+        }
     }
 
     public List<EnchButtonWithData> craftEnchantmentsButtons(String filter){
@@ -460,10 +461,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 c.append(costMsg);
             }
         }
-        List<FormattedCharSequence> seq = font.split(c, 120);
-        button.setTooltip((stack, x, y) -> {
-            EnchantingTableScreen.this.renderTooltip(stack, seq, x, y);
-        });
+        List<FormattedCharSequence> seq = font.split(c, 190);
+        button.setTooltip((stack, x, y) -> EnchantingTableScreen.this.renderTooltip(stack, seq, x, y));
     }
 
     public Object2IntOpenHashMap<Enchantment> filterToNewSet(Object2IntOpenHashMap<Enchantment> map, BiPredicate<Enchantment, Integer> predicate){

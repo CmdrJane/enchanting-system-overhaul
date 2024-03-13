@@ -33,7 +33,7 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
 
     @Override
     protected boolean scrollbarVisible() {
-        return false;
+        return this.getInnerHeight() > this.getHeight();
     }
 
     @Override
@@ -51,6 +51,7 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
             this.renderContents(poseStack, mouseX, mouseY, partialTick);
             poseStack.popPose();
             disableScissor();
+            this.renderDecorations(poseStack);
             if(withinContentAreaPoint(mouseX, mouseY) && !overlayActive){
                 for (EnchButtonWithData b : enchantments){
                     if(b.isHoveredOrFocused()){
@@ -59,7 +60,6 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
                     }
                 }
             }
-            this.renderDecorations(poseStack);
         }
     }
 

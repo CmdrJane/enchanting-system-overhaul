@@ -40,10 +40,6 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public static final ResourceLocation[] TEXTURE_EMPTY_SLOTS = new ResourceLocation[]{InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS,
             InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE, InventoryMenu.EMPTY_ARMOR_SLOT_HELMET};
     protected static final EquipmentSlot[] SLOT_IDS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};;
-
-    public static final ResourceLocation LAZURITE_EMPTY_ICON = new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/empty_slot_lapis_lazuli.png");
-    public static final ResourceLocation SWORD_EMPTY_ICON = new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/empty_slot_sword.png");
-    public static final ResourceLocation INGOT_EMPTY_ICON = new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/empty_slot_ingot.png");
     private final ContainerLevelAccess access;
     public Object2IntOpenHashMap<Enchantment> enchantments = new Object2IntOpenHashMap<>();
 
