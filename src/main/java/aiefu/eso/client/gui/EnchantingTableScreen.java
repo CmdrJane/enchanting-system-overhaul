@@ -455,10 +455,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 c.append(costMsg);
             }
         }
-        List<FormattedCharSequence> seq = font.split(c, 120);
-        button.setTooltip((stack, x, y) -> {
-            EnchantingTableScreen.this.renderTooltip(stack, seq, x, y);
-        });
+        List<FormattedCharSequence> seq = font.split(c, 190);
+        button.setTooltip((stack, x, y) -> EnchantingTableScreen.this.renderTooltip(stack, seq, x, y));
     }
 
     public Object2IntOpenHashMap<Enchantment> filterToNewSet(Object2IntOpenHashMap<Enchantment> map, BiPredicate<Enchantment, Integer> predicate){
