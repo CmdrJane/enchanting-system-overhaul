@@ -2,38 +2,50 @@ package aiefu.eso.client.gui;
 
 import aiefu.eso.ESOCommon;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import org.apache.logging.log4j.util.TriConsumer;
 
 import java.util.Objects;
 
 public class CustomEnchantingButton extends Button {
     public static final ResourceLocation ench_buttons = new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/ench_buttons.png");
+
+    protected TriConsumer<PoseStack, Integer, Integer> tooltip;
     public CustomEnchantingButton(int x, int y, int width, int height, Component message, OnPress onPress) {
-        super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
+        super(x, y, width, height, message, onPress);
     }
 
     @Override
-    public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void renderButton(PoseStack poseStack, int i, int j, float f) {
         Minecraft minecraft = Minecraft.getInstance();
-        guiGraphics.setColor(1.0F, 1.0F, 1.0F, this.alpha);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, ench_buttons);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
         RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
-        guiGraphics.blitNineSliced(ench_buttons, this.getX(), this.getY(), this.getWidth(), this.getHeight(), 20, 4, 200, 20, 0, this.getTextureY());
-        guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
-        int i = this.active ? 4210752 : 10526880;
-        this.drawCenteredString(guiGraphics, minecraft.font, this.getMessage(), i | Mth.ceil(this.alpha * 255.0F) << 24);
-        //this.renderString(guiGraphics, minecraft.font, i | Mth.ceil(this.alpha * 255.0F) << 24);
+        int k = this.active ? 4210752 : 10526880;
+        blit4Sliced(poseStack, this.x, this.y, this.getWidth(), this.getHeight(), getTextureY(), 200, 20, 256, 256);
+        this.drawCenteredStringNoShadow(poseStack, minecraft.font, this.getMessage(), k | Mth.ceil(this.alpha * 255.0F) << 24);
     }
 
-    public void drawCenteredString(GuiGraphics graphics, Font font, Component text, int color){
+    public static void blit4Sliced(PoseStack stack, int x, int y, int w, int h, int yOffset, int activeZoneW, int activeZoneH, int textureW, int textureH){
+        blit(stack, x, y, 0, yOffset, w / 2, h / 2, textureW, textureH);
+        blit(stack, x, y + h / 2, 0, (activeZoneH - (float) h / 2) + yOffset, w / 2, h / 2, textureW, textureH);
+        blit(stack, x + w / 2, y, activeZoneW - (float) w / 2, yOffset, (int)Math.ceil(w / 2.0D), h / 2, textureW, textureH);
+        blit(stack, x + w / 2, y + h / 2, activeZoneW - (float) w / 2, (activeZoneH - (float) h / 2) + yOffset, (int) Math.ceil(w / 2.0D), h / 2 , textureW, textureH);
+    }
+
+    public void drawCenteredStringNoShadow(PoseStack stack, Font font, Component text, int color){
         Objects.requireNonNull(font);
 
         int l = font.width(text);
@@ -42,17 +54,25 @@ public class CustomEnchantingButton extends Button {
             int length = s.length();
             text = Component.literal(s.substring(0, Math.min(14, length)) + "...");
         }
-        int minX = this.getX() + width;
-
-        int r = (this.getY() + this.getY() + this.getHeight() - 9) / 2 + 1;
-
-        this.drawCenteredString(graphics, font, text, (minX + this.getX()) / 2, r, color, false);
+        drawStringNoShadow(stack, font, text, this.x + this.width / 2, this.y + this.height / 4, color);
     }
 
-    public void drawCenteredString(GuiGraphics graphics, Font font, Component text, int x, int y, int color, boolean shadow){
-        FormattedCharSequence formattedCharSequence = text.getVisualOrderText();
-        graphics.drawString(font, formattedCharSequence, x - font.width(formattedCharSequence) / 2, y, color, shadow);
+    @Override
+    public void renderToolTip(PoseStack poseStack, int i, int j) {
+        if(tooltip != null){
+            this.tooltip.accept(poseStack, i, j);
+        }
     }
+
+    protected void drawStringNoShadow(PoseStack poseStack, Font font, Component component, int x, int y, int k) {
+        FormattedCharSequence formattedCharSequence = component.getVisualOrderText();
+        font.draw(poseStack, formattedCharSequence, (float)(x - font.width(formattedCharSequence) / 2), (float)y, k);
+    }
+
+    public void setTooltip(TriConsumer<PoseStack, Integer, Integer> tooltip){
+        this.tooltip = tooltip;
+    }
+
 
     public int getTextureY() {
         int i = 1;

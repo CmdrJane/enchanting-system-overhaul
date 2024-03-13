@@ -4,7 +4,6 @@ import aiefu.eso.TagsUtils;
 import aiefu.eso.exception.ItemDoesNotExistException;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
@@ -76,7 +75,7 @@ public class ItemDataPrepared {
                 return;
             }
             if (data.id.startsWith("tags#")) {
-                this.tagKey = TagKey.create(Registries.ITEM, new ResourceLocation(data.id.substring(5)));
+                this.tagKey = TagKey.create(ForgeRegistries.ITEMS.getRegistryKey(), new ResourceLocation(data.id.substring(5)));
             } else {
                 this.item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(data.id));
                 if (this.item == Items.AIR)

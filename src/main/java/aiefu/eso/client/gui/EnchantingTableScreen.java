@@ -12,15 +12,16 @@ import aiefu.eso.menu.OverhauledEnchantmentMenu;
 import aiefu.eso.network.NetworkManager;
 import aiefu.eso.network.packets.EnchantItemData;
 import com.google.common.collect.Maps;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.*;
@@ -48,6 +49,11 @@ import java.util.function.BiPredicate;
 public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnchantmentMenu> {
     public static final ResourceLocation ENCHANTING_BACKGROUND_TEXTURE = new ResourceLocation(ESOCommon.MOD_ID,"textures/gui/ench_screen.png");
 
+    public static final ResourceLocation[] EMPTY_LOCATIONS = new ResourceLocation[]{
+            new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/empty_slot_sword.png"),
+            new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/empty_slot_lapis_lazuli.png"),
+            new ResourceLocation(ESOCommon.MOD_ID, "textures/gui/empty_slot_ingot.png")};
+
     public static final Style STYLE = Style.EMPTY.withColor(TextColor.fromRgb(5636095));
 
     public static final List<FormattedCharSequence> emptyMsg = Minecraft.getInstance().font.split(Component.translatable("eso.enchantmentsempty"), 110);
@@ -58,6 +64,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     protected EnchantmentListWidget enchantmentsScrollList;
     protected EditBox searchFilter;
+
+    protected Component searchHint;
 
     protected CustomEnchantingButton confirmButton;
     protected CustomEnchantingButton cancelButton;
@@ -91,6 +99,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         }));
         this.cancelButton = this.addWidget(new CustomEnchantingButton(leftPos + 130, topPos + 92, 30, 12, CommonComponents.GUI_NO, button -> {
             this.switchOverlayState(true);
+            this.enchantmentsScrollList.setOverlayActive(false);
             this.recalculateAvailability(this.menu.getTableInv());
         }));
 
@@ -98,10 +107,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton.visible = overlayActive;
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
-        Component searchHint = Component.translatable("eso.search");
+        this.searchHint = Component.translatable("eso.search");
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
-        this.searchFilter.setHint(searchHint);
         List<EnchButtonWithData> list = this.craftEnchantmentsButtons(this.searchFilter.getValue());
         this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
         this.setInitialFocus(enchantmentsScrollList);
@@ -147,7 +155,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     }
 
     public void switchButtonsState(boolean bl){
-        this.enchantmentsScrollList.switchOverlayState(bl);
+        this.enchantmentsScrollList.switchButtonsState(bl);
     }
 
     @Override
@@ -164,7 +172,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         if(ticks % 60 == 0){
             Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(this.menu.getTableInv().getItem(0));
             for (EnchButtonWithData b : this.tickingButtons){
-                if(b.isHovered()){
+                if(b.isHoveredOrFocused()){
                     Enchantment enchantment = b.getEnchantment();
 
                     RecipeHolder holder = b.getRecipe();
@@ -181,52 +189,59 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.searchFilter.render(guiGraphics, mouseX, mouseY, partialTick);
-        if(!overlayActive) this.renderTooltip(guiGraphics, mouseX, mouseY);
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        super.render(poseStack, mouseX, mouseY, partialTick);
+        this.searchFilter.render(poseStack, mouseX, mouseY, partialTick);
+        if(!this.searchFilter.isFocused() && searchHint != null){
+            this.font.drawShadow(poseStack, searchHint, leftPos + 81, topPos + 9, 16777215);
+        }
+        if(!overlayActive) this.renderTooltip(poseStack, mouseX, mouseY);
         if(displayMsg != null){
             int x = leftPos + 79;
-            this.drawCenteredString(guiGraphics, this.font, displayMsg, x + 124 / 2, topPos + 75, 4210752, false);
+            this.drawCenteredStringNoShadow(poseStack, this.font, displayMsg, x + 124 / 2, topPos + 75, 4210752);
         }
         if(menu.enchantments.isEmpty() && menu.curses.isEmpty()){
-            int i = 0;
+            int g = 0;
             int h = (48 - (8 * emptyMsg.size() + (emptyMsg.size() - 1) * 6)) / 2;
             for (FormattedCharSequence cs : emptyMsg){
-                this.drawCenteredString(guiGraphics, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * i, 4210752, false);
-                i++;
+                this.drawCenteredStringNoShadow(poseStack, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * g, 4210752);
+                g++;
             }
         }
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(0.0F, 0.0F, 1000.0F);
-        this.renderConfirmOverlay(guiGraphics, mouseX, mouseY, partialTick);
-        this.confirmButton.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.cancelButton.render(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.pose().popPose();
+
+        poseStack.pushPose();
+        poseStack.translate(0.0F, 0.0F, 1000.0F);
+        this.renderConfirmOverlay(poseStack, mouseX, mouseY, partialTick);
+        this.confirmButton.render(poseStack, mouseX, mouseY, partialTick);
+        this.cancelButton.render(poseStack, mouseX, mouseY, partialTick);
+        poseStack.popPose();
+
     }
 
-    public void renderConfirmOverlay(GuiGraphics graphics, int mx, int my, float pt){
+    public void renderConfirmOverlay(PoseStack stack, int mx, int my, float pt){
         if(overlayActive){
-            graphics.blit(ENCHANTING_BACKGROUND_TEXTURE, leftPos + 10, topPos + 48, 0,196,200, 60);
+            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShaderTexture(0, ENCHANTING_BACKGROUND_TEXTURE);
+            blit(stack, leftPos + 10, topPos + 48, 0,196,200, 60);
             int h = (42 - (8* this.confirmMsg.size() + (this.confirmMsg.size() - 1) * 6)) / 2;
             for (int i = 0; i < this.confirmMsg.size(); i++) {
-                this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 50 + h + 14 * i,4210752, false);
+                this.drawCenteredStringNoShadow(stack, font, this.confirmMsg.get(i), leftPos + 109, topPos + 50 + h + 14 * i,4210752);
             }
         }
     }
 
-    protected void drawCenteredString(GuiGraphics graphics, Font font, Component text, int x, int y, int color, boolean dropShadow){
-        graphics.drawString(font, text, x - font.width(text) / 2, y, color, dropShadow);
+    protected void drawCenteredStringNoShadow(PoseStack stack, Font font, Component text, int x, int y, int color){
+        font.draw(stack, text, x - (float) font.width(text) / 2, y, color);
     }
 
-    protected void drawCenteredString(GuiGraphics graphics, Font font, FormattedCharSequence text, int x, int y, int color, boolean dropShadow){
-        graphics.drawString(font, text, x - font.width(text) / 2, y, color, dropShadow);
+    protected void drawCenteredStringNoShadow(PoseStack stack, Font font, FormattedCharSequence text, int x, int y, int color){
+        font.draw(stack, text, x - (float) font.width(text) / 2, y, color);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if(this.searchFilter.isFocused()){
-            if(keyCode == 256) this.searchFilter.setFocused(false);
+            if(keyCode == 256) this.searchFilter.setFocus(false);
             else if(keyCode == 257){
                 this.enchantmentsScrollList.setEnchantments(this.craftEnchantmentsButtons(this.searchFilter.getValue()));
                 this.recalculateAvailability(this.menu.getTableInv());
@@ -246,10 +261,25 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int i = (this.width - this.imageWidth) / 2;
-        int j = (this.height - this.imageHeight) / 2;
-        guiGraphics.blit(ENCHANTING_BACKGROUND_TEXTURE, i, j, 0, 0, this.imageWidth, this.imageHeight);
+    protected void renderBg(PoseStack poseStack, float mx, int my, int pt) {
+        int x = (this.width - this.imageWidth) / 2;
+        int g = (this.height - this.imageHeight) / 2;
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, ENCHANTING_BACKGROUND_TEXTURE);
+        blit(poseStack, x, g, 0, 0, this.imageWidth, this.imageHeight);
+
+        int q = 0;
+        for (int i = 41; i < 46; i++) {
+            Slot s = menu.slots.get(i);
+            if(s.getItem().isEmpty()){
+                RenderSystem.setShader(GameRenderer::getPositionTexShader);
+                RenderSystem.setShaderTexture(0, EMPTY_LOCATIONS[q]);
+                blit(poseStack, leftPos + s.x,  topPos + s.y, 0, 0, 16, 16, 16, 16);
+            }
+            if(q < 2){
+                q++;
+            }
+        }
     }
 
     public List<EnchButtonWithData> craftEnchantmentsButtons(String filter){
@@ -311,6 +341,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                             this.ordinal = ((EnchButtonWithData)button).getOrdinal();
                             this.switchOverlayState(false);
                             this.switchButtonsState(false);
+                            this.enchantmentsScrollList.setOverlayActive(true);
                         }, holder, enchantment, level, ordinal);
                         this.composeTooltipAndApply(translatable, enchantment, holder, targetLevel, b, true);
                         list.add(b);
@@ -328,6 +359,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                         this.ordinal = -1;
                         this.switchOverlayState(false);
                         this.switchButtonsState(false);
+                        this.enchantmentsScrollList.setOverlayActive(true);
                     }, null, enchantment, level, -1);
                     this.composeTooltipAndApply(translatable, enchantment, null, targetLevel, b, true);
                     list.add(b);
@@ -423,7 +455,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 c.append(costMsg);
             }
         }
-        button.setTooltip(Tooltip.create(c));
+        List<FormattedCharSequence> seq = font.split(c, 120);
+        button.setTooltip((stack, x, y) -> {
+            EnchantingTableScreen.this.renderTooltip(stack, seq, x, y);
+        });
     }
 
     public Object2IntOpenHashMap<Enchantment> filterToNewSet(Object2IntOpenHashMap<Enchantment> map, BiPredicate<Enchantment, Integer> predicate){

@@ -22,7 +22,7 @@ import java.util.Map;
 public class LanguageManagerMixins {
     @Inject(method = "onResourceManagerReload", at = @At("TAIL"))
     private void EOVRPatchEnchsDescriptions(ResourceManager resourceManager, CallbackInfo ci){
-        List<Resource> resources = resourceManager.getResourceStack(new ResourceLocation(ESOCommon.MOD_ID,"ench-desc/" + Minecraft.getInstance().getLanguageManager().getSelected() + "_ench_desc.json"));
+        List<Resource> resources = resourceManager.getResourceStack(new ResourceLocation(ESOCommon.MOD_ID,"ench-desc/" + Minecraft.getInstance().getLanguageManager().getSelected().getCode() + "_ench_desc.json"));
         if(Language.getInstance() instanceof IClientLanguageAcc lacc){
             Map<String, String> lmap = lacc.getLanguageMap();
             HashMap<String, String> languageMap = new HashMap<>();
