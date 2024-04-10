@@ -4,15 +4,18 @@ import aiefu.eso.ESOCommon;
 import aiefu.eso.Utils;
 import aiefu.eso.data.itemdata.ItemData;
 import aiefu.eso.data.itemdata.ItemDataPrepared;
+import aiefu.eso.data.itemdata.RecipeViewerData;
 import aiefu.eso.exception.ItemDoesNotExistException;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -27,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +38,8 @@ public class RecipeHolder {
     public static final ItemDataPrepared EMPTY = new ItemDataPrepared(null);
     public transient ResourceLocation ench_location;
     public transient boolean mode;
+
+    public transient List<RecipeViewerData> recipeViewerData;
 
     public String enchantment_id;
     public int maxLevel;
@@ -151,6 +157,35 @@ public class RecipeHolder {
 
     public int getMaxLevel(Enchantment enchantment){
         return this.maxLevel < 1 ? enchantment.getMaxLevel() : this.maxLevel;
+    }
+
+    public List<RecipeViewerData> mergeAndGet(){
+        if(recipeViewerData == null){
+            Int2ObjectOpenHashMap<RecipeViewerData> map = new Int2ObjectOpenHashMap<>();
+            for (Int2ObjectMap.Entry<ItemDataPrepared[]> set : levels.int2ObjectEntrySet()){
+                int lvl = set.getIntKey();
+                map.put(lvl, new RecipeViewerData(set.getValue(), lvl, BuiltInRegistries.ENCHANTMENT.get(ench_location)));
+            }
+            for (Int2IntMap.Entry set : xpMap.int2IntEntrySet()){
+                int lvl = set.getIntKey();
+                RecipeViewerData data = map.get(lvl);
+                if(data != null){
+                    data.setXp(set.getIntValue());
+                } else map.put(lvl, new RecipeViewerData(set.getIntValue(), lvl, BuiltInRegistries.ENCHANTMENT.get(ench_location)));
+            }
+            List<Integer> keyset = new ArrayList<>(map.keySet());
+            List<RecipeViewerData> sortedData = new ArrayList<>();
+            Collections.sort(keyset);
+            for (int k : keyset){
+                sortedData.add(map.get(k));
+            }
+            this.recipeViewerData = sortedData;
+        }
+        return recipeViewerData;
+    }
+
+    public List<RecipeViewerData> getRecipeViewerData(){
+        return recipeViewerData;
     }
 
     public static MutableComponent getFullName(Enchantment e, int level, int maxLevel){
