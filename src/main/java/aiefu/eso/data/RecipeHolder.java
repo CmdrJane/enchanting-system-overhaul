@@ -68,20 +68,30 @@ public class RecipeHolder {
 
     public boolean check(SimpleContainer container, int targetLevel, Player player){
         int x = 0;
-        ItemDataPrepared[] array = this.levels.get(targetLevel);
-        if(array != null) {
-            for (int i = 0; i < array.length; i++) {
-                ItemStack stack = container.getItem(i + 1);
-                ItemDataPrepared data = array[i];
-                if (data != null) {
-                    if (data.isEmpty() || data.testItemStackMatch(stack)) {
-                        x++;
-                    }
-                } else {
-                    x++;
+        ItemDataPrepared[] arr = this.levels.get(targetLevel);
+        if(arr != null) {
+            ArrayList<ItemDataPrepared> list = new ArrayList<>();
+            for (ItemDataPrepared prep : arr){
+                if(prep != null && !prep.isEmpty()){
+                    list.add(prep);
                 }
             }
-            return x > array.length - 1 && this.checkXPRequirements(player, xpMap.get(targetLevel));
+
+            for (ItemDataPrepared prep : list){
+                for (int i = 1; i < 5; i++) {
+                    ItemStack stack = container.getItem(i);
+                    if(prep.testItemStackMatch(stack)){
+                        x++;
+                        break;
+                    }
+                }
+            }
+            return x >= list.size() && this.checkXPRequirements(player, xpMap.get(targetLevel));
+        } else {
+            int xp = xpMap.get(targetLevel);
+            if(xp > 0){
+                return this.checkXPRequirements(player, xpMap.get(targetLevel));
+            }
         }
         return false;
     }
@@ -90,29 +100,40 @@ public class RecipeHolder {
         int x = 0;
         ItemDataPrepared[] arr = this.levels.get(targetLevel);
         if(arr != null) {
-            for (int i = 0; i < arr.length; i++) {
-                ItemStack stack = container.getItem(i + 1);
-                ItemDataPrepared data = arr[i];
-                if (data != null) {
-                    if (data.isEmpty() || data.testItemStackMatch(stack)) {
+            Int2ObjectOpenHashMap<ItemDataPrepared> stacksToConsume = new Int2ObjectOpenHashMap<>();
+            ArrayList<ItemDataPrepared> list = new ArrayList<>();
+            for (ItemDataPrepared prep : arr){
+                if(prep != null && !prep.isEmpty()){
+                    list.add(prep);
+                }
+            }
+            
+            for (ItemDataPrepared prep : list){
+                for (int i = 1; i < 5; i++) {
+                    ItemStack stack = container.getItem(i);
+                    if(prep.testItemStackMatch(stack)){
+                        stacksToConsume.put(i, prep);
                         x++;
+                        break;
                     }
-                } else {
-                    x++;
-                    arr[i] = EMPTY;
                 }
             }
 
-            if(x >= arr.length && this.checkXPRequirementsAndConsume(player, xpMap.get(targetLevel))){
-                for (int i = 0; i < arr.length; i++) {
-                    ItemStack stack = container.getItem(i + 1);
-                    ItemDataPrepared data = arr[i];
+            if(x >= list.size() && this.checkXPRequirementsAndConsume(player, xpMap.get(targetLevel))){
+                for (Int2ObjectMap.Entry<ItemDataPrepared> e: stacksToConsume.int2ObjectEntrySet()){
+                    ItemStack stack = container.getItem(e.getIntKey());
+                    ItemDataPrepared data = e.getValue();
                     ItemStack remainder = data.getRemainderForStack(stack);
                     if(stack.getCount() == 1 && remainder != null){
-                        container.setItem(i + 1, remainder);
+                        container.setItem(e.getIntKey(), remainder);
                     } else stack.shrink(data.amount);
                 }
                 return true;
+            }
+        } else {
+            int xp = xpMap.get(targetLevel);
+            if(xp > 0){
+                return this.checkXPRequirementsAndConsume(player, xp);
             }
         }
         return false;
@@ -164,14 +185,14 @@ public class RecipeHolder {
             Int2ObjectOpenHashMap<RecipeViewerData> map = new Int2ObjectOpenHashMap<>();
             for (Int2ObjectMap.Entry<ItemDataPrepared[]> set : levels.int2ObjectEntrySet()){
                 int lvl = set.getIntKey();
-                map.put(lvl, new RecipeViewerData(set.getValue(), lvl, BuiltInRegistries.ENCHANTMENT.get(ench_location)));
+                map.put(lvl, new RecipeViewerData(set.getValue(), lvl, BuiltInRegistries.ENCHANTMENT.get(ench_location), mode));
             }
             for (Int2IntMap.Entry set : xpMap.int2IntEntrySet()){
                 int lvl = set.getIntKey();
                 RecipeViewerData data = map.get(lvl);
                 if(data != null){
                     data.setXp(set.getIntValue());
-                } else map.put(lvl, new RecipeViewerData(set.getIntValue(), lvl, BuiltInRegistries.ENCHANTMENT.get(ench_location)));
+                } else map.put(lvl, new RecipeViewerData(set.getIntValue(), lvl, BuiltInRegistries.ENCHANTMENT.get(ench_location), mode));
             }
             List<Integer> keyset = new ArrayList<>(map.keySet());
             List<RecipeViewerData> sortedData = new ArrayList<>();

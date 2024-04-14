@@ -10,8 +10,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractScrollWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -48,6 +50,7 @@ public class RecipeListWidget extends AbstractScrollWidget {
 
     @Override
     protected void renderContents(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        LocalPlayer player = Minecraft.getInstance().player;
         int yOffset = this.getY() + 12;
         List<RecipeViewerData> list = this.recipe.getRecipeViewerData();
         for (RecipeViewerData d : list){
@@ -56,7 +59,7 @@ public class RecipeListWidget extends AbstractScrollWidget {
             if(itd.length < 1 && xp < 1) continue;
             int wOffset = this.getX() + 2;
             Font font = screen.getFont();
-            guiGraphics.drawString(font, Component.literal("Level: " + d.getLvl() + " XP: " + d.getXp()), wOffset + 2, yOffset - 9,4210752, false);
+            guiGraphics.drawString(font, d.getDesc(), wOffset + 2, yOffset - 9,4210752, false);
 
             for (RecipeViewerItemData i : d.getCachedStacks()){
                 ItemStack stack = i.isAnimated() ? i.getNextStack() : i.getStack();
@@ -90,6 +93,31 @@ public class RecipeListWidget extends AbstractScrollWidget {
     @Override
     protected void renderBackground(GuiGraphics guiGraphics) {
 
+    }
+
+    @Override
+    protected void renderDecorations(GuiGraphics guiGraphics) {
+        if (this.scrollbarVisible()) {
+            this.renderScrollBar(guiGraphics);
+        }
+
+    }
+    protected void renderScrollBar(GuiGraphics guiGraphics) {
+        int i = this.getScrollBarHeight();
+        int minX = this.getX() + this.width;
+        int maxX = this.getX() + this.width + 8;
+        int minY = Math.max(this.getY(), (int)this.scrollAmount() * (this.height - i) / this.getMaxScrollAmount() + this.getY());
+        int maxY = minY + i;
+        guiGraphics.fill(minX, minY, maxX, maxY, -345617);
+        guiGraphics.fill(minX + 1, minY + 1, maxX - 1, maxY -1, -4814674); //-8241880 . -11789813 //og -8355712 . -4144960 //purple -4814674 . -345617
+    }
+
+    private int getScrollBarHeight() {
+        return Mth.clamp((int)((float)(this.height * this.height) / (float)this.getContentHeight()), 32, this.height);
+    }
+
+    private int getContentHeight() {
+        return this.getInnerHeight() + 4;
     }
 
     public void tick(){

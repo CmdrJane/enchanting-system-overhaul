@@ -22,6 +22,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -56,7 +57,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     private static final Map<Enchantment, Integer> EMPTY_MAP = Maps.newLinkedHashMap();
 
-    private static final DecimalFormat decimal_formatter = new DecimalFormat("#.##");
+    protected static final DecimalFormat decimal_formatter = new DecimalFormat("#.##");
 
     protected EnchantmentListWidget enchantmentsScrollList;
 
@@ -363,6 +364,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             availableEnchantments.putAll(applicableCurses);
         }
         int offset = 0;
+        LocalPlayer player = Minecraft.getInstance().player;
 
         for (Object2IntMap.Entry<Enchantment> entry : availableEnchantments.object2IntEntrySet()) {
             Enchantment enchantment = entry.getKey();
@@ -370,12 +372,17 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
                 List<RecipeHolder> holders = ESOCommon.getRecipeHolders(BuiltInRegistries.ENCHANTMENT.getKey(enchantment));
+                boolean hide = ESOCommon.config.hideEnchantmentsWithoutRecipe;
                 if(holders != null){
                     int ordinal = 0;
                     for (RecipeHolder holder : holders){
                         Integer l = enchs.get(enchantment);
                         int maxLevel = holder.getMaxLevel(enchantment);
                         int targetLevel = l != null ? Math.min(maxLevel, l + 1) : 1;
+
+                        if(hide && !player.getAbilities().instabuild && !holder.levels.containsKey(targetLevel) && holder.xpMap.get(targetLevel) < 1){
+                            continue;
+                        }
 
                         MutableComponent translatable = RecipeHolder.getFullName(enchantment, targetLevel, maxLevel);
                         EnchButtonWithData b = new EnchButtonWithData(leftPos + 80, (this.topPos + 25) + 16 * offset, 123, 14, translatable, button -> {
@@ -389,7 +396,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                         offset++;
                         ordinal++;
                     }
-                } else {
+                } else if(player.getAbilities().instabuild || !hide){
                     Integer l = enchs.get(enchantment);
                     int maxLevel = enchantment.getMaxLevel();
                     int targetLevel = l != null ? Math.min(maxLevel, l + 1) : 1;
@@ -578,5 +585,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     public Font getFont(){
         return font;
+    }
+
+    public static DecimalFormat getFormatter(){
+        return decimal_formatter;
     }
 }

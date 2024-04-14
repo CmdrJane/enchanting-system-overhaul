@@ -27,5 +27,8 @@
   "eso.command.feedback.successfullyadded": "Now %s level is %s for player %s",
   "eso.command.feedback.invalidoperation": "Invalid operation specified, valid values are add, set, sub or subtract",
   "eso.xprequirementlevels": "XP required: %s",
-  "eso.xprequirementpoints": "XP required: %s, (%s levels)"
+  "eso.xprequirementpoints": "XP required: %s (%s levels)",
+  "eso.rv.level": "Level: %s",
+  "eso.rv.xpreqp": "XP: %s levels",
+  "eso.rv.xpreql": "XP: %s points (%s levels)"
 }
