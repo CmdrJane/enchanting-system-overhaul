@@ -4,11 +4,13 @@ import aiefu.eso.ESOCommon;
 import aiefu.eso.Utils;
 import aiefu.eso.data.itemdata.ItemData;
 import aiefu.eso.data.itemdata.ItemDataPrepared;
+import aiefu.eso.data.itemdata.RecipeViewerData;
 import aiefu.eso.exception.ItemDoesNotExistException;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -22,11 +24,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +38,8 @@ public class RecipeHolder {
     public static final ItemDataPrepared EMPTY = new ItemDataPrepared(null);
     public transient ResourceLocation ench_location;
     public transient boolean mode;
+
+    public transient List<RecipeViewerData> recipeViewerData;
 
     public String enchantment_id;
     public int maxLevel;
@@ -62,20 +68,30 @@ public class RecipeHolder {
 
     public boolean check(SimpleContainer container, int targetLevel, Player player){
         int x = 0;
-        ItemDataPrepared[] array = this.levels.get(targetLevel);
-        if(array != null) {
-            for (int i = 0; i < array.length; i++) {
-                ItemStack stack = container.getItem(i + 1);
-                ItemDataPrepared data = array[i];
-                if (data != null) {
-                    if (data.isEmpty() || data.testItemStackMatch(stack)) {
-                        x++;
-                    }
-                } else {
-                    x++;
+        ItemDataPrepared[] arr = this.levels.get(targetLevel);
+        if(arr != null) {
+            ArrayList<ItemDataPrepared> list = new ArrayList<>();
+            for (ItemDataPrepared prep : arr){
+                if(prep != null && !prep.isEmpty()){
+                    list.add(prep);
                 }
             }
-            return x > array.length - 1 && this.checkXPRequirements(player, xpMap.get(targetLevel));
+
+            for (ItemDataPrepared prep : list){
+                for (int i = 1; i < 5; i++) {
+                    ItemStack stack = container.getItem(i);
+                    if(prep.testItemStackMatch(stack)){
+                        x++;
+                        break;
+                    }
+                }
+            }
+            return x >= list.size() && this.checkXPRequirements(player, xpMap.get(targetLevel));
+        } else {
+            int xp = xpMap.get(targetLevel);
+            if(xp > 0){
+                return this.checkXPRequirements(player, xpMap.get(targetLevel));
+            }
         }
         return false;
     }
@@ -84,29 +100,40 @@ public class RecipeHolder {
         int x = 0;
         ItemDataPrepared[] arr = this.levels.get(targetLevel);
         if(arr != null) {
-            for (int i = 0; i < arr.length; i++) {
-                ItemStack stack = container.getItem(i + 1);
-                ItemDataPrepared data = arr[i];
-                if (data != null) {
-                    if (data.isEmpty() || data.testItemStackMatch(stack)) {
-                        x++;
-                    }
-                } else {
-                    x++;
-                    arr[i] = EMPTY;
+            Int2ObjectOpenHashMap<ItemDataPrepared> stacksToConsume = new Int2ObjectOpenHashMap<>();
+            ArrayList<ItemDataPrepared> list = new ArrayList<>();
+            for (ItemDataPrepared prep : arr){
+                if(prep != null && !prep.isEmpty()){
+                    list.add(prep);
                 }
             }
 
-            if(x >= arr.length && this.checkXPRequirementsAndConsume(player, xpMap.get(targetLevel))){
-                for (int i = 0; i < arr.length; i++) {
-                    ItemStack stack = container.getItem(i + 1);
-                    ItemDataPrepared data = arr[i];
+            for (ItemDataPrepared prep : list){
+                for (int i = 1; i < 5; i++) {
+                    ItemStack stack = container.getItem(i);
+                    if(prep.testItemStackMatch(stack)){
+                        stacksToConsume.put(i, prep);
+                        x++;
+                        break;
+                    }
+                }
+            }
+
+            if(x >= list.size() && this.checkXPRequirementsAndConsume(player, xpMap.get(targetLevel))){
+                for (Int2ObjectMap.Entry<ItemDataPrepared> e: stacksToConsume.int2ObjectEntrySet()){
+                    ItemStack stack = container.getItem(e.getIntKey());
+                    ItemDataPrepared data = e.getValue();
                     ItemStack remainder = data.getRemainderForStack(stack);
                     if(stack.getCount() == 1 && remainder != null){
-                        container.setItem(i + 1, remainder);
+                        container.setItem(e.getIntKey(), remainder);
                     } else stack.shrink(data.amount);
                 }
                 return true;
+            }
+        } else {
+            int xp = xpMap.get(targetLevel);
+            if(xp > 0){
+                return this.checkXPRequirementsAndConsume(player, xp);
             }
         }
         return false;
@@ -151,6 +178,35 @@ public class RecipeHolder {
 
     public int getMaxLevel(Enchantment enchantment){
         return this.maxLevel < 1 ? enchantment.getMaxLevel() : this.maxLevel;
+    }
+
+    public List<RecipeViewerData> mergeAndGet(){
+        if(recipeViewerData == null){
+            Int2ObjectOpenHashMap<RecipeViewerData> map = new Int2ObjectOpenHashMap<>();
+            for (Int2ObjectMap.Entry<ItemDataPrepared[]> set : levels.int2ObjectEntrySet()){
+                int lvl = set.getIntKey();
+                map.put(lvl, new RecipeViewerData(set.getValue(), lvl, ForgeRegistries.ENCHANTMENTS.getValue(ench_location), mode));
+            }
+            for (Int2IntMap.Entry set : xpMap.int2IntEntrySet()){
+                int lvl = set.getIntKey();
+                RecipeViewerData data = map.get(lvl);
+                if(data != null){
+                    data.setXp(set.getIntValue());
+                } else map.put(lvl, new RecipeViewerData(set.getIntValue(), lvl, ForgeRegistries.ENCHANTMENTS.getValue(ench_location), mode));
+            }
+            List<Integer> keyset = new ArrayList<>(map.keySet());
+            List<RecipeViewerData> sortedData = new ArrayList<>();
+            Collections.sort(keyset);
+            for (int k : keyset){
+                sortedData.add(map.get(k));
+            }
+            this.recipeViewerData = sortedData;
+        }
+        return recipeViewerData;
+    }
+
+    public List<RecipeViewerData> getRecipeViewerData(){
+        return recipeViewerData;
     }
 
     public static MutableComponent getFullName(Enchantment e, int level, int maxLevel){

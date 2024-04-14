@@ -21,6 +21,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.*;
@@ -57,6 +58,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     private static final DecimalFormat decimal_formatter = new DecimalFormat("#.##");
 
     protected EnchantmentListWidget enchantmentsScrollList;
+
+    protected RecipeListWidget recipeViewer;
     protected EditBox searchFilter;
 
     protected CustomEnchantingButton confirmButton;
@@ -69,6 +72,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     protected MutableComponent displayMsg;
 
     protected boolean overlayActive = false;
+
+    protected boolean viewingRecipes = false;
+
+    protected boolean seekRecipe = false;
 
     protected HashSet<EnchButtonWithData> tickingButtons = new HashSet<>();
 
@@ -103,7 +110,11 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.searchFilter.setBordered(false);
         this.searchFilter.setHint(searchHint);
         List<EnchButtonWithData> list = this.craftEnchantmentsButtons(this.searchFilter.getValue());
-        this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
+        this.enchantmentsScrollList = this.addWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
+
+        this.viewingRecipes = false;
+        this.seekRecipe = false;
+        this.recipeViewer = new RecipeListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), this);
         this.setInitialFocus(enchantmentsScrollList);
         this.recalculateAvailability(menu.getTableInv());
         this.menu.addSlotListener(new ContainerListener() {
@@ -177,14 +188,25 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 }
             }
         }
+        if(viewingRecipes){
+            recipeViewer.tick();
+        }
         this.ticks++;
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(guiGraphics);
+        if(viewingRecipes){
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(0.0F, 0.0F, 100.0F);
+            this.recipeViewer.render(guiGraphics, mouseX, mouseY, partialTick);
+            guiGraphics.pose().popPose();
+        }
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.searchFilter.render(guiGraphics, mouseX, mouseY, partialTick);
         if(!overlayActive) this.renderTooltip(guiGraphics, mouseX, mouseY);
+        if(!viewingRecipes) this.enchantmentsScrollList.render(guiGraphics, mouseX, mouseY, partialTick);
         if(displayMsg != null){
             int x = leftPos + 79;
             this.drawCenteredString(guiGraphics, this.font, displayMsg, x + 124 / 2, topPos + 75, 4210752, false);
@@ -195,6 +217,20 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             for (FormattedCharSequence cs : emptyMsg){
                 this.drawCenteredString(guiGraphics, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * i, 4210752, false);
                 i++;
+            }
+        }
+        if(seekRecipe && !viewingRecipes){
+            seekRecipe = false;
+            for (EnchButtonWithData e : this.enchantmentsScrollList.enchantments){
+                if(e.isHovered()){
+                    RecipeHolder holder = e.getRecipe();
+                    if(holder != null){
+                        this.viewingRecipes = true;
+                        this.recipeViewer.updateRecipes(holder);
+                        this.recipeViewer.setFocused(true);
+                        break;
+                    }
+                }
             }
         }
         guiGraphics.pose().pushPose();
@@ -233,16 +269,49 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             }
            return this.searchFilter.keyPressed(keyCode, scanCode, modifiers);
         }
-        else return super.keyPressed(keyCode, scanCode, modifiers);
+        else if(viewingRecipes && (keyCode == 85 || keyCode == 256)){
+            this.viewingRecipes = false;
+            this.recipeViewer.setFocused(false);
+            return true;
+        } else if(!overlayActive && !viewingRecipes && keyCode == 85){
+            this.seekRecipe = true;
+            return true;
+        }else return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if(overlayActive) return false;
         else {
-            this.enchantmentsScrollList.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            if(viewingRecipes){
+                this.recipeViewer.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            } else this.enchantmentsScrollList.mouseDragged(mouseX, mouseY, button, dragX, dragY);
             return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if(viewingRecipes){
+            recipeViewer.mouseClicked(mouseX, mouseY, button);
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if(viewingRecipes){
+            this.recipeViewer.mouseScrolled(mouseX, mouseY, delta);
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if(viewingRecipes){
+            this.recipeViewer.mouseReleased(mouseX, mouseY, button);
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
@@ -291,6 +360,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             availableEnchantments.putAll(applicableCurses);
         }
         int offset = 0;
+        LocalPlayer player = Minecraft.getInstance().player;
 
         for (Object2IntMap.Entry<Enchantment> entry : availableEnchantments.object2IntEntrySet()) {
             Enchantment enchantment = entry.getKey();
@@ -298,12 +368,17 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
                 List<RecipeHolder> holders = ESOCommon.getRecipeHolders(ForgeRegistries.ENCHANTMENTS.getKey(enchantment));
+                boolean hide = ESOCommon.config.hideEnchantmentsWithoutRecipe;
                 if(holders != null){
                     int ordinal = 0;
                     for (RecipeHolder holder : holders){
                         Integer l = enchs.get(enchantment);
                         int maxLevel = holder.getMaxLevel(enchantment);
                         int targetLevel = l != null ? Math.min(maxLevel, l + 1) : 1;
+
+                        if(hide && !player.getAbilities().instabuild && !holder.levels.containsKey(targetLevel) && holder.xpMap.get(targetLevel) < 1){
+                            continue;
+                        }
 
                         MutableComponent translatable = RecipeHolder.getFullName(enchantment, targetLevel, maxLevel);
                         EnchButtonWithData b = new EnchButtonWithData(leftPos + 80, (this.topPos + 25) + 16 * offset, 123, 14, translatable, button -> {
@@ -317,7 +392,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                         offset++;
                         ordinal++;
                     }
-                } else {
+                } else if(player.getAbilities().instabuild || !hide){
                     Integer l = enchs.get(enchantment);
                     int maxLevel = enchantment.getMaxLevel();
                     int targetLevel = l != null ? Math.min(maxLevel, l + 1) : 1;
@@ -502,5 +577,13 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     public EnchantmentListWidget getEnchantmentsScrollList() {
         return enchantmentsScrollList;
+    }
+
+    public Font getFont(){
+        return font;
+    }
+
+    public static DecimalFormat getFormatter(){
+        return decimal_formatter;
     }
 }

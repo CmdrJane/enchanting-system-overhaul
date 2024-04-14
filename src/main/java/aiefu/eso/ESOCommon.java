@@ -143,6 +143,10 @@ public class ESOCommon{
 			jsonObject.addProperty("enableEnchantmentsLeveling", false);
 			shouldSave = true;
 		}
+		if(!jsonObject.has("hideEnchantmentsWithoutRecipe")){
+			jsonObject.addProperty("hideEnchantmentsWithoutRecipe", false);
+			shouldSave = true;
+		}
 		ESOCommon.config = gson.fromJson(jsonObject, ConfigurationFile.class);
 		if(shouldSave){
 			try(FileWriter writer = new FileWriter("./config/eso/config.json")){
