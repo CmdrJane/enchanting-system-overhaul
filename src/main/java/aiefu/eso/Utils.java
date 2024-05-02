@@ -2,8 +2,16 @@ package aiefu.eso;
 
 import aiefu.eso.data.materialoverrides.MaterialData;
 import aiefu.eso.data.materialoverrides.MaterialOverrides;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.BiPredicate;
 
 public class Utils {
     public static int getTotalAvailableXPPoints(Player player){
@@ -71,4 +79,52 @@ public class Utils {
         return cfg.enableCursesAmplifier ? appliedEnchantments - curses : appliedEnchantments;
     }
 
+    public static boolean containsEnchantments(ItemStack stack){
+        if(stack.hasTag()){
+            CompoundTag tag = stack.getTag();
+            if(tag.contains("Enchantments", Tag.TAG_LIST)){
+                return !tag.getList("Enchantments", Tag.TAG_COMPOUND).isEmpty();
+            } else if(tag.contains("StoredEnchantments", Tag.TAG_LIST)){
+                return !tag.getList("StoredEnchantments", Tag.TAG_COMPOUND).isEmpty();
+            } else return false;
+        } else return false;
+    }
+
+    /**
+     * Use {@link net.minecraft.world.item.enchantment.EnchantmentHelper#getEnchantments} to get enchantment map from stack
+     */
+    public static boolean containsSameEnchantments(Map<Enchantment, Integer> m1, Map<Enchantment, Integer> m2){
+        if(m1.size() != m2.size()){
+            return false;
+        } else {
+            int matches = 0;
+            for (Enchantment e : m1.keySet()){
+                if(m2.containsKey(e)) matches++;
+            }
+            return matches == m2.size();
+        }
+    }
+
+    public static boolean containsSameEnchantmentsOfSameLevel(Map<Enchantment, Integer> m1, Map<Enchantment, Integer> m2){
+        if(m1.size() != m2.size()){
+            return false;
+        } else {
+            int matches = 0;
+            for (Map.Entry<Enchantment, Integer> e : m1.entrySet()){
+                Integer lvl = m2.get(e.getKey());
+                if(lvl != null && lvl.intValue() == e.getValue()) matches++;
+            }
+            return matches == m2.size();
+        }
+    }
+
+    public static LinkedHashMap<Enchantment, Integer> filterToNewMap(Map<Enchantment, Integer> map, BiPredicate<Enchantment, Integer> predicate){
+        LinkedHashMap<Enchantment, Integer>  enchs = new LinkedHashMap<>();
+        for (Map.Entry<Enchantment, Integer> e : map.entrySet()){
+            if(predicate.test(e.getKey(), e.getValue())){
+                enchs.put(e.getKey(), e.getValue());
+            }
+        }
+        return enchs;
+    }
 }

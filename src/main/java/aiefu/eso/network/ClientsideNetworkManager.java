@@ -1,5 +1,6 @@
 package aiefu.eso.network;
 
+import aiefu.eso.ConfigurationFile;
 import aiefu.eso.ESOCommon;
 import aiefu.eso.data.RecipeData;
 import aiefu.eso.data.RecipeHolder;
@@ -22,15 +23,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientsideNetworkManager {
     public static void registerGlobalReceivers(){
-        ClientPlayNetworking.registerGlobalReceiver(PacketIdentifiers.s2c_data_sync, (client, handler, buf, responseSender) -> readRecipes(buf));
+        ClientPlayNetworking.registerGlobalReceiver(PacketIdentifiers.s2c_data_sync, (client, handler, buf, responseSender) -> readRecipes(buf, client));
         ClientPlayNetworking.registerGlobalReceiver(PacketIdentifiers.s2c_string_to_clipboard, (client, handler, buf, responseSender) -> {
             String s = buf.readUtf();
             client.execute(() -> client.keyboardHandler.setClipboard(s));
         });
-        ClientPlayNetworking.registerGlobalReceiver(PacketIdentifiers.s2c_mat_config_sync, (client, handler, buf, responseSender) -> readMatConfigData(buf));
+        ClientPlayNetworking.registerGlobalReceiver(PacketIdentifiers.s2c_mat_config_sync, (client, handler, buf, responseSender) -> readMatConfigData(buf, client));
+        ClientPlayNetworking.registerGlobalReceiver(PacketIdentifiers.s2c_sync_config, (client, handler, buf, responseSender) -> readConfig(buf, client));
     }
 
-    public static void readMatConfigData(FriendlyByteBuf buf){
+    public static void readMatConfigData(FriendlyByteBuf buf, Minecraft client){
         int ts = buf.readVarInt();
         HashMap<String, MaterialData> tools = new HashMap<>();
         for (int i = 0; i < ts; i++) {
@@ -52,10 +54,10 @@ public class ClientsideNetworkManager {
             MaterialData data = new MaterialData(buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
             items.put(id, data);
         }
-        Minecraft.getInstance().execute(() -> ESOCommon.mat_config = MaterialOverrides.reconstructFromPacket(tools, armor, items));
+        client.execute(() -> ESOCommon.mat_config = MaterialOverrides.reconstructFromPacket(tools, armor, items));
     }
 
-    public static void readRecipes(FriendlyByteBuf buf){
+    public static void readRecipes(FriendlyByteBuf buf, Minecraft client){
         Interner<String> interner = Interners.newWeakInterner();
         String n = "null";
         interner.intern(n);
@@ -120,7 +122,7 @@ public class ClientsideNetworkManager {
             }
             map.put(loc, holders);
         }
-        Minecraft.getInstance().execute(() -> {
+        client.execute(() -> {
             ConcurrentHashMap<ResourceLocation, List<RecipeHolder>> holdersMap = new ConcurrentHashMap<>();
             map.forEach((k, v) -> {
                 List<RecipeHolder> holders = new ArrayList<>();
@@ -133,5 +135,12 @@ public class ClientsideNetworkManager {
             });
             ESOCommon.recipeMap = holdersMap;
         });
+    }
+
+    public static void readConfig(FriendlyByteBuf buf, Minecraft client){
+        ConfigurationFile file = new ConfigurationFile(buf.readVarInt(), buf.readBoolean(), buf.readBoolean(),
+                buf.readBoolean(), buf.readBoolean(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(),
+                buf.readVarInt(), buf.readVarInt(), buf.readBoolean());
+        client.execute(() -> ESOCommon.config = file);
     }
 }

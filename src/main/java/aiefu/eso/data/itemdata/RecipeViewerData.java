@@ -16,7 +16,7 @@ import net.minecraft.world.item.enchantment.EnchantmentInstance;
 public class RecipeViewerData {
     protected ItemDataPrepared[] itemData = new ItemDataPrepared[]{};
     protected RecipeViewerItemData[] cachedStacks;
-    protected Enchantment enchantment;
+    protected final Enchantment enchantment;
     protected ItemStack resultStack;
     protected int xp = 0;
     protected int lvl;

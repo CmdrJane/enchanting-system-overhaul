@@ -230,9 +230,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 if(e.isHovered()){
                     RecipeHolder holder = e.getRecipe();
                     if(holder != null){
-                        this.viewingRecipes = true;
-                        this.recipeViewer.updateRecipes(holder);
+                        this.recipeViewer.updateRecipes(holder, e.getEnchantment());
                         this.recipeViewer.setFocused(true);
+                        this.viewingRecipes = true;
                         break;
                     }
                 }
@@ -330,7 +330,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         List<EnchButtonWithData> list = new ArrayList<>();
         ItemStack stack = this.menu.getTableInv().getItem(0);
         boolean stackIsEmpty = stack.isEmpty();
-        boolean bl = stack.is(Items.BOOK);
+        boolean bl = stack.is(Items.BOOK) || stack.is(Items.ENCHANTED_BOOK);
         Map<Enchantment, Integer> enchs = stackIsEmpty ? EMPTY_MAP : EnchantmentHelper.getEnchantments(stack);
         Object2IntOpenHashMap<Enchantment> availableEnchantments = stackIsEmpty || bl ? menu.enchantments : this.filterToNewSet(menu.enchantments, (enchantment, level) -> enchantment.canEnchant(stack));
         Object2IntOpenHashMap<Enchantment> curses = this.filterToNewSet(enchs, (enchantment, integer) -> enchantment.isCurse());
@@ -354,9 +354,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     availableEnchantments.putAll(applicableCurses);
                 } else {
                     for (Object2IntMap.Entry<Enchantment> c : curses.object2IntEntrySet()){
-                        if(enchs.containsKey(c.getKey())){
-                            availableEnchantments.put(c.getKey(), c.getIntValue());
-                        }
+                        availableEnchantments.put(c.getKey(), c.getIntValue());
                     }
                 }
             }
@@ -423,8 +421,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         c.withStyle(ChatFormatting.AQUA);
         c.append(CommonComponents.NEW_LINE);
         c.append(ESOClient.getEnchantmentDescription(enchantment));
-        if(ESOCommon.config.enableEnchantmentsLeveling && targetLevel > button.enchantmentInstance.level){
-            c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(button.enchantmentInstance.level)).withStyle(ChatFormatting.DARK_RED));
+        if(ESOCommon.config.enableEnchantmentsLeveling && !Minecraft.getInstance().player.getAbilities().instabuild && targetLevel > button.enchantmentInstance.level){
+            c.append(CommonComponents.NEW_LINE);
+            c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(targetLevel)).withStyle(ChatFormatting.DARK_RED));
         }
         if(holder != null){
             c.append(CommonComponents.NEW_LINE);
@@ -551,7 +550,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public void recalculateAvailability(SimpleContainer container){
         ItemStack stack = container.getItem(0);
         Player player = Minecraft.getInstance().player;
-        if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)){
+        if(!stack.isEmpty() && (stack.is(Items.ENCHANTED_BOOK) || stack.getItem().isEnchantable(stack))){
             Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
             label1:
             for (EnchButtonWithData b : this.enchantmentsScrollList.getEnchantments()) {
@@ -563,7 +562,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     continue;
                 }
 
-                if(!stack.is(Items.BOOK)) {
+                if(!stack.is(Items.BOOK) || !stack.is(Items.ENCHANTED_BOOK)) {
                     for (Enchantment e : enchs.keySet()) {
                         if (e != b.getEnchantment() && !e.isCompatibleWith(b.getEnchantment())) {
                             b.active = false;
