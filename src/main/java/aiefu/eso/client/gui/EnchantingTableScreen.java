@@ -73,6 +73,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     protected MutableComponent displayMsg;
 
+    protected MutableComponent searchHint;
+
     protected boolean overlayActive = false;
 
     protected boolean viewingRecipes = false;
@@ -110,10 +112,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton.visible = overlayActive;
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
-        Component searchHint = Component.translatable("eso.search");
+        this.searchHint = Component.translatable("eso.search");
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
-        this.searchFilter.setHint(searchHint);
         List<EnchButtonWithData> list = this.craftEnchantmentsButtons(this.searchFilter.getValue());
         this.enchantmentsScrollList = this.addWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
 
@@ -214,13 +215,16 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         if(!viewingRecipes) this.enchantmentsScrollList.render(guiGraphics, mouseX, mouseY, partialTick);
         if(displayMsg != null){
             int x = leftPos + 79;
-            this.drawCenteredString(guiGraphics, this.font, displayMsg, x + 124 / 2, topPos + 75, 4210752, false);
+            this.drawCenteredString(guiGraphics, this.font, displayMsg, x + 124 / 2, topPos + 75, ESOClient.colorData.getTextActiveColor(), ESOClient.colorData.isDropShadow());
+        }
+        if(this.searchFilter.getValue().isEmpty() && !this.searchFilter.isFocused()){
+            guiGraphics.drawString(font, searchHint, this.leftPos + 81, this.topPos + 9, ESOClient.colorData.getSearchBarHintColor(), ESOClient.colorData.isSearchBarHintDropShadow());
         }
         if(menu.enchantments.isEmpty() && menu.curses.isEmpty()){
             int i = 0;
             int h = (48 - (8 * emptyMsg.size() + (emptyMsg.size() - 1) * 6)) / 2;
             for (FormattedCharSequence cs : emptyMsg){
-                this.drawCenteredString(guiGraphics, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * i, 4210752, false);
+                this.drawCenteredString(guiGraphics, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * i, ESOClient.colorData.getTextActiveColor(), ESOClient.colorData.isDropShadow());
                 i++;
             }
         }
@@ -251,7 +255,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             graphics.blit(ENCHANTING_BACKGROUND_TEXTURE, leftPos + 10, topPos + 48, 0,196,200, 60);
             int h = (42 - (8* this.confirmMsg.size() + (this.confirmMsg.size() - 1) * 6)) / 2;
             for (int i = 0; i < this.confirmMsg.size(); i++) {
-                this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 50 + h + 14 * i,4210752, false);
+                this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 50 + h + 14 * i,ESOClient.colorData.getTextActiveColor(), ESOClient.colorData.isDropShadow());
             }
         }
     }

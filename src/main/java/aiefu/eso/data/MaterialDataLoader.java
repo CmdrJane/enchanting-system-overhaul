@@ -25,20 +25,16 @@ import java.util.concurrent.Executor;
 public class MaterialDataLoader {
     public static final ResourceLocation mat_data_loader = new ResourceLocation(ESOCommon.MOD_ID,"mat_data_loader");
     public static void registerReloadListener(Gson gson){
-        ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new SimpleResourceReloadListener<Map<ResourceLocation, Resource>>() {
+        ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new SimpleResourceReloadListener<MaterialOverrides>() {
             @Override
             public ResourceLocation getFabricId() {
                 return mat_data_loader;
             }
 
             @Override
-            public CompletableFuture<Map<ResourceLocation, Resource>> load(ResourceManager manager, ProfilerFiller profiler, Executor executor) {
-                return CompletableFuture.supplyAsync(() -> manager.listResources("mat-overrides", resourceLocation -> resourceLocation.getPath().endsWith(".json")), executor);
-            }
-
-            @Override
-            public CompletableFuture<Void> apply(Map<ResourceLocation, Resource> data, ResourceManager manager, ProfilerFiller profiler, Executor executor) {
-                return CompletableFuture.runAsync(() -> {
+            public CompletableFuture<MaterialOverrides> load(ResourceManager manager, ProfilerFiller profiler, Executor executor) {
+                return CompletableFuture.supplyAsync(() -> {
+                    Map<ResourceLocation, Resource> data = manager.listResources("mat-overrides", resourceLocation -> resourceLocation.getPath().endsWith(".json"));
                     HashMap<String, MaterialData> armor = new HashMap<>();
                     HashMap<String, MaterialData> tools = new HashMap<>();
                     HashMap<String, MaterialData> items = new HashMap<>();
@@ -61,11 +57,17 @@ public class MaterialDataLoader {
                         }
                     });
                     try {
-                        ESOCommon.mat_config = MaterialOverrides.readWithAttachments(tools, armor, items);
+                        return MaterialOverrides.readWithAttachments(tools, armor, items);
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);
                     }
                 }, executor);
+
+            }
+
+            @Override
+            public CompletableFuture<Void> apply(MaterialOverrides data, ResourceManager manager, ProfilerFiller profiler, Executor executor) {
+                return CompletableFuture.runAsync(() -> ESOCommon.mat_config = data, executor);
             }
         });
     }

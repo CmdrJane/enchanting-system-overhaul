@@ -3,7 +3,9 @@ package aiefu.eso.client;
 import aiefu.eso.ESOCommon;
 import aiefu.eso.client.gui.EnchantingTableScreen;
 import aiefu.eso.compat.EnchDescCompat;
+import aiefu.eso.data.ColorsDataReloadListener;
 import aiefu.eso.data.LanguageReloadListener;
+import aiefu.eso.data.client.ColorDataHolder;
 import aiefu.eso.network.ClientsideNetworkManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -20,8 +22,8 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ESOClient implements ClientModInitializer {
+    public static ColorDataHolder colorData;
     private static final ConcurrentHashMap<Enchantment, MutableComponent> descriptions = new ConcurrentHashMap<>();
-
     private static boolean ench_desc_loaded = false;
 
     @Override
@@ -34,6 +36,7 @@ public class ESOClient implements ClientModInitializer {
         });
         ClientsideNetworkManager.registerGlobalReceivers();
         LanguageReloadListener.registerListener();
+        ColorsDataReloadListener.registerListener(ESOCommon.getGson());
     }
 
     public static MutableComponent getEnchantmentDescription(Enchantment e){
