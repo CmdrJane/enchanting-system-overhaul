@@ -1,4 +1,5 @@
 {
+  "eso.modname": "Enchanting System Overhaul",
   "eso.applyench.1": "Apply %s to %s",
   "eso.requires": "Crafting Ingredients: ",
   "eso.slot": "Slot %s :",
@@ -30,5 +31,7 @@
   "eso.xprequirementpoints": "XP required: %s (%s levels)",
   "eso.rv.level": "Level: %s",
   "eso.rv.xpreqp": "XP: %s levels",
-  "eso.rv.xpreql": "XP: %s points (%s levels)"
+  "eso.rv.xpreql": "XP: %s points (%s levels)",
+  "eso.recipekeybind": "Show Recipe",
+  "eso.tooltip.recipekey": "Press %s to open recipe viewer"
 }

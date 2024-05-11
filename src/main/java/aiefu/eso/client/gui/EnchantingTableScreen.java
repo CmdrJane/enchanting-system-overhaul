@@ -16,6 +16,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -269,6 +270,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        KeyMapping key = ESOClient.recipeKey;
         if(this.searchFilter.isFocused()){
             if(keyCode == 256) this.searchFilter.setFocused(false);
             else if(keyCode == 257){
@@ -277,11 +279,11 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             }
            return this.searchFilter.keyPressed(keyCode, scanCode, modifiers);
         }
-        else if(viewingRecipes && (keyCode == 85 || keyCode == 256)){
+        else if(viewingRecipes && (key.matches(keyCode, scanCode) || keyCode == 256)){
             this.viewingRecipes = false;
             this.recipeViewer.setFocused(false);
             return true;
-        } else if(!overlayActive && !viewingRecipes && keyCode == 85){
+        } else if(!overlayActive && !viewingRecipes && key.matches(keyCode, scanCode)){
             this.seekRecipe = true;
             return true;
         }else return super.keyPressed(keyCode, scanCode, modifiers);
@@ -504,6 +506,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 c.append(CommonComponents.NEW_LINE);
                 c.append(costMsg);
             }
+            c.append(CommonComponents.NEW_LINE);
+            c.append(Component.translatable("eso.tooltip.recipekey", ESOClient.recipeKey.getTranslatedKeyMessage()).withStyle(ChatFormatting.DARK_GRAY));
         }
         button.setTooltip(Tooltip.create(c));
     }
