@@ -74,11 +74,15 @@ public abstract class EnchantedBookMixins extends Item {
 
     @Unique
     private void esoSendMessage(Enchantment e, int level, Player player){
-        if(e.isCurse() && !ESOCommon.config.enableCursesAmplifier){
-            return;
+        ChatFormatting style = ChatFormatting.AQUA;
+        if(e.isCurse()){
+            if(!ESOCommon.config.enableCursesAmplifier) return;
+            else {
+                style = ChatFormatting.RED;
+            }
         }
-        MutableComponent c = Component.literal("[").withStyle(ChatFormatting.DARK_PURPLE);
-        MutableComponent eName = ESOCommon.config.enableEnchantmentsLeveling ? (MutableComponent) e.getFullname(level) : Component.translatable(e.getDescriptionId());
+        MutableComponent c = Component.literal("[").withStyle(style);
+        MutableComponent eName = ESOCommon.config.enableEnchantmentsLeveling ? ((MutableComponent) e.getFullname(level)).withStyle(style) : Component.translatable(e.getDescriptionId()).withStyle(style);
         c.append(eName);
         c.append(Component.literal("]"));
         player.displayClientMessage(Component.translatable("eso.youlearned", c).withStyle(ChatFormatting.GOLD), false);

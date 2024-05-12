@@ -10,4 +10,5 @@ public class PacketIdentifiers {
     public static final ResourceLocation s2c_data_sync = new ResourceLocation(ESOCommon.MOD_ID, "s2c_data_sync");
     public static final ResourceLocation s2c_mat_config_sync = new ResourceLocation(ESOCommon.MOD_ID, "s2c_mat_config_sync");
     public static final ResourceLocation s2c_string_to_clipboard = new ResourceLocation(ESOCommon.MOD_ID, "s2c_string_to_clipboard");
+    public static final ResourceLocation s2c_sync_config = new ResourceLocation(ESOCommon.MOD_ID, "s2c_sync_config");
 }

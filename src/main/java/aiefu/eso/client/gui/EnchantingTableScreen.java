@@ -18,10 +18,12 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.Registry;
@@ -65,9 +67,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     private static final DecimalFormat decimal_formatter = new DecimalFormat("#.##");
 
     protected EnchantmentListWidget enchantmentsScrollList;
-    protected EditBox searchFilter;
 
-    protected Component searchHint;
+    protected RecipeListWidget recipeViewer;
+    protected EditBox searchFilter;
 
     protected CustomEnchantingButton confirmButton;
     protected CustomEnchantingButton cancelButton;
@@ -78,9 +80,17 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     protected MutableComponent displayMsg;
 
+    protected final MutableComponent searchHint =  Component.translatable("eso.search");
+
     protected boolean overlayActive = false;
 
+    protected boolean viewingRecipes = false;
+
+    protected boolean seekRecipe = false;
+
     protected HashSet<EnchButtonWithData> tickingButtons = new HashSet<>();
+
+    protected List<FormattedCharSequence> recipeViewerTooltip;
 
     protected int ticks = 0;
 
@@ -113,11 +123,14 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton.visible = overlayActive;
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
-        this.searchHint = Component.translatable("eso.search");
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
         List<EnchButtonWithData> list = this.craftEnchantmentsButtons(this.searchFilter.getValue());
-        this.enchantmentsScrollList = this.addRenderableWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
+        this.enchantmentsScrollList = this.addWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
+
+        this.viewingRecipes = false;
+        this.seekRecipe = false;
+        this.recipeViewer = new RecipeListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), this);
         this.setInitialFocus(enchantmentsScrollList);
         this.recalculateAvailability(menu.getTableInv());
         this.menu.addSlotListener(new ContainerListener() {
@@ -191,20 +204,39 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 }
             }
         }
+        if(viewingRecipes){
+            recipeViewer.tick();
+        }
         this.ticks++;
+    }
+
+    public void setTooltipForNextRenderPass(List<FormattedCharSequence> seq){
+        this.recipeViewerTooltip = seq;
     }
 
     @Override
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        this.recipeViewerTooltip = null;
+        this.renderBackground(poseStack);
+        if(viewingRecipes){
+            poseStack.pushPose();
+            poseStack.translate(0.0, 0.0, 100.0);
+            this.recipeViewer.render(poseStack, mouseX, mouseY, partialTick);
+            poseStack.popPose();
+        }
         super.render(poseStack, mouseX, mouseY, partialTick);
         this.searchFilter.render(poseStack, mouseX, mouseY, partialTick);
-        if(!this.searchFilter.isFocused() && searchHint != null){
-            this.font.drawShadow(poseStack, searchHint, leftPos + 81, topPos + 9, 16777215);
+        if(!viewingRecipes) this.enchantmentsScrollList.render(poseStack, mouseX, mouseY, partialTick);
+        else if(recipeViewerTooltip != null){
+            renderTooltip(poseStack, recipeViewerTooltip, mouseX, mouseY);
         }
         if(!overlayActive) this.renderTooltip(poseStack, mouseX, mouseY);
         if(displayMsg != null){
             int x = leftPos + 79;
             this.drawCenteredStringNoShadow(poseStack, this.font, displayMsg, x + 124 / 2, topPos + 75, 4210752);
+        }
+        if(this.searchFilter.getValue().isEmpty() && !this.searchFilter.isFocused()){
+            this.font.drawShadow(poseStack, searchHint, leftPos + 81, topPos + 9, 16777215);
         }
         if(menu.enchantments.isEmpty() && menu.curses.isEmpty()){
             int g = 0;
@@ -212,6 +244,21 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             for (FormattedCharSequence cs : emptyMsg){
                 this.drawCenteredStringNoShadow(poseStack, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * g, 4210752);
                 g++;
+            }
+        }
+
+        if(seekRecipe && !viewingRecipes){
+            seekRecipe = false;
+            for (EnchButtonWithData e : this.enchantmentsScrollList.enchantments){
+                if(e.isHoveredOrFocused()){
+                    RecipeHolder holder = e.getRecipe();
+                    if(holder != null){
+                        this.recipeViewer.updateRecipes(holder, e.getEnchantment());
+                        this.recipeViewer.setFocused(true);
+                        this.viewingRecipes = true;
+                        break;
+                    }
+                }
             }
         }
 
@@ -246,6 +293,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        KeyMapping key = ESOClient.recipeKey;
         if(this.searchFilter.isFocused()){
             if(keyCode == 256) this.searchFilter.setFocus(false);
             else if(keyCode == 257){
@@ -254,16 +302,49 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             }
            return this.searchFilter.keyPressed(keyCode, scanCode, modifiers);
         }
-        else return super.keyPressed(keyCode, scanCode, modifiers);
+        else if(viewingRecipes && (key.matches(keyCode, scanCode) || keyCode == 256)){
+            this.viewingRecipes = false;
+            this.recipeViewer.setFocused(false);
+            return true;
+        } else if(!overlayActive && !viewingRecipes && key.matches(keyCode, scanCode)){
+            this.seekRecipe = true;
+            return true;
+        }else return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if(overlayActive) return false;
         else {
-            this.enchantmentsScrollList.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            if(viewingRecipes){
+                this.recipeViewer.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            } else this.enchantmentsScrollList.mouseDragged(mouseX, mouseY, button, dragX, dragY);
             return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if(viewingRecipes){
+            recipeViewer.mouseClicked(mouseX, mouseY, button);
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if(viewingRecipes){
+            this.recipeViewer.mouseScrolled(mouseX, mouseY, delta);
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if(viewingRecipes){
+            this.recipeViewer.mouseReleased(mouseX, mouseY, button);
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
@@ -293,7 +374,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         List<EnchButtonWithData> list = new ArrayList<>();
         ItemStack stack = this.menu.getTableInv().getItem(0);
         boolean stackIsEmpty = stack.isEmpty();
-        boolean bl = stack.is(Items.BOOK);
+        boolean bl = stack.is(Items.BOOK) || stack.is(Items.ENCHANTED_BOOK);
         Map<Enchantment, Integer> enchs = stackIsEmpty ? EMPTY_MAP : EnchantmentHelper.getEnchantments(stack);
         Object2IntOpenHashMap<Enchantment> availableEnchantments = stackIsEmpty || bl ? menu.enchantments : this.filterToNewSet(menu.enchantments, (enchantment, level) -> enchantment.canEnchant(stack));
         Object2IntOpenHashMap<Enchantment> curses = this.filterToNewSet(enchs, (enchantment, integer) -> enchantment.isCurse());
@@ -317,9 +398,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     availableEnchantments.putAll(applicableCurses);
                 } else {
                     for (Object2IntMap.Entry<Enchantment> c : curses.object2IntEntrySet()){
-                        if(enchs.containsKey(c.getKey())){
-                            availableEnchantments.put(c.getKey(), c.getIntValue());
-                        }
+                        availableEnchantments.put(c.getKey(), c.getIntValue());
                     }
                 }
             }
@@ -327,6 +406,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             availableEnchantments.putAll(applicableCurses);
         }
         int offset = 0;
+        LocalPlayer player = Minecraft.getInstance().player;
 
         for (Object2IntMap.Entry<Enchantment> entry : availableEnchantments.object2IntEntrySet()) {
             Enchantment enchantment = entry.getKey();
@@ -334,12 +414,17 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
                 List<RecipeHolder> holders = ESOCommon.getRecipeHolders(Registry.ENCHANTMENT.getKey(enchantment));
+                boolean hide = ESOCommon.config.hideEnchantmentsWithoutRecipe;
                 if(holders != null){
                     int ordinal = 0;
                     for (RecipeHolder holder : holders){
                         Integer l = enchs.get(enchantment);
                         int maxLevel = holder.getMaxLevel(enchantment);
                         int targetLevel = l != null ? Math.min(maxLevel, l + 1) : 1;
+
+                        if(hide && !player.getAbilities().instabuild && !holder.levels.containsKey(targetLevel) && holder.xpMap.get(targetLevel) < 1){
+                            continue;
+                        }
 
                         MutableComponent translatable = RecipeHolder.getFullName(enchantment, targetLevel, maxLevel);
                         EnchButtonWithData b = new EnchButtonWithData(leftPos + 80, (this.topPos + 25) + 16 * offset, 123, 14, translatable, button -> {
@@ -354,7 +439,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                         offset++;
                         ordinal++;
                     }
-                } else {
+                } else if(player.getAbilities().instabuild || !hide){
                     Integer l = enchs.get(enchantment);
                     int maxLevel = enchantment.getMaxLevel();
                     int targetLevel = l != null ? Math.min(maxLevel, l + 1) : 1;
@@ -382,8 +467,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         c.withStyle(ChatFormatting.AQUA);
         c.append(CommonComponents.NEW_LINE);
         c.append(ESOClient.getEnchantmentDescription(enchantment));
-        if(ESOCommon.config.enableEnchantmentsLeveling && targetLevel > button.enchantmentInstance.level){
-            c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(button.enchantmentInstance.level)).withStyle(ChatFormatting.DARK_RED));
+        if(ESOCommon.config.enableEnchantmentsLeveling && !Minecraft.getInstance().player.getAbilities().instabuild && targetLevel > button.enchantmentInstance.level){
+            c.append(CommonComponents.NEW_LINE);
+            c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(targetLevel)).withStyle(ChatFormatting.DARK_RED));
         }
         if(holder != null){
             c.append(CommonComponents.NEW_LINE);
@@ -460,6 +546,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 c.append(CommonComponents.NEW_LINE);
                 c.append(costMsg);
             }
+            c.append(CommonComponents.NEW_LINE);
+            c.append(Component.translatable("eso.tooltip.recipekey", ESOClient.recipeKey.getTranslatedKeyMessage().getString().toUpperCase()).withStyle(ChatFormatting.DARK_GRAY));
         }
         List<FormattedCharSequence> seq = font.split(c, 190);
         button.setTooltip((stack, x, y) -> EnchantingTableScreen.this.renderTooltip(stack, seq, x, y));
@@ -511,7 +599,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public void recalculateAvailability(SimpleContainer container){
         ItemStack stack = container.getItem(0);
         Player player = Minecraft.getInstance().player;
-        if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)){
+        if(!stack.isEmpty() && (stack.is(Items.ENCHANTED_BOOK) || stack.getItem().isEnchantable(stack))){
             Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
             label1:
             for (EnchButtonWithData b : this.enchantmentsScrollList.getEnchantments()) {
@@ -523,7 +611,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     continue;
                 }
 
-                if(!stack.is(Items.BOOK)) {
+                if(!stack.is(Items.BOOK) || !stack.is(Items.ENCHANTED_BOOK)) {
                     for (Enchantment e : enchs.keySet()) {
                         if (e != b.getEnchantment() && !e.isCompatibleWith(b.getEnchantment())) {
                             b.active = false;
@@ -541,5 +629,13 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     public EnchantmentListWidget getEnchantmentsScrollList() {
         return enchantmentsScrollList;
+    }
+
+    public Font getFont(){
+        return font;
+    }
+
+    public static DecimalFormat getFormatter(){
+        return decimal_formatter;
     }
 }

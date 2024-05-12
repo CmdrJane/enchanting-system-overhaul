@@ -12,10 +12,12 @@ public class ConfigurationFile {
     public int maxCurses;
     public int enchantmentLimitIncreasePerCurse;
 
+    public boolean hideEnchantmentsWithoutRecipe;
+
     public ConfigurationFile() {
     }
 
-    public ConfigurationFile(int maxEnchantments, boolean enableEnchantability, boolean enableDefaultRecipe, boolean disableDiscoverySystem, boolean enableEnchantmentsLeveling, int maxEnchantmentsOnLootBooks, int maxEnchantmentsOnLootItems, boolean enableCursesAmplifier, int maxCurses, int enchantmentLimitIncreasePerCurse) {
+    public ConfigurationFile(int maxEnchantments, boolean enableEnchantability, boolean enableDefaultRecipe, boolean disableDiscoverySystem, boolean enableEnchantmentsLeveling, int maxEnchantmentsOnLootBooks, int maxEnchantmentsOnLootItems, boolean enableCursesAmplifier, int maxCurses, int enchantmentLimitIncreasePerCurse, boolean hideEnchantmentsWithoutRecipe) {
         this.maxEnchantments = maxEnchantments;
         this.enableEnchantability = enableEnchantability;
         this.enableDefaultRecipe = enableDefaultRecipe;
@@ -26,9 +28,10 @@ public class ConfigurationFile {
         this.enableCursesAmplifier = enableCursesAmplifier;
         this.maxCurses = maxCurses;
         this.enchantmentLimitIncreasePerCurse = enchantmentLimitIncreasePerCurse;
+        this.hideEnchantmentsWithoutRecipe = hideEnchantmentsWithoutRecipe;
     }
 
     public static ConfigurationFile getDefault(){
-        return new ConfigurationFile(4, true, true, false, false,10, 3, true, 1, 1);
+        return new ConfigurationFile(4, true, true, false, false,10, 3, true, 1, 1, false);
     }
 }
