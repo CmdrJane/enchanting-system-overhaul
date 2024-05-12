@@ -1,6 +1,7 @@
 package aiefu.eso.client.gui;
 
 import aiefu.eso.ESOCommon;
+import aiefu.eso.client.ESOClient;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -33,7 +34,7 @@ public class CustomEnchantingButton extends Button {
         RenderSystem.enableDepthTest();
         guiGraphics.blitSprite(CUSTOM_SPRITES.get(this.active, this.isHoveredOrFocused()), this.getX(), this.getY(), this.getWidth(), this.getHeight());
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
-        int i = this.active ? 4210752 : 10526880;
+        int i = this.active ? ESOClient.colorData.getTextActiveColor() : ESOClient.colorData.getTextInactiveColor();
         this.drawCenteredString(guiGraphics, minecraft.font, this.getMessage(), i | Mth.ceil(this.alpha * 255.0F) << 24);
         //this.renderString(guiGraphics, minecraft.font, i | Mth.ceil(this.alpha * 255.0F) << 24);
     }

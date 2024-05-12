@@ -31,10 +31,8 @@ import java.util.Set;
 
 @Mixin(EnchantmentTableBlockEntity.class)
 public abstract class EnchTableBlockEntityMixins extends BlockEntity implements ExtendedScreenHandlerFactory {
-
-
-    public EnchTableBlockEntityMixins(BlockEntityType<?> blockEntityType, BlockPos blockPos, BlockState blockState) {
-        super(blockEntityType, blockPos, blockState);
+    public EnchTableBlockEntityMixins(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
+        super(type, pos, blockState);
     }
 
     @Shadow public abstract Component getName();

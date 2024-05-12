@@ -1,5 +1,6 @@
 package aiefu.eso.network;
 
+import aiefu.eso.ConfigurationFile;
 import aiefu.eso.ESOCommon;
 import aiefu.eso.data.RecipeHolder;
 import aiefu.eso.data.itemdata.ItemData;
@@ -123,5 +124,24 @@ public class ServersideNetworkManager {
             }
         }
         ServerPlayNetworking.send(player, PacketIdentifiers.s2c_data_sync, buf);
+    }
+
+    public static void syncConfig(ServerPlayer player){
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        ConfigurationFile cfg = ESOCommon.config;
+
+        buf.writeVarInt(cfg.maxEnchantments);
+        buf.writeBoolean(cfg.enableEnchantability);
+        buf.writeBoolean(cfg.enableDefaultRecipe);
+        buf.writeBoolean(cfg.disableDiscoverySystem);
+        buf.writeBoolean(cfg.enableEnchantmentsLeveling);
+        buf.writeVarInt(cfg.maxEnchantmentsOnLootBooks);
+        buf.writeVarInt(cfg.maxEnchantmentsOnLootItems);
+        buf.writeBoolean(cfg.enableCursesAmplifier);
+        buf.writeVarInt(cfg.maxCurses);
+        buf.writeVarInt(cfg.enchantmentLimitIncreasePerCurse);
+        buf.writeBoolean(cfg.hideEnchantmentsWithoutRecipe);
+
+        ServerPlayNetworking.send(player, PacketIdentifiers.s2c_sync_config, buf);
     }
 }

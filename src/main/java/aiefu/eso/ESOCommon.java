@@ -60,7 +60,7 @@ public class ESOCommon implements ModInitializer {
 		ServersideNetworkManager.registerReceivers();
 		try {
 			this.genConfig();
-			this.readConfig();
+			ESOCommon.readConfig();
 			this.genDefaultRecipe();
 			MaterialOverrides.generateDefault();
 		} catch (IOException e) {
@@ -100,7 +100,7 @@ public class ESOCommon implements ModInitializer {
 		}
 	}
 
-	public void readConfig() throws IOException {
+	public static void readConfig() throws IOException {
 		JsonObject jsonObject = JsonParser.parseReader(new FileReader("./config/eso/config.json")).getAsJsonObject();
 		boolean shouldSave = false;
 		if(!jsonObject.has("enableEnchantability")){
@@ -117,6 +117,10 @@ public class ESOCommon implements ModInitializer {
 		}
 		if(!jsonObject.has("enableEnchantmentsLeveling")){
 			jsonObject.addProperty("enableEnchantmentsLeveling", false);
+			shouldSave = true;
+		}
+		if(!jsonObject.has("hideEnchantmentsWithoutRecipe")){
+			jsonObject.addProperty("hideEnchantmentsWithoutRecipe", false);
 			shouldSave = true;
 		}
 		ESOCommon.config = gson.fromJson(jsonObject, ConfigurationFile.class);

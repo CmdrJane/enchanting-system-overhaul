@@ -1,5 +1,6 @@
 package aiefu.eso.client.gui;
 
+import aiefu.eso.client.ESOClient;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractScrollWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -52,8 +53,7 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
     }
 
     protected void renderBorder(GuiGraphics guiGraphics, int x, int y, int width, int height) {
-        int i = this.isFocused() ? -1 : -6250336;
-        guiGraphics.fill(x, y, x + width, y + height, -3159622);
+        guiGraphics.fill(x, y, x + width, y + height, ESOClient.colorData.getBackgroundColor());
         //guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, -16777216);
     }
 
@@ -70,8 +70,8 @@ public class EnchantmentListWidget extends AbstractScrollWidget {
         int maxX = this.getX() + this.width + 8;
         int minY = Math.max(this.getY(), (int)this.scrollAmount() * (this.height - i) / this.getMaxScrollAmount() + this.getY());
         int maxY = minY + i;
-        guiGraphics.fill(minX, minY, maxX, maxY, -345617);
-        guiGraphics.fill(minX + 1, minY + 1, maxX - 1, maxY -1, -4814674); //-8241880 . -11789813 //og -8355712 . -4144960 //purple -4814674 . -345617
+        guiGraphics.fill(minX, minY, maxX, maxY, ESOClient.colorData.getSliderOuterColor());
+        guiGraphics.fill(minX + 1, minY + 1, maxX - 1, maxY -1, ESOClient.colorData.getSliderInnerColor()); //-8241880 . -11789813 //og -8355712 . -4144960 //purple -4814674 . -345617
     }
 
     public void resetScrollAmount(){
