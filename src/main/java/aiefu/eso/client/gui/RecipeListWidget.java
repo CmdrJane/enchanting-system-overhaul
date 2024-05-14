@@ -106,7 +106,6 @@ public class RecipeListWidget extends AbstractScrollWidget {
             yOffset += 32;
         }
         ir.blitOffset = 0;
-        this.setBlitOffset(0);
     }
 
     public void setTooltipForNextPass(ItemStack stack, Font font, PoseStack ps, int x, int y){
