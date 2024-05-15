@@ -57,7 +57,6 @@ public class RecipeListWidget extends AbstractScrollWidget {
 
     @Override
     protected void renderContents(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        LocalPlayer player = Minecraft.getInstance().player;
         int yOffset = this.getY() + 12;
         List<RecipeViewerData> list = this.data;
         for (RecipeViewerData d : list){

@@ -237,8 +237,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                         this.recipeViewer.updateRecipes(holder, e.getEnchantment());
                         this.recipeViewer.setFocused(true);
                         this.viewingRecipes = true;
-                        break;
                     }
+                    break;
                 }
             }
         }
