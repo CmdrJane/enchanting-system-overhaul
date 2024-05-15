@@ -4,24 +4,30 @@ import aiefu.eso.data.RecipeHolder;
 import aiefu.eso.data.itemdata.ItemDataPrepared;
 import aiefu.eso.data.itemdata.RecipeViewerData;
 import aiefu.eso.data.itemdata.RecipeViewerItemData;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractScrollWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 public class RecipeListWidget extends AbstractScrollWidget {
     protected RecipeHolder recipe;
+
+    protected List<RecipeViewerData> data;
     protected int innerHeight = 0;
 
     protected EnchantingTableScreen screen;
@@ -50,9 +56,8 @@ public class RecipeListWidget extends AbstractScrollWidget {
 
     @Override
     protected void renderContents(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        LocalPlayer player = Minecraft.getInstance().player;
         int yOffset = this.getY() + 12;
-        List<RecipeViewerData> list = this.recipe.getRecipeViewerData();
+        List<RecipeViewerData> list = this.data;
         for (RecipeViewerData d : list){
             ItemDataPrepared[] itd = d.getItemData();
             int xp = d.getXp();
@@ -122,7 +127,7 @@ public class RecipeListWidget extends AbstractScrollWidget {
 
     public void tick(){
         if(this.tickCount % 60 == 0){
-            this.recipe.recipeViewerData.forEach(recipeViewerData -> {
+            this.data.forEach(recipeViewerData -> {
                 for (RecipeViewerItemData d : recipeViewerData.getCachedStacks()){
                     d.next();
                 }
@@ -136,11 +141,34 @@ public class RecipeListWidget extends AbstractScrollWidget {
         return mouseX > wOffset && mouseX < wOffset + 17 && k > yOffset && k < yOffset + 17;
     }
 
-    public void updateRecipes(RecipeHolder holder){
+    public void updateRecipes(RecipeHolder holder, Enchantment enchantment){
         Objects.requireNonNull(holder);
         this.recipe = holder;
-        this.innerHeight = holder.mergeAndGet().size() * 32;
+        this.prepareData(enchantment);
+        this.innerHeight = this.data.size() * 32;
         this.setScrollAmount(0.0D);
+    }
+
+    protected void prepareData(Enchantment enchantment){
+        Int2ObjectOpenHashMap<RecipeViewerData> map = new Int2ObjectOpenHashMap<>();
+        for (Int2ObjectMap.Entry<ItemDataPrepared[]> set : this.recipe.levels.int2ObjectEntrySet()){
+            int lvl = set.getIntKey();
+            map.put(lvl, new RecipeViewerData(set.getValue(), lvl, enchantment, this.recipe.mode));
+        }
+        for (Int2IntMap.Entry set : this.recipe.xpMap.int2IntEntrySet()){
+            int lvl = set.getIntKey();
+            RecipeViewerData data = map.get(lvl);
+            if(data != null){
+                data.setXp(set.getIntValue());
+            } else map.put(lvl, new RecipeViewerData(set.getIntValue(), lvl, enchantment, this.recipe.mode));
+        }
+        List<Integer> keyset = new ArrayList<>(map.keySet());
+        List<RecipeViewerData> sortedData = new ArrayList<>();
+        Collections.sort(keyset);
+        for (int k : keyset){
+            sortedData.add(map.get(k));
+        }
+        this.data = sortedData;
     }
 
     @Override

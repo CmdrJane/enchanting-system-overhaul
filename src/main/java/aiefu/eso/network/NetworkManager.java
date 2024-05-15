@@ -1,10 +1,7 @@
 package aiefu.eso.network;
 
 import aiefu.eso.ESOCommon;
-import aiefu.eso.network.packets.CopyToClipboardData;
-import aiefu.eso.network.packets.EnchantItemData;
-import aiefu.eso.network.packets.SyncEnchantmentsData;
-import aiefu.eso.network.packets.SyncMatData;
+import aiefu.eso.network.packets.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
@@ -24,6 +21,8 @@ public class NetworkManager {
                 .encoder(CopyToClipboardData::encode).decoder(CopyToClipboardData::decode).consumerMainThread(CopyToClipboardData::handle).add();
         network.messageBuilder(SyncMatData.class,id++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(SyncMatData::encode).decoder(SyncMatData::decode).consumerMainThread(SyncMatData::handle).add();
+        network.messageBuilder(SyncConfig.class, id++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(SyncConfig::encode).decoder(SyncConfig::decode).consumerMainThread(SyncConfig::handle).add();
         network.messageBuilder(EnchantItemData.class, id++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(EnchantItemData::encode).decoder(EnchantItemData::decode).consumerMainThread(EnchantItemData::handle).add();
     }

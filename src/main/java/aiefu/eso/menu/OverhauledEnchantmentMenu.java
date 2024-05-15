@@ -1,12 +1,11 @@
 package aiefu.eso.menu;
 
-import aiefu.eso.ConfigurationFile;
 import aiefu.eso.ESOCommon;
 import aiefu.eso.IServerPlayerAcc;
+import aiefu.eso.Utils;
 import aiefu.eso.client.ESOClient;
 import aiefu.eso.data.RecipeHolder;
 import aiefu.eso.data.materialoverrides.MaterialData;
-import aiefu.eso.data.materialoverrides.MaterialOverrides;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.network.FriendlyByteBuf;
@@ -21,7 +20,10 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.EnchantedBookItem;
+import net.minecraft.world.item.Equipable;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
@@ -132,7 +134,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(this.tableInv, 0, 24,31){
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return stack.getItem().isEnchantable(stack) || stack.is(Items.BOOK);
+                return stack.getItem().isEnchantable(stack) || stack.is(Items.BOOK) || stack.is(Items.ENCHANTED_BOOK);
             }
 
             @Override
@@ -162,55 +164,55 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         this.access.execute((level, blockPos) -> {
             boolean instabuild = player.getAbilities().instabuild;
             ItemStack stack = this.tableInv.getItem(0);
-            if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)) {
-                if(stack.is(Items.BOOK)) {
-                    this.enchantBook(location, player, ordinal);
-                } else {
-                    Enchantment target = ForgeRegistries.ENCHANTMENTS.getValue(location);
-                    if (target != null) {
-                        Object2IntOpenHashMap<Enchantment> learnedEnchantments = ((IServerPlayerAcc)player).enchantment_overhaul$getUnlockedEnchantments();
-                        int learnedLevel = learnedEnchantments.getInt(target);
-                        if(learnedLevel == 0 && !ESOCommon.config.disableDiscoverySystem && !instabuild){
-                            return;
-                        }
-                        if(target.isCurse() && !ESOCommon.config.enableCursesAmplifier){
-                            return;
-                        }
+            boolean isBook = stack.is(Items.BOOK) || stack.is(Items.ENCHANTED_BOOK);
+            if(!stack.isEmpty() && (isBook || stack.getItem().isEnchantable(stack))) {
+                Enchantment target = ForgeRegistries.ENCHANTMENTS.getValue(location);
+                if (target != null) {
+                    Object2IntOpenHashMap<Enchantment> learnedEnchantments = ((IServerPlayerAcc)player).enchantment_overhaul$getUnlockedEnchantments();
+                    int learnedLevel = learnedEnchantments.getInt(target);
+                    if(learnedLevel == 0 && !ESOCommon.config.disableDiscoverySystem && !instabuild){
+                        return;
+                    }
+                    if(target.isCurse() && !ESOCommon.config.enableCursesAmplifier){
+                        return;
+                    }
 
-                        stack.getOrCreateTag();
-                        Map<Enchantment, Integer> enchs = stack.isEnchanted() ? EnchantmentHelper.getEnchantments(stack) : new HashMap<>();
-                        int curses = 0;
-                        for (Enchantment e : enchs.keySet()){
-                            if(e.isCurse()) curses++;
-                        }
-                        MaterialData data = this.getMatData(stack.getItem());
-                        if(target.canEnchant(stack) && (enchs.containsKey(target) || target.isCurse() && curses < data.getMaxCurses()
-                                || this.getCurrentLimit(enchs.keySet().size(), curses) < this.getEnchantmentsLimit(curses, data))) {
+                    stack.getOrCreateTag();
+                    Map<Enchantment, Integer> enchs = Utils.containsEnchantments(stack) ? EnchantmentHelper.getEnchantments(stack) : new HashMap<>();
+                    int curses = 0;
+                    for (Enchantment e : enchs.keySet()){
+                        if(e.isCurse()) curses++;
+                    }
+                    MaterialData data = Utils.getMatData(stack.getItem());
+                    if((isBook || target.canEnchant(stack)) && (enchs.containsKey(target) || target.isCurse() && curses < data.getMaxCurses()
+                            || Utils.getCurrentLimit(enchs.keySet().size(), curses) < Utils.getEnchantmentsLimit(curses, data))) {
 
+                        if(!isBook){
                             for (Enchantment e : enchs.keySet()) {
                                 if (e != target && !e.isCompatibleWith(target)) {
                                     return;
                                 }
                             }
-                            int targetLevel = 1;
-                            Integer l = enchs.get(target);
-                            if (l != null) {
-                                targetLevel = l + 1;
-                            }
-                            if(targetLevel > learnedLevel && ESOCommon.config.enableEnchantmentsLeveling && !instabuild){
-                                return;
-                            }
-                            List<RecipeHolder> holders = ESOCommon.getRecipeHolders(location);
-                            if (holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()) {
-                                RecipeHolder holder = holders.get(ordinal);
-                                if (instabuild || targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel, player)) {
-                                    enchs.put(target, targetLevel);
-                                    this.applyAndBroadcast(player, enchs, stack);
-                                }
-                            } else if (instabuild && targetLevel <= target.getMaxLevel()) {
+                        }
+
+                        int targetLevel = 1;
+                        Integer l = enchs.get(target);
+                        if (l != null) {
+                            targetLevel = l + 1;
+                        }
+                        if(targetLevel > learnedLevel && ESOCommon.config.enableEnchantmentsLeveling && !instabuild){
+                            return;
+                        }
+                        List<RecipeHolder> holders = ESOCommon.getRecipeHolders(location);
+                        if (holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()) {
+                            RecipeHolder holder = holders.get(ordinal);
+                            if (instabuild || targetLevel <= holder.getMaxLevel(target) && holder.checkAndConsume(this.tableInv, targetLevel, player)) {
                                 enchs.put(target, targetLevel);
-                                this.applyAndBroadcast(player, enchs, stack);
+                                this.applyAndBroadcast(player, enchs, stack, isBook);
                             }
+                        } else if (instabuild && targetLevel <= target.getMaxLevel()) {
+                            enchs.put(target, targetLevel);
+                            this.applyAndBroadcast(player, enchs, stack, isBook);
                         }
                     }
                 }
@@ -218,48 +220,21 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
         });
     }
 
-    public int getEnchantmentsLimit(int curses, MaterialData data){
-        ConfigurationFile cfg = ESOCommon.config;
-        return cfg.enableCursesAmplifier ? data.getMaxEnchantments() + Math.min(curses, data.getMaxCurses()) * data.getCurseMultiplier() : data.getMaxEnchantments();
-    }
-
-    public MaterialData getMatData(Item item){
-        return ESOCommon.config.enableEnchantability ? ESOCommon.mat_config.getMaterialData(item) : MaterialOverrides.defaultMatData;
-    }
-
-    public int getCurrentLimit(int appliedEnchantments, int curses){
-        ConfigurationFile cfg = ESOCommon.config;
-        return cfg.enableCursesAmplifier ? appliedEnchantments - curses : appliedEnchantments;
-    }
-
-    public void applyAndBroadcast(Player player, Map<Enchantment, Integer> map, ItemStack stack){
-        EnchantmentHelper.setEnchantments(map, stack);
+    public void applyAndBroadcast(Player player, Map<Enchantment, Integer> map, ItemStack stack, boolean isBook){
+        if(isBook){
+            if(stack.is(Items.BOOK)){
+                stack = new ItemStack(Items.ENCHANTED_BOOK);
+                this.tableInv.setItem(0, stack);
+            }
+            for (Map.Entry<Enchantment, Integer> e : map.entrySet()){
+                EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(e.getKey(), e.getValue()));
+            }
+        } else {
+            EnchantmentHelper.setEnchantments(map, stack);
+        }
         player.onEnchantmentPerformed(stack, 0);
         this.tableInv.setChanged();
         this.broadcastChanges();
-    }
-
-    public void enchantBook(ResourceLocation location, Player player, int ordinal){
-        Enchantment target = ForgeRegistries.ENCHANTMENTS.getValue(location);
-        if(target != null){
-            ItemStack stack = new ItemStack(Items.ENCHANTED_BOOK);
-            stack.getOrCreateTag();
-            List<RecipeHolder> holders = ESOCommon.getRecipeHolders(location);
-            if(holders != null && !holders.isEmpty() && ordinal != -1 && ordinal < holders.size()){
-                RecipeHolder holder = holders.get(ordinal);
-                if(holder.checkAndConsume(this.tableInv, 1, player)){
-                    EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(target, 1));
-                    this.tableInv.setItem(0, stack);
-                    player.onEnchantmentPerformed(stack, 0);
-                    this.broadcastChanges();
-                }
-            } else if(player.getAbilities().instabuild){
-                EnchantedBookItem.addEnchantment(stack, new EnchantmentInstance(target, 1));
-                this.tableInv.setItem(0, stack);
-                player.onEnchantmentPerformed(stack, 0);
-                this.broadcastChanges();
-            }
-        }
     }
 
     public SimpleContainer getTableInv() {

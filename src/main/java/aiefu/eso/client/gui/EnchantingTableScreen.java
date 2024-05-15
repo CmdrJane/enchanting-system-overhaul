@@ -15,6 +15,7 @@ import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -55,7 +56,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     private static final Map<Enchantment, Integer> EMPTY_MAP = Maps.newLinkedHashMap();
 
-    private static final DecimalFormat decimal_formatter = new DecimalFormat("#.##");
+    protected static final DecimalFormat decimal_formatter = new DecimalFormat("#.##");
 
     protected EnchantmentListWidget enchantmentsScrollList;
 
@@ -70,6 +71,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     protected List<FormattedCharSequence> confirmMsg = new ArrayList<>();
 
     protected MutableComponent displayMsg;
+
+    protected MutableComponent searchHint;
 
     protected boolean overlayActive = false;
 
@@ -105,10 +108,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.confirmButton.visible = overlayActive;
         this.cancelButton.active = overlayActive;
         this.cancelButton.visible = overlayActive;
-        Component searchHint = Component.translatable("eso.search");
+        this.searchHint = Component.translatable("eso.search");
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
-        this.searchFilter.setHint(searchHint);
         List<EnchButtonWithData> list = this.craftEnchantmentsButtons(this.searchFilter.getValue());
         this.enchantmentsScrollList = this.addWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
 
@@ -209,13 +211,16 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         if(!viewingRecipes) this.enchantmentsScrollList.render(guiGraphics, mouseX, mouseY, partialTick);
         if(displayMsg != null){
             int x = leftPos + 79;
-            this.drawCenteredString(guiGraphics, this.font, displayMsg, x + 124 / 2, topPos + 75, 4210752, false);
+            this.drawCenteredString(guiGraphics, this.font, displayMsg, x + 124 / 2, topPos + 75, ESOClient.colorData.getTextActiveColor(), ESOClient.colorData.isDropShadow());
+        }
+        if(this.searchFilter.getValue().isEmpty() && !this.searchFilter.isFocused()){
+            guiGraphics.drawString(font, searchHint, this.leftPos + 81, this.topPos + 9, ESOClient.colorData.getSearchBarHintColor(), ESOClient.colorData.isSearchBarHintDropShadow());
         }
         if(menu.enchantments.isEmpty() && menu.curses.isEmpty()){
             int i = 0;
             int h = (48 - (8 * emptyMsg.size() + (emptyMsg.size() - 1) * 6)) / 2;
             for (FormattedCharSequence cs : emptyMsg){
-                this.drawCenteredString(guiGraphics, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * i, 4210752, false);
+                this.drawCenteredString(guiGraphics, this.font, cs,leftPos + 79 + 124 / 2, topPos + 25 + h + 14 * i, ESOClient.colorData.getTextActiveColor(), ESOClient.colorData.isDropShadow());
                 i++;
             }
         }
@@ -225,11 +230,11 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 if(e.isHovered()){
                     RecipeHolder holder = e.getRecipe();
                     if(holder != null){
-                        this.viewingRecipes = true;
-                        this.recipeViewer.updateRecipes(holder);
+                        this.recipeViewer.updateRecipes(holder, e.getEnchantment());
                         this.recipeViewer.setFocused(true);
-                        break;
+                        this.viewingRecipes = true;
                     }
+                    break;
                 }
             }
         }
@@ -246,11 +251,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             graphics.blit(ENCHANTING_BACKGROUND_TEXTURE, leftPos + 10, topPos + 48, 0,196,200, 60);
             int h = (42 - (8* this.confirmMsg.size() + (this.confirmMsg.size() - 1) * 6)) / 2;
             for (int i = 0; i < this.confirmMsg.size(); i++) {
-                this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 50 + h + 14 * i,4210752, false);
+                this.drawCenteredString(graphics, font, this.confirmMsg.get(i), leftPos + 109, topPos + 50 + h + 14 * i,ESOClient.colorData.getTextActiveColor(), ESOClient.colorData.isDropShadow());
             }
         }
     }
-
     protected void drawCenteredString(GuiGraphics graphics, Font font, Component text, int x, int y, int color, boolean dropShadow){
         graphics.drawString(font, text, x - font.width(text) / 2, y, color, dropShadow);
     }
@@ -261,6 +265,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        KeyMapping key = ESOClient.recipeKey;
         if(this.searchFilter.isFocused()){
             if(keyCode == 256) this.searchFilter.setFocused(false);
             else if(keyCode == 257){
@@ -269,11 +274,11 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             }
            return this.searchFilter.keyPressed(keyCode, scanCode, modifiers);
         }
-        else if(viewingRecipes && (keyCode == 85 || keyCode == 256)){
+        else if(viewingRecipes && (key.matches(keyCode, scanCode) || keyCode == 256)){
             this.viewingRecipes = false;
             this.recipeViewer.setFocused(false);
             return true;
-        } else if(!overlayActive && !viewingRecipes && keyCode == 85){
+        } else if(!overlayActive && !viewingRecipes && key.matches(keyCode, scanCode)){
             this.seekRecipe = true;
             return true;
         }else return super.keyPressed(keyCode, scanCode, modifiers);
@@ -326,7 +331,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         List<EnchButtonWithData> list = new ArrayList<>();
         ItemStack stack = this.menu.getTableInv().getItem(0);
         boolean stackIsEmpty = stack.isEmpty();
-        boolean bl = stack.is(Items.BOOK);
+        boolean bl = stack.is(Items.BOOK) || stack.is(Items.ENCHANTED_BOOK);
         Map<Enchantment, Integer> enchs = stackIsEmpty ? EMPTY_MAP : EnchantmentHelper.getEnchantments(stack);
         Object2IntOpenHashMap<Enchantment> availableEnchantments = stackIsEmpty || bl ? menu.enchantments : this.filterToNewSet(menu.enchantments, (enchantment, level) -> enchantment.canEnchant(stack));
         Object2IntOpenHashMap<Enchantment> curses = this.filterToNewSet(enchs, (enchantment, integer) -> enchantment.isCurse());
@@ -350,9 +355,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     availableEnchantments.putAll(applicableCurses);
                 } else {
                     for (Object2IntMap.Entry<Enchantment> c : curses.object2IntEntrySet()){
-                        if(enchs.containsKey(c.getKey())){
-                            availableEnchantments.put(c.getKey(), c.getIntValue());
-                        }
+                        availableEnchantments.put(c.getKey(), c.getIntValue());
                     }
                 }
             }
@@ -419,8 +422,9 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         c.withStyle(ChatFormatting.AQUA);
         c.append(CommonComponents.NEW_LINE);
         c.append(ESOClient.getEnchantmentDescription(enchantment));
-        if(ESOCommon.config.enableEnchantmentsLeveling && targetLevel > button.enchantmentInstance.level){
-            c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(button.enchantmentInstance.level)).withStyle(ChatFormatting.DARK_RED));
+        if(ESOCommon.config.enableEnchantmentsLeveling && !Minecraft.getInstance().player.getAbilities().instabuild && targetLevel > button.enchantmentInstance.level){
+            c.append(CommonComponents.NEW_LINE);
+            c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(targetLevel)).withStyle(ChatFormatting.DARK_RED));
         }
         if(holder != null){
             c.append(CommonComponents.NEW_LINE);
@@ -497,6 +501,8 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 c.append(CommonComponents.NEW_LINE);
                 c.append(costMsg);
             }
+            c.append(CommonComponents.NEW_LINE);
+            c.append(Component.translatable("eso.tooltip.recipekey", ESOClient.recipeKey.getTranslatedKeyMessage()).withStyle(ChatFormatting.DARK_GRAY));
         }
         button.setTooltip(Tooltip.create(c));
     }
@@ -547,7 +553,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
     public void recalculateAvailability(SimpleContainer container){
         ItemStack stack = container.getItem(0);
         Player player = Minecraft.getInstance().player;
-        if(!stack.isEmpty() && stack.getItem().isEnchantable(stack)){
+        if(!stack.isEmpty() && (stack.is(Items.ENCHANTED_BOOK) || stack.getItem().isEnchantable(stack))){
             Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
             label1:
             for (EnchButtonWithData b : this.enchantmentsScrollList.getEnchantments()) {
@@ -559,7 +565,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                     continue;
                 }
 
-                if(!stack.is(Items.BOOK)) {
+                if(!stack.is(Items.BOOK) || !stack.is(Items.ENCHANTED_BOOK)) {
                     for (Enchantment e : enchs.keySet()) {
                         if (e != b.getEnchantment() && !e.isCompatibleWith(b.getEnchantment())) {
                             b.active = false;

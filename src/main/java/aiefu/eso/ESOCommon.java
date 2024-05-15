@@ -71,6 +71,7 @@ public class ESOCommon{
 		if(FMLEnvironment.dist.isClient()){
 			modEventBus.addListener(ESOClient::onInitializeClient);
 			modEventBus.addListener(ESOClient::onLoadComplete);
+			ESOClient.registerToModBusEvent(modEventBus);
 		}
 	}
 
@@ -78,7 +79,7 @@ public class ESOCommon{
 		MinecraftForge.EVENT_BUS.register(this);
 		try {
 			this.genConfig();
-			this.readConfig();
+			ESOCommon.readConfig();
 			this.genDefaultRecipe();
 			MaterialOverrides.generateDefault();
 		} catch (IOException e) {
@@ -124,7 +125,7 @@ public class ESOCommon{
 		}
 	}
 
-	public void readConfig() throws IOException {
+	public static void readConfig() throws IOException {
 		JsonObject jsonObject = JsonParser.parseReader(new FileReader("./config/eso/config.json")).getAsJsonObject();
 		boolean shouldSave = false;
 		if(!jsonObject.has("enableEnchantability")){
