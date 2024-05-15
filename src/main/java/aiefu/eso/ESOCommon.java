@@ -71,6 +71,7 @@ public class ESOCommon{
 		if(FMLEnvironment.dist.isClient()){
 			modEventBus.addListener(ESOClient::onInitializeClient);
 			modEventBus.addListener(ESOClient::onLoadComplete);
+			ESOClient.registerToModBusEvent(modEventBus);
 		}
 	}
 
