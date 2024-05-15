@@ -13,7 +13,7 @@ public class EnchButtonWithData extends CustomEnchantingButton{
     protected EnchantmentInstance enchantmentInstance;
     protected int ordinal;
 
-    public EnchButtonWithData(int x, int y, int width, int height, Component message, OnPress onPress, RecipeHolder recipe, Enchantment enchantment, int level, int ordinal) {
+    public EnchButtonWithData(int x, int y, int width, int height, Component message, OnPress onPress, @Nullable RecipeHolder recipe, Enchantment enchantment, int level, int ordinal) {
         super(x, y, width, height, message, onPress);
         this.recipe = recipe;
         this.enchantmentInstance = new EnchantmentInstance(enchantment, level);

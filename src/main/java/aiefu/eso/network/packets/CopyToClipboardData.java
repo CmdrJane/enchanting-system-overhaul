@@ -2,6 +2,7 @@ package aiefu.eso.network.packets;
 
 import aiefu.eso.client.ESOClient;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -24,8 +25,10 @@ public class CopyToClipboardData {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ESOClient.copyToClipboard(string);
-        });
+        if(FMLEnvironment.dist.isClient()){
+            ctx.get().enqueueWork(() -> {
+                ESOClient.copyToClipboard(string);
+            });
+        }
     }
 }
