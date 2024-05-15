@@ -13,7 +13,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractScrollWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -57,7 +56,6 @@ public class RecipeListWidget extends AbstractScrollWidget {
 
     @Override
     protected void renderContents(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        LocalPlayer player = Minecraft.getInstance().player;
         int yOffset = this.getY() + 12;
         List<RecipeViewerData> list = this.data;
         for (RecipeViewerData d : list){
