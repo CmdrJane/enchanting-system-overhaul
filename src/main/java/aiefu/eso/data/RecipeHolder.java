@@ -211,12 +211,14 @@ public class RecipeHolder {
         Int2ObjectOpenHashMap<ItemDataPrepared[]> levelsProcessed = new Int2ObjectOpenHashMap<>();
         try {
             for (Int2ObjectMap.Entry<ItemData[]> e : levels.int2ObjectEntrySet()){
-                ItemDataPrepared[] prepArr = new ItemDataPrepared[e.getValue().length];
-                for (int i = 0; i < e.getValue().length; i++) {
-                    ItemData data = e.getValue()[i];
-                    prepArr[i] = new ItemDataPrepared(data, location, id, true);
+                if(e.getValue() != null){
+                    ItemDataPrepared[] prepArr = new ItemDataPrepared[e.getValue().length];
+                    for (int i = 0; i < e.getValue().length; i++) {
+                        ItemData data = e.getValue()[i];
+                        prepArr[i] = new ItemDataPrepared(data, location, id, true);
+                    }
+                    levelsProcessed.put(e.getIntKey(), prepArr);
                 }
-                levelsProcessed.put(e.getIntKey(), prepArr);
             }
         } catch (ItemDoesNotExistException exception){
             exception.printStackTrace();

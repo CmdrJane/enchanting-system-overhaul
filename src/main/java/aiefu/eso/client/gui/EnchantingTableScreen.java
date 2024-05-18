@@ -229,7 +229,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             for (EnchButtonWithData e : this.enchantmentsScrollList.enchantments){
                 if(e.isHovered()){
                     RecipeHolder holder = e.getRecipe();
-                    if(holder != null){
+                    if(holder != null && !(holder.levels.isEmpty() && holder.xpMap.isEmpty())){
                         this.recipeViewer.updateRecipes(holder, e.getEnchantment());
                         this.recipeViewer.setFocused(true);
                         this.viewingRecipes = true;
@@ -362,12 +362,14 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         } else if(cfg.enableCursesAmplifier && curses.size() < matData.getMaxCurses()){
             availableEnchantments.putAll(applicableCurses);
         }
+        SortedMap<Enchantment, Integer> sortedMap = new TreeMap<>(Comparator.comparing(e -> I18n.get(e.getDescriptionId())));
+        sortedMap.putAll(availableEnchantments);
         int offset = 0;
         LocalPlayer player = Minecraft.getInstance().player;
 
-        for (Object2IntMap.Entry<Enchantment> entry : availableEnchantments.object2IntEntrySet()) {
+        for (Map.Entry<Enchantment, Integer> entry : sortedMap.entrySet()) {
             Enchantment enchantment = entry.getKey();
-            int level = entry.getIntValue();
+            int level = entry.getValue();
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
                 List<RecipeHolder> holders = ESOCommon.getRecipeHolders(ForgeRegistries.ENCHANTMENTS.getKey(enchantment));
@@ -427,60 +429,63 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
             c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(targetLevel)).withStyle(ChatFormatting.DARK_RED));
         }
         if(holder != null){
-            c.append(CommonComponents.NEW_LINE);
-            c.append(Component.translatable("eso.requires").withStyle(ChatFormatting.GRAY));
-            for (ItemDataPrepared data : holder.levels.get(targetLevel)) {
-                MutableComponent itemName;
-                if(data.isEmpty()){
-                    itemName = Component.translatable("eso.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
-                } else {
-                    Item item;
-                    CompoundTag tag = null;
-                    int amount;
-                    if(data.itemList != null){
-                        if(data.applicableItems.isEmpty()) continue;
-                        if(bl){
-                            this.tickingButtons.add(button);
-                            data.resetPos();
-                        }
-                        ItemDataPrepared ids = data.getNotNestedData();
-                        item = ids.item;
-                        tag = ids.compoundTag;
-                        amount = ids.amount;
-                        data.next();
-                    } else if(data.tagKey != null){
-                        if(data.applicableItems.isEmpty()) continue;
-                        if(bl){
-                            this.tickingButtons.add(button);
-                            data.resetPos();
-                        }
-                        item = data.getApplicableItem();
-                        amount = data.amount;
-                        data.next();
-                    } else {
-                        item = data.item;
-                        tag = data.compoundTag;
-                        amount = data.amount;
-                    }
-                    if(tag != null){
-                        ItemStack refStack = new ItemStack(item, 1);
-                        refStack.setTag(tag);
-                        itemName = Component.translatable(refStack.getDescriptionId());
-                        if(item instanceof PotionItem){
-                            String potion_id = tag.getString("Potion");
-                            if(potion_id.contains("strong")){
-                                itemName.append(Component.translatable("eso.potionstrong"));
-                            } else if(potion_id.contains("long")){
-                                itemName.append(Component.translatable("eso.potionlong"));
-                            }
-
-                        }
-                    } else itemName = Component.translatable(item.getDescriptionId());
-                    itemName.append(": ").append(Component.literal(String.valueOf(amount)).withStyle(ChatFormatting.AQUA)).withStyle(ChatFormatting.GOLD);
-                }
+            ItemDataPrepared[] d = holder.levels.get(targetLevel);
+            if(d != null){
                 c.append(CommonComponents.NEW_LINE);
-                c.append(itemName);
+                c.append(Component.translatable("eso.requires").withStyle(ChatFormatting.GRAY));
+                for (ItemDataPrepared data : holder.levels.get(targetLevel)) {
+                    MutableComponent itemName;
+                    if(data.isEmpty()){
+                        itemName = Component.translatable("eso.emptyitem").withStyle(ChatFormatting.DARK_GRAY);
+                    } else {
+                        Item item;
+                        CompoundTag tag = null;
+                        int amount;
+                        if(data.itemList != null){
+                            if(data.applicableItems.isEmpty()) continue;
+                            if(bl){
+                                this.tickingButtons.add(button);
+                                data.resetPos();
+                            }
+                            ItemDataPrepared ids = data.getNotNestedData();
+                            item = ids.item;
+                            tag = ids.compoundTag;
+                            amount = ids.amount;
+                            data.next();
+                        } else if(data.tagKey != null){
+                            if(data.applicableItems.isEmpty()) continue;
+                            if(bl){
+                                this.tickingButtons.add(button);
+                                data.resetPos();
+                            }
+                            item = data.getApplicableItem();
+                            amount = data.amount;
+                            data.next();
+                        } else {
+                            item = data.item;
+                            tag = data.compoundTag;
+                            amount = data.amount;
+                        }
+                        if(tag != null){
+                            ItemStack refStack = new ItemStack(item, 1);
+                            refStack.setTag(tag);
+                            itemName = Component.translatable(refStack.getDescriptionId());
+                            if(item instanceof PotionItem){
+                                String potion_id = tag.getString("Potion");
+                                if(potion_id.contains("strong")){
+                                    itemName.append(Component.translatable("eso.potionstrong"));
+                                } else if(potion_id.contains("long")){
+                                    itemName.append(Component.translatable("eso.potionlong"));
+                                }
 
+                            }
+                        } else itemName = Component.translatable(item.getDescriptionId());
+                        itemName.append(": ").append(Component.literal(String.valueOf(amount)).withStyle(ChatFormatting.AQUA)).withStyle(ChatFormatting.GOLD);
+                    }
+                    c.append(CommonComponents.NEW_LINE);
+                    c.append(itemName);
+
+                }
             }
             int cost = holder.xpMap.get(targetLevel);
             if(cost > 0){
@@ -501,8 +506,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 c.append(CommonComponents.NEW_LINE);
                 c.append(costMsg);
             }
-            c.append(CommonComponents.NEW_LINE);
-            c.append(Component.translatable("eso.tooltip.recipekey", ESOClient.recipeKey.getTranslatedKeyMessage()).withStyle(ChatFormatting.DARK_GRAY));
+            if(!(holder.levels.isEmpty() && holder.xpMap.isEmpty())){
+                c.append(CommonComponents.NEW_LINE);
+                c.append(Component.translatable("eso.tooltip.recipekey", ESOClient.recipeKey.getTranslatedKeyMessage()).withStyle(ChatFormatting.DARK_GRAY));
+            }
         }
         button.setTooltip(Tooltip.create(c));
     }
