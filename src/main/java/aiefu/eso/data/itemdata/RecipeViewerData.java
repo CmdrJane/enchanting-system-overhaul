@@ -37,6 +37,7 @@ public class RecipeViewerData {
         this.lvl = lvl;
         this.enchantment = enchantment;
         this.mode = mode;
+        this.cacheItemStacks(null);
         this.composeDescription();
     }
 
@@ -69,10 +70,13 @@ public class RecipeViewerData {
     }
 
     public void cacheItemStacks(ItemDataPrepared[] prepared){
-        RecipeViewerItemData[] data = new RecipeViewerItemData[prepared.length];
-        for (int i = 0; i < prepared.length; i++) {
-            data[i] = new RecipeViewerItemData(prepared[i]);
-        }
+        RecipeViewerItemData[] data;
+        if(prepared != null){
+            data = new RecipeViewerItemData[prepared.length];
+            for (int i = 0; i < prepared.length; i++) {
+                data[i] = new RecipeViewerItemData(prepared[i]);
+            }
+        } else data = new RecipeViewerItemData[0];
         this.cachedStacks = data;
         this.resultStack = new ItemStack(Items.ENCHANTED_BOOK, 1);
         EnchantedBookItem.addEnchantment(resultStack, new EnchantmentInstance(enchantment, lvl));
