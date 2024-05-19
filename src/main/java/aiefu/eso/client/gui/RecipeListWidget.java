@@ -77,38 +77,41 @@ public class RecipeListWidget extends AbstractScrollWidget {
         ir.blitOffset = 100.0F;
         for (RecipeViewerData d : list){
             ItemDataPrepared[] itd = d.getItemData();
-            int xp = d.getXp();
-            if(itd.length < 1 && xp < 1) continue;
+            if(itd.length < 1 && d.getXp() < 1){
+                continue;
+            }
             int wOffset = this.x + 2;
             Font font = screen.getFont();
             font.draw(poseStack, d.getDesc(), wOffset + 2, yOffset - 9,4210752);
-
-            for (RecipeViewerItemData i : d.getCachedStacks()){
-                ItemStack stack = i.isAnimated() ? i.getNextStack() : i.getStack();
-                if(withinContentAreaPoint(mouseX, mouseY) && currentItemIsHovered(yOffset, wOffset, mouseX, mouseY)){
-                    this.setTooltipForNextPass(stack, font, poseStack, mouseX, mouseY);
+            if(itd.length > 0) {
+                for (RecipeViewerItemData i : d.getCachedStacks()) {
+                    ItemStack stack = i.isAnimated() ? i.getNextStack() : i.getStack();
+                    if (withinContentAreaPoint(mouseX, mouseY) && currentItemIsHovered(yOffset, wOffset, mouseX, mouseY)) {
+                        this.setTooltipForNextPass(stack, font);
+                    }
+                    ir.renderGuiItem(stack, wOffset, (int) (yOffset - scrollAmount()));
+                    ir.renderGuiItemDecorations(font, stack, wOffset, (int) (yOffset - scrollAmount()));
+                    wOffset += 20;
                 }
-                ir.renderGuiItem(stack, wOffset, (int) (yOffset - scrollAmount()));
-                ir.renderGuiItemDecorations(font, stack, wOffset, (int) (yOffset - scrollAmount()));
+                RenderSystem.setShader(GameRenderer::getPositionTexShader);
+                RenderSystem.setShaderTexture(0, EnchantingTableScreen.ENCHANTING_BACKGROUND_TEXTURE);
+                RenderSystem.enableDepthTest();
+                blit(poseStack, wOffset, yOffset + 2, 210, 197, 16, 14);
                 wOffset += 20;
+                ItemStack resultStack = d.getResultStack();
+                if (withinContentAreaPoint(mouseX, mouseY) && currentItemIsHovered(yOffset, wOffset, mouseX, mouseY)) {
+                    this.setTooltipForNextPass(resultStack, font);
+                }
+                ir.renderGuiItem(resultStack, wOffset, (int) (yOffset - scrollAmount()));
+                ir.renderGuiItemDecorations(font, resultStack, wOffset, (int) (yOffset - scrollAmount()));
+                yOffset += 20;
             }
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            RenderSystem.setShaderTexture(0, EnchantingTableScreen.ENCHANTING_BACKGROUND_TEXTURE);
-            RenderSystem.enableDepthTest();
-            blit(poseStack, wOffset, yOffset + 2, 210, 197, 16, 14);
-            wOffset +=20;
-            ItemStack resultStack = d.getResultStack();
-            if(withinContentAreaPoint(mouseX, mouseY) && currentItemIsHovered(yOffset, wOffset, mouseX, mouseY)){
-                this.setTooltipForNextPass(resultStack, font, poseStack, mouseX, mouseY);
-            }
-            ir.renderGuiItem(resultStack, wOffset, (int) (yOffset - scrollAmount()));
-            ir.renderGuiItemDecorations(font, resultStack, wOffset, (int) (yOffset - scrollAmount()));
-            yOffset += 32;
+            yOffset += 12;
         }
         ir.blitOffset = 0;
     }
 
-    public void setTooltipForNextPass(ItemStack stack, Font font, PoseStack ps, int x, int y){
+    public void setTooltipForNextPass(ItemStack stack, Font font){
         List<FormattedCharSequence> fcsl = new ArrayList<>();
         for (Component c : screen.getTooltipFromItem(stack)){
             fcsl.addAll(font.split(c, 200));
@@ -170,7 +173,9 @@ public class RecipeListWidget extends AbstractScrollWidget {
         Int2ObjectOpenHashMap<RecipeViewerData> map = new Int2ObjectOpenHashMap<>();
         for (Int2ObjectMap.Entry<ItemDataPrepared[]> set : this.recipe.levels.int2ObjectEntrySet()){
             int lvl = set.getIntKey();
-            map.put(lvl, new RecipeViewerData(set.getValue(), lvl, enchantment, this.recipe.mode));
+            if(set.getValue() != null){
+                map.put(lvl, new RecipeViewerData(set.getValue(), lvl, enchantment, this.recipe.mode));
+            }
         }
         for (Int2IntMap.Entry set : this.recipe.xpMap.int2IntEntrySet()){
             int lvl = set.getIntKey();

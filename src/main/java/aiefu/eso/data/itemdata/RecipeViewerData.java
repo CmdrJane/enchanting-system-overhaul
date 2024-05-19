@@ -11,6 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import org.jetbrains.annotations.Nullable;
 
 public class RecipeViewerData {
     protected ItemDataPrepared[] itemData = new ItemDataPrepared[]{};
@@ -36,6 +37,7 @@ public class RecipeViewerData {
         this.lvl = lvl;
         this.enchantment = enchantment;
         this.mode = mode;
+        this.cacheItemStacks(null);
         this.composeDescription();
     }
 
@@ -67,11 +69,14 @@ public class RecipeViewerData {
         this.composeDescription();
     }
 
-    public void cacheItemStacks(ItemDataPrepared[] prepared){
-        RecipeViewerItemData[] data = new RecipeViewerItemData[prepared.length];
-        for (int i = 0; i < prepared.length; i++) {
-            data[i] = new RecipeViewerItemData(prepared[i]);
-        }
+    public void cacheItemStacks(@Nullable ItemDataPrepared[] prepared){
+        RecipeViewerItemData[] data;
+        if(prepared != null){
+            data = new RecipeViewerItemData[prepared.length];
+            for (int i = 0; i < prepared.length; i++) {
+                data[i] = new RecipeViewerItemData(prepared[i]);
+            }
+        } else data = new RecipeViewerItemData[0];
         this.cachedStacks = data;
         this.resultStack = new ItemStack(Items.ENCHANTED_BOOK, 1);
         EnchantedBookItem.addEnchantment(resultStack, new EnchantmentInstance(enchantment, lvl));
