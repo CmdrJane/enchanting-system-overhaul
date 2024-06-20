@@ -2,16 +2,13 @@ package aiefu.eso.client;
 
 import aiefu.eso.ESOCommon;
 import aiefu.eso.client.gui.EnchantingTableScreen;
-import aiefu.eso.compat.EnchDescCompat;
 import aiefu.eso.data.ColorsDataReloadListener;
 import aiefu.eso.data.LanguageReloadListener;
 import aiefu.eso.data.client.ColorDataHolder;
 import aiefu.eso.network.ClientsideNetworkManager;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -29,16 +26,10 @@ public class ESOClient implements ClientModInitializer {
     public static ColorDataHolder colorData;
     private static final ConcurrentHashMap<Enchantment, MutableComponent> descriptions = new ConcurrentHashMap<>();
     public static KeyMapping recipeKey;
-    private static boolean ench_desc_loaded = false;
 
     @Override
     public void onInitializeClient() {
         MenuScreens.register(ESOCommon.enchantment_menu_ovr, EnchantingTableScreen::new);
-        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
-            if(FabricLoaderImpl.INSTANCE.isModLoaded("enchdesc")){
-                ench_desc_loaded = true;
-            }
-        });
         ClientsideNetworkManager.registerGlobalReceivers();
         LanguageReloadListener.registerListener();
         ColorsDataReloadListener.registerListener(ESOCommon.getGson());
@@ -47,12 +38,13 @@ public class ESOClient implements ClientModInitializer {
     }
 
     public static MutableComponent getEnchantmentDescription(Enchantment e){
-        return ench_desc_loaded ? EnchDescCompat.getEnchantmentDescription(e) : descriptions.computeIfAbsent(e, (enchantment) -> {
-            String ed = enchantment.getDescriptionId() + ".desc";
+        return descriptions.computeIfAbsent(e, (enchantment) -> {
+            String desc = enchantment.getDescriptionId();
+            String ed = desc + ".desc";
             Language language = Language.getInstance();
-            if (!language.has(ed) && language.has(ed + ".description")) {
+            if (!language.has(ed) && language.has(desc + ".description")) {
 
-                ed = ed + ".description";
+                ed = desc + ".description";
             }
            return Component.translatable(ed).withStyle(ChatFormatting.DARK_GRAY);
         });
