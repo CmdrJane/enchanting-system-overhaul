@@ -44,8 +44,8 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
     public static final ResourceLocation SWORD_EMPTY_ICON = new ResourceLocation("item/empty_slot_sword");
     public static final ResourceLocation INGOT_EMPTY_ICON = new ResourceLocation("item/empty_slot_ingot");
     private final ContainerLevelAccess access;
+    public Object2IntOpenHashMap<Enchantment> allEnchantments = new Object2IntOpenHashMap<>();
     public Object2IntOpenHashMap<Enchantment> enchantments = new Object2IntOpenHashMap<>();
-
     public Object2IntOpenHashMap<Enchantment> curses = new Object2IntOpenHashMap<>();
 
     public boolean isClientSide = false;
@@ -60,6 +60,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             int l = buf.readVarInt();
             Enchantment e = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(s));
             if(e != null){
+                allEnchantments.put(e, l);
                 if(e.isCurse()){
                     curses.put(e, l);
                 } else enchantments.put(e, l);
