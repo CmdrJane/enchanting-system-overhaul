@@ -147,6 +147,14 @@ public class ESOCommon{
 			jsonObject.addProperty("hideEnchantmentsWithoutRecipe", false);
 			shouldSave = true;
 		}
+		if(!jsonObject.has("disableAnvilEnchanting")){
+			jsonObject.addProperty("disableAnvilEnchanting", false);
+			shouldSave = true;
+		}
+		if(!jsonObject.has("disableBookCombining")){
+			jsonObject.addProperty("disableBookCombining", false);
+			shouldSave = true;
+		}
 		ESOCommon.config = gson.fromJson(jsonObject, ConfigurationFile.class);
 		if(shouldSave){
 			try(FileWriter writer = new FileWriter("./config/eso/config.json")){
