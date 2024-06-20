@@ -39,11 +39,12 @@ public class ESOClient {
 
     public static MutableComponent getEnchantmentDescription(Enchantment e){
         return descriptions.computeIfAbsent(e, (enchantment) -> {
-            String ed = enchantment.getDescriptionId() + ".desc";
+            String desc = enchantment.getDescriptionId();
+            String ed = desc + ".desc";
             Language language = Language.getInstance();
-            if (!language.has(ed) && language.has(ed + ".description")) {
+            if (!language.has(ed) && language.has(desc + ".description")) {
 
-                ed = ed + ".description";
+                ed = desc + ".description";
             }
            return Component.translatable(ed).withStyle(ChatFormatting.DARK_GRAY);
         });
