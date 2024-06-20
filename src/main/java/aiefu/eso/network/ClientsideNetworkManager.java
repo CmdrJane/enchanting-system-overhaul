@@ -140,7 +140,7 @@ public class ClientsideNetworkManager {
     public static void readConfig(FriendlyByteBuf buf, Minecraft client){
         ConfigurationFile file = new ConfigurationFile(buf.readVarInt(), buf.readBoolean(), buf.readBoolean(),
                 buf.readBoolean(), buf.readBoolean(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(),
-                buf.readVarInt(), buf.readVarInt(), buf.readBoolean());
+                buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean());
         client.execute(() -> ESOCommon.config = file);
     }
 }
