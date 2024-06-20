@@ -39,6 +39,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE, InventoryMenu.EMPTY_ARMOR_SLOT_HELMET};
     protected static final EquipmentSlot[] SLOT_IDS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};;
     private final ContainerLevelAccess access;
+    public Object2IntOpenHashMap<Enchantment> allEnchantments = new Object2IntOpenHashMap<>();
     public Object2IntOpenHashMap<Enchantment> enchantments = new Object2IntOpenHashMap<>();
 
     public Object2IntOpenHashMap<Enchantment> curses = new Object2IntOpenHashMap<>();
@@ -55,6 +56,7 @@ public class OverhauledEnchantmentMenu extends AbstractContainerMenu {
             int l = buf.readVarInt();
             Enchantment e = Registry.ENCHANTMENT.get(new ResourceLocation(s));
             if(e != null){
+                allEnchantments.put(e, l);
                 if(e.isCurse()){
                     curses.put(e, l);
                 } else enchantments.put(e, l);

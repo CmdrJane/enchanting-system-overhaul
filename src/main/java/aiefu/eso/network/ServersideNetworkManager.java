@@ -141,6 +141,8 @@ public class ServersideNetworkManager {
         buf.writeVarInt(cfg.maxCurses);
         buf.writeVarInt(cfg.enchantmentLimitIncreasePerCurse);
         buf.writeBoolean(cfg.hideEnchantmentsWithoutRecipe);
+        buf.writeBoolean(cfg.disableAnvilEnchanting);
+        buf.writeBoolean(cfg.disableBookCombining);
 
         ServerPlayNetworking.send(player, PacketIdentifiers.s2c_sync_config, buf);
     }

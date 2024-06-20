@@ -40,8 +40,8 @@ public class MaterialOverrides {
                 if(data != null){
                     this.toolsMatOverridesCompiled.put(item, data);
                 }
-            } else if (item instanceof ArmorMaterial am){
-                MaterialData data = armorMatOverrides.get(am.getName());
+            } else if (item instanceof ArmorItem am){
+                MaterialData data = armorMatOverrides.get(am.getMaterial().getName());
                 if(data != null){
                     this.armorMatOverridesCompiled.put(item, data);
                 }
@@ -59,7 +59,7 @@ public class MaterialOverrides {
         } else {
             if(item instanceof TieredItem){
                 data = toolsMatOverridesCompiled.get(item);
-            } else if (item instanceof ArmorMaterial) {
+            } else if (item instanceof ArmorItem) {
                 data = armorMatOverridesCompiled.get(item);
             }
             if(data != null){
