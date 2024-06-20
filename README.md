@@ -24,6 +24,6 @@ __[Modrinth](https://modrinth.com/mod/enchanting-system-overhaul)__
 * Optionally enchantments leveling can be enabled which will require you to obtain books with higher enchantments levels to be able to upgrade to them
 * You can apply as many enchantments to item as configuration allows at any time. That means you don't need to fully enchant your item in one go
 * Optionally curse amplification feature can be enabled to allow for intentional curse application to items. Curses will increase enchantments limit per item
-* Item enchanting and enchantments combining through anvil has been disabled
+* Item enchanting and combining through anvil has been re-enabled as of version 1.2.0
 * Enchantment recipes are data driven and can be customized through data-packs at any time
 * Materials override feature allows to customize enchantability of materials or individual items
