@@ -18,7 +18,7 @@ public class SyncConfig {
     public static SyncConfig decode(FriendlyByteBuf buf){
         return new SyncConfig(new ConfigurationFile(buf.readVarInt(), buf.readBoolean(), buf.readBoolean(),
                 buf.readBoolean(), buf.readBoolean(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(),
-                buf.readVarInt(), buf.readVarInt(), buf.readBoolean()));
+                buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean()));
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -33,6 +33,8 @@ public class SyncConfig {
         buf.writeVarInt(cfg.maxCurses);
         buf.writeVarInt(cfg.enchantmentLimitIncreasePerCurse);
         buf.writeBoolean(cfg.hideEnchantmentsWithoutRecipe);
+        buf.writeBoolean(cfg.disableAnvilEnchanting);
+        buf.writeBoolean(cfg.disableBookCombining);
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

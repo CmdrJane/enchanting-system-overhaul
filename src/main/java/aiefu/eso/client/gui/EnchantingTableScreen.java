@@ -120,7 +120,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         this.searchFilter = this.addWidget(new EditBox(this.font, leftPos + 81, topPos + 9, 123, 10, searchHint));
         this.searchFilter.setBordered(false);
         List<EnchButtonWithData> list = this.craftEnchantmentsButtons(this.searchFilter.getValue());
-        this.enchantmentsScrollList = this.addWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list));
+        this.enchantmentsScrollList = Objects.requireNonNull(this.addWidget(new EnchantmentListWidget(this.leftPos + 79, this.topPos + 24, 125 , 48, Component.literal(""), list)));
 
         this.viewingRecipes = false;
         this.seekRecipe = false;
@@ -232,7 +232,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         if(this.searchFilter.getValue().isEmpty() && !this.searchFilter.isFocused()){
             this.font.drawShadow(poseStack, searchHint, leftPos + 81, topPos + 9, 16777215);
         }
-        if(menu.enchantments.isEmpty() && menu.curses.isEmpty()){
+        if(!Minecraft.getInstance().player.getAbilities().instabuild && menu.allEnchantments.isEmpty()){
             int g = 0;
             int h = (48 - (8 * emptyMsg.size() + (emptyMsg.size() - 1) * 6)) / 2;
             for (FormattedCharSequence cs : emptyMsg){
@@ -399,12 +399,14 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         } else if(cfg.enableCursesAmplifier && curses.size() < matData.getMaxCurses()){
             availableEnchantments.putAll(applicableCurses);
         }
+        SortedMap<Enchantment, Integer> sortedMap = new TreeMap<>(Comparator.comparing(e -> I18n.get(e.getDescriptionId())));
+        sortedMap.putAll(availableEnchantments);
         int offset = 0;
         LocalPlayer player = Minecraft.getInstance().player;
 
-        for (Object2IntMap.Entry<Enchantment> entry : availableEnchantments.object2IntEntrySet()) {
+        for (Map.Entry<Enchantment, Integer> entry : sortedMap.entrySet()) {
             Enchantment enchantment = entry.getKey();
-            int level = entry.getIntValue();
+            int level = entry.getValue();
             String name = I18n.get(enchantment.getDescriptionId());
             if(filter.isEmpty() || filter.isBlank() || name.toLowerCase().contains(filter.toLowerCase())){
                 List<RecipeHolder> holders = ESOCommon.getRecipeHolders(ForgeRegistries.ENCHANTMENTS.getKey(enchantment));
@@ -461,7 +463,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
         c.withStyle(ChatFormatting.AQUA);
         c.append(CommonComponents.NEW_LINE);
         c.append(ESOClient.getEnchantmentDescription(enchantment));
-        if(ESOCommon.config.enableEnchantmentsLeveling && !Minecraft.getInstance().player.getAbilities().instabuild && targetLevel > button.enchantmentInstance.level){
+        if(ESOCommon.config.enableEnchantmentsLeveling && !Minecraft.getInstance().player.getAbilities().instabuild && targetLevel > menu.allEnchantments.getInt(enchantment)){
             c.append(CommonComponents.NEW_LINE);
             c.append(Component.translatable("eso.knowledgerequired", enchantment.getFullname(targetLevel)).withStyle(ChatFormatting.DARK_RED));
         }
@@ -605,7 +607,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<OverhauledEnc
                 Integer targetLevel = enchs.get(b.getEnchantment());
                 targetLevel = targetLevel == null ? 1 : targetLevel + 1;
 
-                if(ESOCommon.config.enableEnchantmentsLeveling && targetLevel > b.enchantmentInstance.level){
+                if(ESOCommon.config.enableEnchantmentsLeveling && targetLevel > menu.allEnchantments.getInt(b.getEnchantment())){
                     b.active = false;
                     continue;
                 }
