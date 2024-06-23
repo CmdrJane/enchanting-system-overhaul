@@ -17,7 +17,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Mixin(AnvilMenu.class)
@@ -49,31 +48,11 @@ public abstract class AnvilMenuMixins extends ItemCombinerMenu {
                     } else {
                         MaterialData data = Utils.getMatData(stack.getItem());
                         Map<Enchantment, Integer> curses = Utils.filterToNewMap(enchs, (e, i) -> e.isCurse());
-                        Map<Enchantment, Integer> enchantments = new LinkedHashMap<>();
-
                         int limit = Utils.getEnchantmentsLimit(curses.size(), data);
-                        int maxCurses = data.getMaxCurses();
 
-
-                        if(enchs.size() < limit + curses.size()){
-                            int k = 0;
-                            for (Map.Entry<Enchantment, Integer> e : enchs.entrySet()){
-                                if(e.getKey().isCurse()) continue;
-                                if(k < limit){
-                                    enchantments.put(e.getKey(), e.getValue());
-                                    k++;
-                                }
-                            }
-
-                            int j = 0;
-                            for (Map.Entry<Enchantment, Integer> e : curses.entrySet()){
-                                if(j < maxCurses){
-                                    enchantments.put(e.getKey(), e.getValue());
-                                    j++;
-                                }
-                            }
-                            EnchantmentHelper.setEnchantments(enchantments, stack);
-                        } else {
+                        if(stack.isDamageableItem() && input.isDamageableItem() && stack.getDamageValue() != input.getDamageValue()){
+                            EnchantmentHelper.setEnchantments(inputE, stack);
+                        } else if(enchs.size() > limit + curses.size()){
                             this.resultSlots.setItem(0, ItemStack.EMPTY);
                             this.cost.set(0);
                         }
