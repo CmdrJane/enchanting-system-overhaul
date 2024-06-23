@@ -2,7 +2,6 @@ package aiefu.eso.client;
 
 import aiefu.eso.ESOCommon;
 import aiefu.eso.client.gui.EnchantingTableScreen;
-import aiefu.eso.compat.EnchDescCompat;
 import aiefu.eso.data.ColorsDataLoader;
 import aiefu.eso.data.client.ColorDataHolder;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -19,9 +18,7 @@ import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,16 +28,6 @@ public class ESOClient {
     private static final ConcurrentHashMap<Enchantment, MutableComponent> descriptions = new ConcurrentHashMap<>();
     public static KeyMapping recipeKey = new KeyMapping("eso.recipekeybind",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U, "eso.modname");
-    private static boolean ench_desc_loaded = false;
-
-    public static void onLoadComplete(FMLLoadCompleteEvent event){
-       if(ModList.get().isLoaded("enchdesc")){
-           ench_desc_loaded = true;
-           ESOCommon.LOGGER.info("Enchantment Descriptions mod are loaded");
-       } else {
-           ESOCommon.LOGGER.info("Enchantment Descriptions mod are not loaded, switching to fallback");
-       }
-    }
 
     public static void onInitializeClient(FMLClientSetupEvent event) {
         MenuScreens.register(ESOCommon.enchantment_menu_ovr.get(), EnchantingTableScreen::new);
